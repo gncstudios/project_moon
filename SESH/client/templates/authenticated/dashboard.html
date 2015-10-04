@@ -1,4 +1,13 @@
 <template name="dashboard">
   <h3>Dashboard</h3>
-  <p>this is a test {{currentUser.emails.[0].address}}</p>
+  <p>Here are your e-mails:</p>
+  <ul>
+  {{#each currentUser.emails}}
+  <li>{{address}}</li>
+  {{/each}}
+  </ul>
+  <form id="test">
+    <input name="test" value="yep"/>
+    <input type="submit" value="Submit"/>
+  </form>
 </template>
