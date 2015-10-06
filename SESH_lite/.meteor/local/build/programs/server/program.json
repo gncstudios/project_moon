@@ -457,8 +457,8 @@
       "path": "packages/global-imports.js"
     },
     {
-      "sourceMap": "app/both/collections/items.js.map",
-      "path": "app/both/collections/items.js"
+      "sourceMap": "app/both/collections/meetings.js.map",
+      "path": "app/both/collections/meetings.js"
     },
     {
       "sourceMap": "app/both/config/config.js.map",
@@ -473,12 +473,12 @@
       "path": "app/server/methods/user.js"
     },
     {
-      "sourceMap": "app/server/permissions/items.js.map",
-      "path": "app/server/permissions/items.js"
+      "sourceMap": "app/server/permissions/meetings.js.map",
+      "path": "app/server/permissions/meetings.js"
     },
     {
-      "sourceMap": "app/server/publications/items.js.map",
-      "path": "app/server/publications/items.js"
+      "sourceMap": "app/server/publications/meetings.js.map",
+      "path": "app/server/publications/meetings.js"
     }
   ]
 }

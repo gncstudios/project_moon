@@ -4,15 +4,15 @@ Template.dashboard.rendered = function() {
 
 
 Template.dashboard.events({
-  "click [data-action='add-item']": function (e) {
+  "submit .add-item": function (e) {
 
     // Prevent default button click behavior
     e.preventDefault();
 
     // Insert the form data into the "Items" collection
-    Items.insert({
+    Meetings.insert({
       name: $("[name='name']").val(),
-      rating: $("[name='rating']").val(),
+      cost: $("[name='cost']").val(),
       owner: Meteor.userId()
     });
 
@@ -20,4 +20,10 @@ Template.dashboard.events({
     $('#addItemModal').modal('hide');
   }
 
+});
+
+Template.dashboard.helpers({
+  myMeetings: function() {
+    return Meetings.find({owner: Meteor.userId()});
+  }
 });

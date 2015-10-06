@@ -1100,6 +1100,17 @@
       "hash": "54c49704e6dda0dfa71e0e3142bbc025e59c2408"
     },
     {
+      "path": "app/client/templates/_shared/template.meetingRow.js",
+      "where": "client",
+      "type": "js",
+      "cacheable": true,
+      "url": "/app/client/templates/_shared/template.meetingRow.js?24861dd531f98a07811c78d4445e3b765b5d706d",
+      "sourceMap": "app/client/templates/_shared/template.meetingRow.js.map",
+      "sourceMapUrl": "/app/client/templates/_shared/24861dd531f98a07811c78d4445e3b765b5d706d.map",
+      "size": 1245,
+      "hash": "24861dd531f98a07811c78d4445e3b765b5d706d"
+    },
+    {
       "path": "app/client/templates/_shared/template.notFound.js",
       "where": "client",
       "type": "js",
@@ -1115,11 +1126,11 @@
       "where": "client",
       "type": "js",
       "cacheable": true,
-      "url": "/app/client/templates/dashboard/template.dashboard.js?a60900a630380d6abd6cb88c08711909930c8ddc",
+      "url": "/app/client/templates/dashboard/template.dashboard.js?f092fa414572892cde7cfddba85880fb79e98ab0",
       "sourceMap": "app/client/templates/dashboard/template.dashboard.js.map",
-      "sourceMapUrl": "/app/client/templates/dashboard/a60900a630380d6abd6cb88c08711909930c8ddc.map",
-      "size": 2369,
-      "hash": "a60900a630380d6abd6cb88c08711909930c8ddc"
+      "sourceMapUrl": "/app/client/templates/dashboard/f092fa414572892cde7cfddba85880fb79e98ab0.map",
+      "size": 2674,
+      "hash": "f092fa414572892cde7cfddba85880fb79e98ab0"
     },
     {
       "path": "app/client/templates/home/template.home.js",
@@ -1177,15 +1188,26 @@
       "hash": "5dd1e04d8769af68b61162584e4f14fe25dfc3b9"
     },
     {
+      "path": "app/client/templates/_shared/meetingRow.js",
+      "where": "client",
+      "type": "js",
+      "cacheable": true,
+      "url": "/app/client/templates/_shared/meetingRow.js?ae4e84e679434b63eb8482230cd8f3121ab2a823",
+      "sourceMap": "app/client/templates/_shared/meetingRow.js.map",
+      "sourceMapUrl": "/app/client/templates/_shared/ae4e84e679434b63eb8482230cd8f3121ab2a823.map",
+      "size": 2445,
+      "hash": "ae4e84e679434b63eb8482230cd8f3121ab2a823"
+    },
+    {
       "path": "app/client/templates/dashboard/dashboard.js",
       "where": "client",
       "type": "js",
       "cacheable": true,
-      "url": "/app/client/templates/dashboard/dashboard.js?bcdde886448c3513458262d102386c560e51c5ef",
+      "url": "/app/client/templates/dashboard/dashboard.js?0ad66040a38323e3216c96cfe5f325ec2ff2f08a",
       "sourceMap": "app/client/templates/dashboard/dashboard.js.map",
-      "sourceMapUrl": "/app/client/templates/dashboard/bcdde886448c3513458262d102386c560e51c5ef.map",
-      "size": 2052,
-      "hash": "bcdde886448c3513458262d102386c560e51c5ef"
+      "sourceMapUrl": "/app/client/templates/dashboard/0ad66040a38323e3216c96cfe5f325ec2ff2f08a.map",
+      "size": 2505,
+      "hash": "0ad66040a38323e3216c96cfe5f325ec2ff2f08a"
     },
     {
       "path": "app/client/templates/home/home.js",
@@ -1232,15 +1254,15 @@
       "hash": "06dbd1277e91e657b23b60bdcde29016dd755819"
     },
     {
-      "path": "app/both/collections/items.js",
+      "path": "app/both/collections/meetings.js",
       "where": "client",
       "type": "js",
       "cacheable": true,
-      "url": "/app/both/collections/items.js?a68915261742b40d36801660dc8200264f5f6162",
-      "sourceMap": "app/both/collections/items.js.map",
-      "sourceMapUrl": "/app/both/collections/a68915261742b40d36801660dc8200264f5f6162.map",
+      "url": "/app/both/collections/meetings.js?3ad56579b48de25912c96c38689282c9ff3fab00",
+      "sourceMap": "app/both/collections/meetings.js.map",
+      "sourceMapUrl": "/app/both/collections/3ad56579b48de25912c96c38689282c9ff3fab00.map",
       "size": 1299,
-      "hash": "a68915261742b40d36801660dc8200264f5f6162"
+      "hash": "3ad56579b48de25912c96c38689282c9ff3fab00"
     },
     {
       "path": "app/both/config/config.js",
@@ -1258,11 +1280,11 @@
       "where": "client",
       "type": "js",
       "cacheable": true,
-      "url": "/app/both/router/routes.js?371db6fc51bc0020f47ccd28bbd9e98993a67b3e",
+      "url": "/app/both/router/routes.js?3c300be89c1ed63e3713c47bcce81d813863b1cd",
       "sourceMap": "app/both/router/routes.js.map",
-      "sourceMapUrl": "/app/both/router/371db6fc51bc0020f47ccd28bbd9e98993a67b3e.map",
-      "size": 2358,
-      "hash": "371db6fc51bc0020f47ccd28bbd9e98993a67b3e"
+      "sourceMapUrl": "/app/both/router/3c300be89c1ed63e3713c47bcce81d813863b1cd.map",
+      "size": 2432,
+      "hash": "3c300be89c1ed63e3713c47bcce81d813863b1cd"
     },
     {
       "path": "app/client/compatibility/bootstrap.js",

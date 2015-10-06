@@ -1,7 +1,7 @@
 <template name="dashboard">
   <div class="template-dashboard">
     <div class="page-header">
-      <h1>Courses I Teach</h1>
+      <h1>My Courses</h1>
 
       <div class="page-actions pull-right">
         <btn class="btn btn-primary" data-toggle="modal" data-target="#addItemModal">+ Add Item</btn>
@@ -9,11 +9,17 @@
     </div>
 
     <ul class="list-group">
-      {{#each items}}
-        <li class="list-group-item">{{ name }} <span class="label label-default">{{ rating }}</span></li>
+      {{#each myMeetings}}
+        {{ > meetingRow this }}
       {{/each}}
     </ul>
 
+    <h1>All Courses</h1>
+    <ul class="list-group">
+      {{#each meetings}}
+        {{ > meetingRow this }}
+      {{/each}}
+    </ul>
   </div>
 
 
@@ -25,22 +31,23 @@
           <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
           <h4 class="modal-title" id="myModalLabel">Add an Item</h4>
         </div>
-        <div class="modal-body">
-          <form role="form">
-            <div class="form-group">
-              <label>Name</label>
-              <input type="text" class="form-control" name="name" placeholder="Name of Item">
-            </div>
-            <div class="form-group">
-              <label>Cost</label>
-              <input type="number" class="form-control" name="rating" placeholder="Rating">
-            </div>
-          </form>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
-          <button type="button" data-action="add-item" class="btn btn-primary">+ Add Item</button>
-        </div>
+        <form role="form" class="add-item">
+          <div class="modal-body">
+              <div class="form-group">
+                <label>Name</label>
+                <input type="text" class="form-control" name="name" placeholder="Name of Item">
+              </div>
+              <div class="form-group">
+                <label>Cost</label>
+                <input type="number" class="form-control" name="cost" placeholder="Cost">
+              </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+            <input type="submit" class="btn btn-primary" value="+ Add Item"/>
+          </div>
+        </form>
+
       </div>
     </div>
   </div>

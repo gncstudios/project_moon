@@ -9,15 +9,15 @@
 Template.dashboard.rendered = function () {};                          // 1
                                                                        //
 Template.dashboard.events({                                            // 6
-  "click [data-action='add-item']": function (e) {                     // 7
+  "submit .add-item": function (e) {                                   // 7
                                                                        //
     // Prevent default button click behavior                           //
     e.preventDefault();                                                // 10
                                                                        //
     // Insert the form data into the "Items" collection                //
-    Items.insert({                                                     // 13
+    Meetings.insert({                                                  // 13
       name: $("[name='name']").val(),                                  // 14
-      rating: $("[name='rating']").val(),                              // 15
+      cost: $("[name='cost']").val(),                                  // 15
       owner: Meteor.userId()                                           // 16
     });                                                                //
                                                                        //
@@ -25,6 +25,12 @@ Template.dashboard.events({                                            // 6
     $('#addItemModal').modal('hide');                                  // 20
   }                                                                    //
                                                                        //
+});                                                                    //
+                                                                       //
+Template.dashboard.helpers({                                           // 25
+  myMeetings: function () {                                            // 26
+    return Meetings.find({ owner: Meteor.userId() });                  // 27
+  }                                                                    //
 });                                                                    //
 /////////////////////////////////////////////////////////////////////////
 

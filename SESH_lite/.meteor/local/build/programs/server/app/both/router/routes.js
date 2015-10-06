@@ -15,20 +15,21 @@ Router.route('/', {                                                    // 2
 Router.route('/dashboard', {                                           // 7
   name: 'dashboard',                                                   // 8
   waitOn: function () {                                                // 9
-    return this.subscribe('items');                                    // 10
+    return this.subscribe('meetings');                                 // 10
   },                                                                   //
   data: {                                                              // 12
-    items: Items.find({})                                              // 13
+    meetings: Meetings.find()                                          // 13
+                                                                       //
   },                                                                   //
-  onBeforeAction: function (pause) {                                   // 15
-    AccountsTemplates.ensureSignedIn.call(this, pause);                // 16
+  onBeforeAction: function (pause) {                                   // 16
+    AccountsTemplates.ensureSignedIn.call(this, pause);                // 17
   },                                                                   //
-  onAfterAction: function () {}                                        // 18
+  onAfterAction: function () {}                                        // 19
 });                                                                    //
                                                                        //
 // Profile Route                                                       //
-Router.route('/profile', {                                             // 24
-  name: 'profile'                                                      // 25
+Router.route('/profile', {                                             // 25
+  name: 'profile'                                                      // 26
 });                                                                    //
 /////////////////////////////////////////////////////////////////////////
 

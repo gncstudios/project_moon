@@ -7,10 +7,11 @@ Router.route('/', {
 Router.route('/dashboard', {
   name: 'dashboard',
   waitOn: function() {
-    return this.subscribe('items');
+    return this.subscribe('meetings');
   },
   data: {
-    items: Items.find({})
+    meetings: Meetings.find()
+
   },
   onBeforeAction: function (pause) {
     AccountsTemplates.ensureSignedIn.call(this, pause);
