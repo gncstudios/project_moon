@@ -21,26 +21,14 @@ Router.route('/dashboard', {                                           // 7
     items: Items.find({})                                              // 13
   },                                                                   //
   onBeforeAction: function (pause) {                                   // 15
-    if (!Meteor.userId()) {                                            // 16
-      Router.go("/login");                                             // 17
-    }                                                                  //
-    this.next();                                                       // 19
+    AccountsTemplates.ensureSignedIn.call(this, pause);                // 16
   },                                                                   //
-  onAfterAction: function () {}                                        // 21
+  onAfterAction: function () {}                                        // 18
 });                                                                    //
                                                                        //
 // Profile Route                                                       //
-Router.route('/profile', {                                             // 27
-  name: 'profile'                                                      // 28
-});                                                                    //
-                                                                       //
-// Login Route                                                         //
-Router.route('/login', {                                               // 32
-  name: 'login'                                                        // 33
-});                                                                    //
-// Signup Route                                                        //
-Router.route('/signup', {                                              // 36
-  name: 'signup'                                                       // 37
+Router.route('/profile', {                                             // 24
+  name: 'profile'                                                      // 25
 });                                                                    //
 /////////////////////////////////////////////////////////////////////////
 

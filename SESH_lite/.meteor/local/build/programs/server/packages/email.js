@@ -9,119 +9,111 @@ var Email, EmailTest, EmailInternals;
 
 (function(){
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//                                                                                                                //
-// packages/email/packages/email.js                                                                               //
-//                                                                                                                //
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-                                                                                                                  //
-(function(){                                                                                                      // 1
-                                                                                                                  // 2
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////     // 3
-//                                                                                                         //     // 4
-// packages/email/email.js                                                                                 //     // 5
-//                                                                                                         //     // 6
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////     // 7
-                                                                                                           //     // 8
-var Future = Npm.require('fibers/future');                                                                 // 1   // 9
-var urlModule = Npm.require('url');                                                                        // 2   // 10
-                                                                                                           // 3   // 11
-Email = {};                                                                                                // 4   // 12
-EmailTest = {};                                                                                            // 5   // 13
-                                                                                                           // 6   // 14
-EmailInternals = {                                                                                         // 7   // 15
-  NpmModules: {                                                                                            // 8   // 16
-    mailcomposer: {                                                                                        // 9   // 17
-      version: Npm.require('mailcomposer/package.json').version,                                           // 10  // 18
-      module: Npm.require('mailcomposer')                                                                  // 11  // 19
-    }                                                                                                      // 12  // 20
-  }                                                                                                        // 13  // 21
-};                                                                                                         // 14  // 22
-                                                                                                           // 15  // 23
-var MailComposer = EmailInternals.NpmModules.mailcomposer.module.MailComposer;                             // 16  // 24
-                                                                                                           // 17  // 25
-var makePool = function (mailUrlString) {                                                                  // 18  // 26
-  var mailUrl = urlModule.parse(mailUrlString);                                                            // 19  // 27
-  if (mailUrl.protocol !== 'smtp:')                                                                        // 20  // 28
-    throw new Error("Email protocol in $MAIL_URL (" +                                                      // 21  // 29
-                    mailUrlString + ") must be 'smtp'");                                                   // 22  // 30
-                                                                                                           // 23  // 31
-  var port = +(mailUrl.port);                                                                              // 24  // 32
-  var auth = false;                                                                                        // 25  // 33
-  if (mailUrl.auth) {                                                                                      // 26  // 34
-    var parts = mailUrl.auth.split(':', 2);                                                                // 27  // 35
-    auth = {user: parts[0] && decodeURIComponent(parts[0]),                                                // 28  // 36
-            pass: parts[1] && decodeURIComponent(parts[1])};                                               // 29  // 37
-  }                                                                                                        // 30  // 38
-                                                                                                           // 31  // 39
-  var simplesmtp = Npm.require('simplesmtp');                                                              // 32  // 40
-  var pool = simplesmtp.createClientPool(                                                                  // 33  // 41
-    port,  // Defaults to 25                                                                               // 34  // 42
-    mailUrl.hostname,  // Defaults to "localhost"                                                          // 35  // 43
-    { secureConnection: (port === 465),                                                                    // 36  // 44
-      // XXX allow maxConnections to be configured?                                                        // 37  // 45
-      auth: auth });                                                                                       // 38  // 46
-                                                                                                           // 39  // 47
-  pool._future_wrapped_sendMail = _.bind(Future.wrap(pool.sendMail), pool);                                // 40  // 48
-  return pool;                                                                                             // 41  // 49
-};                                                                                                         // 42  // 50
-                                                                                                           // 43  // 51
-var getPool = _.once(function () {                                                                         // 44  // 52
-  // We delay this check until the first call to Email.send, in case someone                               // 45  // 53
-  // set process.env.MAIL_URL in startup code.                                                             // 46  // 54
-  var url = process.env.MAIL_URL;                                                                          // 47  // 55
-  if (! url)                                                                                               // 48  // 56
-    return null;                                                                                           // 49  // 57
-  return makePool(url);                                                                                    // 50  // 58
-});                                                                                                        // 51  // 59
-                                                                                                           // 52  // 60
-var next_devmode_mail_id = 0;                                                                              // 53  // 61
-var output_stream = process.stdout;                                                                        // 54  // 62
-                                                                                                           // 55  // 63
-// Testing hooks                                                                                           // 56  // 64
-EmailTest.overrideOutputStream = function (stream) {                                                       // 57  // 65
-  next_devmode_mail_id = 0;                                                                                // 58  // 66
-  output_stream = stream;                                                                                  // 59  // 67
-};                                                                                                         // 60  // 68
-                                                                                                           // 61  // 69
-EmailTest.restoreOutputStream = function () {                                                              // 62  // 70
-  output_stream = process.stdout;                                                                          // 63  // 71
-};                                                                                                         // 64  // 72
-                                                                                                           // 65  // 73
-var devModeSend = function (mc) {                                                                          // 66  // 74
-  var devmode_mail_id = next_devmode_mail_id++;                                                            // 67  // 75
-                                                                                                           // 68  // 76
-  var stream = output_stream;                                                                              // 69  // 77
-                                                                                                           // 70  // 78
-  // This approach does not prevent other writers to stdout from interleaving.                             // 71  // 79
-  stream.write("====== BEGIN MAIL #" + devmode_mail_id + " ======\n");                                     // 72  // 80
-  stream.write("(Mail not sent; to enable sending, set the MAIL_URL " +                                    // 73  // 81
-               "environment variable.)\n");                                                                // 74  // 82
-  mc.streamMessage();                                                                                      // 75  // 83
-  mc.pipe(stream, {end: false});                                                                           // 76  // 84
-  var future = new Future;                                                                                 // 77  // 85
-  mc.on('end', function () {                                                                               // 78  // 86
-    stream.write("====== END MAIL #" + devmode_mail_id + " ======\n");                                     // 79  // 87
-    future['return']();                                                                                    // 80  // 88
-  });                                                                                                      // 81  // 89
-  future.wait();                                                                                           // 82  // 90
-};                                                                                                         // 83  // 91
-                                                                                                           // 84  // 92
-var smtpSend = function (pool, mc) {                                                                       // 85  // 93
-  pool._future_wrapped_sendMail(mc).wait();                                                                // 86  // 94
-};                                                                                                         // 87  // 95
-                                                                                                           // 88  // 96
-/**                                                                                                        // 89  // 97
- * Mock out email sending (eg, during a test.) This is private for now.                                    // 90  // 98
- *                                                                                                         // 91  // 99
- * f receives the arguments to Email.send and should return true to go                                     // 92  // 100
- * ahead and send the email (or at least, try subsequent hooks), or                                        // 93  // 101
- * false to skip sending.                                                                                  // 94  // 102
- */                                                                                                        // 95  // 103
-var sendHooks = [];                                                                                        // 96  // 104
-EmailTest.hookSend = function (f) {                                                                        // 97  // 105
-  sendHooks.push(f);                                                                                       // 98  // 106
-};                                                                                                         // 99  // 107
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                                         //
+// packages/email/email.js                                                                                 //
+//                                                                                                         //
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+                                                                                                           //
+var Future = Npm.require('fibers/future');                                                                 // 1
+var urlModule = Npm.require('url');                                                                        // 2
+                                                                                                           // 3
+Email = {};                                                                                                // 4
+EmailTest = {};                                                                                            // 5
+                                                                                                           // 6
+EmailInternals = {                                                                                         // 7
+  NpmModules: {                                                                                            // 8
+    mailcomposer: {                                                                                        // 9
+      version: Npm.require('mailcomposer/package.json').version,                                           // 10
+      module: Npm.require('mailcomposer')                                                                  // 11
+    }                                                                                                      // 12
+  }                                                                                                        // 13
+};                                                                                                         // 14
+                                                                                                           // 15
+var MailComposer = EmailInternals.NpmModules.mailcomposer.module.MailComposer;                             // 16
+                                                                                                           // 17
+var makePool = function (mailUrlString) {                                                                  // 18
+  var mailUrl = urlModule.parse(mailUrlString);                                                            // 19
+  if (mailUrl.protocol !== 'smtp:')                                                                        // 20
+    throw new Error("Email protocol in $MAIL_URL (" +                                                      // 21
+                    mailUrlString + ") must be 'smtp'");                                                   // 22
+                                                                                                           // 23
+  var port = +(mailUrl.port);                                                                              // 24
+  var auth = false;                                                                                        // 25
+  if (mailUrl.auth) {                                                                                      // 26
+    var parts = mailUrl.auth.split(':', 2);                                                                // 27
+    auth = {user: parts[0] && decodeURIComponent(parts[0]),                                                // 28
+            pass: parts[1] && decodeURIComponent(parts[1])};                                               // 29
+  }                                                                                                        // 30
+                                                                                                           // 31
+  var simplesmtp = Npm.require('simplesmtp');                                                              // 32
+  var pool = simplesmtp.createClientPool(                                                                  // 33
+    port,  // Defaults to 25                                                                               // 34
+    mailUrl.hostname,  // Defaults to "localhost"                                                          // 35
+    { secureConnection: (port === 465),                                                                    // 36
+      // XXX allow maxConnections to be configured?                                                        // 37
+      auth: auth });                                                                                       // 38
+                                                                                                           // 39
+  pool._future_wrapped_sendMail = _.bind(Future.wrap(pool.sendMail), pool);                                // 40
+  return pool;                                                                                             // 41
+};                                                                                                         // 42
+                                                                                                           // 43
+var getPool = _.once(function () {                                                                         // 44
+  // We delay this check until the first call to Email.send, in case someone                               // 45
+  // set process.env.MAIL_URL in startup code.                                                             // 46
+  var url = process.env.MAIL_URL;                                                                          // 47
+  if (! url)                                                                                               // 48
+    return null;                                                                                           // 49
+  return makePool(url);                                                                                    // 50
+});                                                                                                        // 51
+                                                                                                           // 52
+var next_devmode_mail_id = 0;                                                                              // 53
+var output_stream = process.stdout;                                                                        // 54
+                                                                                                           // 55
+// Testing hooks                                                                                           // 56
+EmailTest.overrideOutputStream = function (stream) {                                                       // 57
+  next_devmode_mail_id = 0;                                                                                // 58
+  output_stream = stream;                                                                                  // 59
+};                                                                                                         // 60
+                                                                                                           // 61
+EmailTest.restoreOutputStream = function () {                                                              // 62
+  output_stream = process.stdout;                                                                          // 63
+};                                                                                                         // 64
+                                                                                                           // 65
+var devModeSend = function (mc) {                                                                          // 66
+  var devmode_mail_id = next_devmode_mail_id++;                                                            // 67
+                                                                                                           // 68
+  var stream = output_stream;                                                                              // 69
+                                                                                                           // 70
+  // This approach does not prevent other writers to stdout from interleaving.                             // 71
+  stream.write("====== BEGIN MAIL #" + devmode_mail_id + " ======\n");                                     // 72
+  stream.write("(Mail not sent; to enable sending, set the MAIL_URL " +                                    // 73
+               "environment variable.)\n");                                                                // 74
+  mc.streamMessage();                                                                                      // 75
+  mc.pipe(stream, {end: false});                                                                           // 76
+  var future = new Future;                                                                                 // 77
+  mc.on('end', function () {                                                                               // 78
+    stream.write("====== END MAIL #" + devmode_mail_id + " ======\n");                                     // 79
+    future['return']();                                                                                    // 80
+  });                                                                                                      // 81
+  future.wait();                                                                                           // 82
+};                                                                                                         // 83
+                                                                                                           // 84
+var smtpSend = function (pool, mc) {                                                                       // 85
+  pool._future_wrapped_sendMail(mc).wait();                                                                // 86
+};                                                                                                         // 87
+                                                                                                           // 88
+/**                                                                                                        // 89
+ * Mock out email sending (eg, during a test.) This is private for now.                                    // 90
+ *                                                                                                         // 91
+ * f receives the arguments to Email.send and should return true to go                                     // 92
+ * ahead and send the email (or at least, try subsequent hooks), or                                        // 93
+ * false to skip sending.                                                                                  // 94
+ */                                                                                                        // 95
+var sendHooks = [];                                                                                        // 96
+EmailTest.hookSend = function (f) {                                                                        // 97
+  sendHooks.push(f);                                                                                       // 98
+};                                                                                                         // 99
                                                                                                            // 100
 // Old comment below                                                                                       // 101
 /**                                                                                                        // 102
@@ -158,7 +150,7 @@ EmailTest.hookSend = function (f) {                                             
  * @param {String} [options.text|html] Mail body (in plain text and/or HTML)                               // 133
  * @param {Object} [options.headers] Dictionary of custom headers                                          // 134
  * @param {Object[]} [options.attachments] Array of attachment objects, as                                 // 135
- * described in the [mailcomposer documentation](https://github.com/andris9/mailcomposer#add-attachments).        // 144
+ * described in the [mailcomposer documentation](https://github.com/andris9/mailcomposer#add-attachments).
  * @param {MailComposer} [options.mailComposer] A [MailComposer](https://github.com/andris9/mailcomposer)  // 137
  * object representing the message to be sent. Overrides all other options. You                            // 138
  * can access the `mailcomposer` npm module at                                                             // 139
@@ -204,11 +196,7 @@ Email.send = function (options) {                                               
   }                                                                                                        // 179
 };                                                                                                         // 180
                                                                                                            // 181
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////     // 190
-                                                                                                                  // 191
-}).call(this);                                                                                                    // 192
-                                                                                                                  // 193
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 }).call(this);
 

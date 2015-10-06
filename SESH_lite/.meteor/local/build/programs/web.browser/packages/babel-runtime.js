@@ -18,119 +18,111 @@ var babelHelpers;
 
 (function(){
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//                                                                                                                //
-// packages/babel-runtime/packages/babel-runtime.js                                                               //
-//                                                                                                                //
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-                                                                                                                  //
-(function(){                                                                                                      // 1
-                                                                                                                  // 2
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////     // 3
-//                                                                                                         //     // 4
-// packages/babel-runtime/babel-runtime.js                                                                 //     // 5
-//                                                                                                         //     // 6
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////     // 7
-                                                                                                           //     // 8
-var hasOwn = Object.prototype.hasOwnProperty;                                                              // 1   // 9
-                                                                                                           // 2   // 10
-function canDefineNonEnumerableProperties() {                                                              // 3   // 11
-  var testObj = {};                                                                                        // 4   // 12
-  var testPropName = "t";                                                                                  // 5   // 13
-                                                                                                           // 6   // 14
-  try {                                                                                                    // 7   // 15
-    Object.defineProperty(testObj, testPropName, {                                                         // 8   // 16
-      enumerable: false,                                                                                   // 9   // 17
-      value: testObj                                                                                       // 10  // 18
-    });                                                                                                    // 11  // 19
-                                                                                                           // 12  // 20
-    for (var k in testObj) {                                                                               // 13  // 21
-      if (k === testPropName) {                                                                            // 14  // 22
-        return false;                                                                                      // 15  // 23
-      }                                                                                                    // 16  // 24
-    }                                                                                                      // 17  // 25
-  } catch (e) {                                                                                            // 18  // 26
-    return false;                                                                                          // 19  // 27
-  }                                                                                                        // 20  // 28
-                                                                                                           // 21  // 29
-  return testObj[testPropName] === testObj;                                                                // 22  // 30
-}                                                                                                          // 23  // 31
-                                                                                                           // 24  // 32
-// The name `babelHelpers` is hard-coded in Babel.  Otherwise we would make it                             // 25  // 33
-// something capitalized and more descriptive, like `BabelRuntime`.                                        // 26  // 34
-babelHelpers = {                                                                                           // 27  // 35
-  // Meteor-specific runtime helper for wrapping the object of for-in                                      // 28  // 36
-  // loops, so that inherited Array methods defined by es5-shim can be                                     // 29  // 37
-  // ignored in browsers where they cannot be defined as non-enumerable.                                   // 30  // 38
-  sanitizeForInObject: canDefineNonEnumerableProperties()                                                  // 31  // 39
-    ? function (value) { return value; }                                                                   // 32  // 40
-    : function (obj) {                                                                                     // 33  // 41
-      if (Array.isArray(obj)) {                                                                            // 34  // 42
-        var newObj = {};                                                                                   // 35  // 43
-        var keys = Object.keys(obj);                                                                       // 36  // 44
-        var keyCount = keys.length;                                                                        // 37  // 45
-        for (var i = 0; i < keyCount; ++i) {                                                               // 38  // 46
-          var key = keys[i];                                                                               // 39  // 47
-          newObj[key] = obj[key];                                                                          // 40  // 48
-        }                                                                                                  // 41  // 49
-        return newObj;                                                                                     // 42  // 50
-      }                                                                                                    // 43  // 51
-                                                                                                           // 44  // 52
-      return obj;                                                                                          // 45  // 53
-    },                                                                                                     // 46  // 54
-                                                                                                           // 47  // 55
-  // es6.templateLiterals                                                                                  // 48  // 56
-  // Constructs the object passed to the tag function in a tagged                                          // 49  // 57
-  // template literal.                                                                                     // 50  // 58
-  taggedTemplateLiteralLoose: function (strings, raw) {                                                    // 51  // 59
-    // Babel's own version of this calls Object.freeze on `strings` and                                    // 52  // 60
-    // `strings.raw`, but it doesn't seem worth the compatibility and                                      // 53  // 61
-    // performance concerns.  If you're writing code against this helper,                                  // 54  // 62
-    // don't add properties to these objects.                                                              // 55  // 63
-    strings.raw = raw;                                                                                     // 56  // 64
-    return strings;                                                                                        // 57  // 65
-  },                                                                                                       // 58  // 66
-                                                                                                           // 59  // 67
-  // es6.classes                                                                                           // 60  // 68
-  // Checks that a class constructor is being called with `new`, and throws                                // 61  // 69
-  // an error if it is not.                                                                                // 62  // 70
-  classCallCheck: function (instance, Constructor) {                                                       // 63  // 71
-    if (!(instance instanceof Constructor)) {                                                              // 64  // 72
-      throw new TypeError("Cannot call a class as a function");                                            // 65  // 73
-    }                                                                                                      // 66  // 74
-  },                                                                                                       // 67  // 75
-                                                                                                           // 68  // 76
-  // es6.classes                                                                                           // 69  // 77
-  inherits: function (subClass, superClass) {                                                              // 70  // 78
-    if (typeof superClass !== "function" && superClass !== null) {                                         // 71  // 79
-      throw new TypeError("Super expression must either be null or a function, not " + typeof superClass);        // 80
-    }                                                                                                      // 73  // 81
-                                                                                                           // 74  // 82
-    if (superClass) {                                                                                      // 75  // 83
-      if (Object.create) {                                                                                 // 76  // 84
-        // All but IE 8                                                                                    // 77  // 85
-        subClass.prototype = Object.create(superClass.prototype, {                                         // 78  // 86
-          constructor: {                                                                                   // 79  // 87
-            value: subClass,                                                                               // 80  // 88
-            enumerable: false,                                                                             // 81  // 89
-            writable: true,                                                                                // 82  // 90
-            configurable: true                                                                             // 83  // 91
-          }                                                                                                // 84  // 92
-        });                                                                                                // 85  // 93
-      } else {                                                                                             // 86  // 94
-        // IE 8 path.  Slightly worse for modern browsers, because `constructor`                           // 87  // 95
-        // is enumerable and shows up in the inspector unnecessarily.                                      // 88  // 96
-        // It's not an "own" property of any instance though.                                              // 89  // 97
-        //                                                                                                 // 90  // 98
-        // For correctness when writing code,                                                              // 91  // 99
-        // don't enumerate all the own-and-inherited properties of an instance                             // 92  // 100
-        // of a class and expect not to find `constructor` (but who does that?).                           // 93  // 101
-        var F = function () {                                                                              // 94  // 102
-          this.constructor = subClass;                                                                     // 95  // 103
-        };                                                                                                 // 96  // 104
-        F.prototype = superClass.prototype;                                                                // 97  // 105
-        subClass.prototype = new F();                                                                      // 98  // 106
-      }                                                                                                    // 99  // 107
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                                         //
+// packages/babel-runtime/babel-runtime.js                                                                 //
+//                                                                                                         //
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+                                                                                                           //
+var hasOwn = Object.prototype.hasOwnProperty;                                                              // 1
+                                                                                                           // 2
+function canDefineNonEnumerableProperties() {                                                              // 3
+  var testObj = {};                                                                                        // 4
+  var testPropName = "t";                                                                                  // 5
+                                                                                                           // 6
+  try {                                                                                                    // 7
+    Object.defineProperty(testObj, testPropName, {                                                         // 8
+      enumerable: false,                                                                                   // 9
+      value: testObj                                                                                       // 10
+    });                                                                                                    // 11
+                                                                                                           // 12
+    for (var k in testObj) {                                                                               // 13
+      if (k === testPropName) {                                                                            // 14
+        return false;                                                                                      // 15
+      }                                                                                                    // 16
+    }                                                                                                      // 17
+  } catch (e) {                                                                                            // 18
+    return false;                                                                                          // 19
+  }                                                                                                        // 20
+                                                                                                           // 21
+  return testObj[testPropName] === testObj;                                                                // 22
+}                                                                                                          // 23
+                                                                                                           // 24
+// The name `babelHelpers` is hard-coded in Babel.  Otherwise we would make it                             // 25
+// something capitalized and more descriptive, like `BabelRuntime`.                                        // 26
+babelHelpers = {                                                                                           // 27
+  // Meteor-specific runtime helper for wrapping the object of for-in                                      // 28
+  // loops, so that inherited Array methods defined by es5-shim can be                                     // 29
+  // ignored in browsers where they cannot be defined as non-enumerable.                                   // 30
+  sanitizeForInObject: canDefineNonEnumerableProperties()                                                  // 31
+    ? function (value) { return value; }                                                                   // 32
+    : function (obj) {                                                                                     // 33
+      if (Array.isArray(obj)) {                                                                            // 34
+        var newObj = {};                                                                                   // 35
+        var keys = Object.keys(obj);                                                                       // 36
+        var keyCount = keys.length;                                                                        // 37
+        for (var i = 0; i < keyCount; ++i) {                                                               // 38
+          var key = keys[i];                                                                               // 39
+          newObj[key] = obj[key];                                                                          // 40
+        }                                                                                                  // 41
+        return newObj;                                                                                     // 42
+      }                                                                                                    // 43
+                                                                                                           // 44
+      return obj;                                                                                          // 45
+    },                                                                                                     // 46
+                                                                                                           // 47
+  // es6.templateLiterals                                                                                  // 48
+  // Constructs the object passed to the tag function in a tagged                                          // 49
+  // template literal.                                                                                     // 50
+  taggedTemplateLiteralLoose: function (strings, raw) {                                                    // 51
+    // Babel's own version of this calls Object.freeze on `strings` and                                    // 52
+    // `strings.raw`, but it doesn't seem worth the compatibility and                                      // 53
+    // performance concerns.  If you're writing code against this helper,                                  // 54
+    // don't add properties to these objects.                                                              // 55
+    strings.raw = raw;                                                                                     // 56
+    return strings;                                                                                        // 57
+  },                                                                                                       // 58
+                                                                                                           // 59
+  // es6.classes                                                                                           // 60
+  // Checks that a class constructor is being called with `new`, and throws                                // 61
+  // an error if it is not.                                                                                // 62
+  classCallCheck: function (instance, Constructor) {                                                       // 63
+    if (!(instance instanceof Constructor)) {                                                              // 64
+      throw new TypeError("Cannot call a class as a function");                                            // 65
+    }                                                                                                      // 66
+  },                                                                                                       // 67
+                                                                                                           // 68
+  // es6.classes                                                                                           // 69
+  inherits: function (subClass, superClass) {                                                              // 70
+    if (typeof superClass !== "function" && superClass !== null) {                                         // 71
+      throw new TypeError("Super expression must either be null or a function, not " + typeof superClass);
+    }                                                                                                      // 73
+                                                                                                           // 74
+    if (superClass) {                                                                                      // 75
+      if (Object.create) {                                                                                 // 76
+        // All but IE 8                                                                                    // 77
+        subClass.prototype = Object.create(superClass.prototype, {                                         // 78
+          constructor: {                                                                                   // 79
+            value: subClass,                                                                               // 80
+            enumerable: false,                                                                             // 81
+            writable: true,                                                                                // 82
+            configurable: true                                                                             // 83
+          }                                                                                                // 84
+        });                                                                                                // 85
+      } else {                                                                                             // 86
+        // IE 8 path.  Slightly worse for modern browsers, because `constructor`                           // 87
+        // is enumerable and shows up in the inspector unnecessarily.                                      // 88
+        // It's not an "own" property of any instance though.                                              // 89
+        //                                                                                                 // 90
+        // For correctness when writing code,                                                              // 91
+        // don't enumerate all the own-and-inherited properties of an instance                             // 92
+        // of a class and expect not to find `constructor` (but who does that?).                           // 93
+        var F = function () {                                                                              // 94
+          this.constructor = subClass;                                                                     // 95
+        };                                                                                                 // 96
+        F.prototype = superClass.prototype;                                                                // 97
+        subClass.prototype = new F();                                                                      // 98
+      }                                                                                                    // 99
                                                                                                            // 100
       // For modern browsers, this would be `subClass.__proto__ = superClass`,                             // 101
       // but IE <=10 don't support `__proto__`, and in this case the difference                            // 102
@@ -287,11 +279,7 @@ babelHelpers = {                                                                
   slice: Array.prototype.slice                                                                             // 253
 };                                                                                                         // 254
                                                                                                            // 255
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////     // 264
-                                                                                                                  // 265
-}).call(this);                                                                                                    // 266
-                                                                                                                  // 267
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 }).call(this);
 

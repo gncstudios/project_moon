@@ -18,141 +18,133 @@ var module, GeoJSON;
 
 (function(){
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//                                                                                                                //
-// packages/geojson-utils/packages/geojson-utils.js                                                               //
-//                                                                                                                //
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-                                                                                                                  //
-(function(){                                                                                                      // 1
-                                                                                                                  // 2
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////     // 3
-//                                                                                                         //     // 4
-// packages/geojson-utils/pre.js                                                                           //     // 5
-//                                                                                                         //     // 6
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////     // 7
-                                                                                                           //     // 8
-// Define an object named exports. This will cause geojson-utils.js to put `gju`                           // 1   // 9
-// as a field on it, instead of in the global namespace.  See also post.js.                                // 2   // 10
-module = {exports:{}};                                                                                     // 3   // 11
-                                                                                                           // 4   // 12
-                                                                                                           // 5   // 13
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////     // 14
-                                                                                                                  // 15
-}).call(this);                                                                                                    // 16
-                                                                                                                  // 17
-                                                                                                                  // 18
-                                                                                                                  // 19
-                                                                                                                  // 20
-                                                                                                                  // 21
-                                                                                                                  // 22
-(function(){                                                                                                      // 23
-                                                                                                                  // 24
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////     // 25
-//                                                                                                         //     // 26
-// packages/geojson-utils/geojson-utils.js                                                                 //     // 27
-//                                                                                                         //     // 28
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////     // 29
-                                                                                                           //     // 30
-(function () {                                                                                             // 1   // 31
-  var gju = {};                                                                                            // 2   // 32
-                                                                                                           // 3   // 33
-  // Export the geojson object for **CommonJS**                                                            // 4   // 34
-  if (typeof module !== 'undefined' && module.exports) {                                                   // 5   // 35
-    module.exports = gju;                                                                                  // 6   // 36
-  }                                                                                                        // 7   // 37
-                                                                                                           // 8   // 38
-  // adapted from http://www.kevlindev.com/gui/math/intersection/Intersection.js                           // 9   // 39
-  gju.lineStringsIntersect = function (l1, l2) {                                                           // 10  // 40
-    var intersects = [];                                                                                   // 11  // 41
-    for (var i = 0; i <= l1.coordinates.length - 2; ++i) {                                                 // 12  // 42
-      for (var j = 0; j <= l2.coordinates.length - 2; ++j) {                                               // 13  // 43
-        var a1 = {                                                                                         // 14  // 44
-          x: l1.coordinates[i][1],                                                                         // 15  // 45
-          y: l1.coordinates[i][0]                                                                          // 16  // 46
-        },                                                                                                 // 17  // 47
-          a2 = {                                                                                           // 18  // 48
-            x: l1.coordinates[i + 1][1],                                                                   // 19  // 49
-            y: l1.coordinates[i + 1][0]                                                                    // 20  // 50
-          },                                                                                               // 21  // 51
-          b1 = {                                                                                           // 22  // 52
-            x: l2.coordinates[j][1],                                                                       // 23  // 53
-            y: l2.coordinates[j][0]                                                                        // 24  // 54
-          },                                                                                               // 25  // 55
-          b2 = {                                                                                           // 26  // 56
-            x: l2.coordinates[j + 1][1],                                                                   // 27  // 57
-            y: l2.coordinates[j + 1][0]                                                                    // 28  // 58
-          },                                                                                               // 29  // 59
-          ua_t = (b2.x - b1.x) * (a1.y - b1.y) - (b2.y - b1.y) * (a1.x - b1.x),                            // 30  // 60
-          ub_t = (a2.x - a1.x) * (a1.y - b1.y) - (a2.y - a1.y) * (a1.x - b1.x),                            // 31  // 61
-          u_b = (b2.y - b1.y) * (a2.x - a1.x) - (b2.x - b1.x) * (a2.y - a1.y);                             // 32  // 62
-        if (u_b != 0) {                                                                                    // 33  // 63
-          var ua = ua_t / u_b,                                                                             // 34  // 64
-            ub = ub_t / u_b;                                                                               // 35  // 65
-          if (0 <= ua && ua <= 1 && 0 <= ub && ub <= 1) {                                                  // 36  // 66
-            intersects.push({                                                                              // 37  // 67
-              'type': 'Point',                                                                             // 38  // 68
-              'coordinates': [a1.x + ua * (a2.x - a1.x), a1.y + ua * (a2.y - a1.y)]                        // 39  // 69
-            });                                                                                            // 40  // 70
-          }                                                                                                // 41  // 71
-        }                                                                                                  // 42  // 72
-      }                                                                                                    // 43  // 73
-    }                                                                                                      // 44  // 74
-    if (intersects.length == 0) intersects = false;                                                        // 45  // 75
-    return intersects;                                                                                     // 46  // 76
-  }                                                                                                        // 47  // 77
-                                                                                                           // 48  // 78
-  // Bounding Box                                                                                          // 49  // 79
-                                                                                                           // 50  // 80
-  function boundingBoxAroundPolyCoords (coords) {                                                          // 51  // 81
-    var xAll = [], yAll = []                                                                               // 52  // 82
-                                                                                                           // 53  // 83
-    for (var i = 0; i < coords[0].length; i++) {                                                           // 54  // 84
-      xAll.push(coords[0][i][1])                                                                           // 55  // 85
-      yAll.push(coords[0][i][0])                                                                           // 56  // 86
-    }                                                                                                      // 57  // 87
-                                                                                                           // 58  // 88
-    xAll = xAll.sort(function (a,b) { return a - b })                                                      // 59  // 89
-    yAll = yAll.sort(function (a,b) { return a - b })                                                      // 60  // 90
-                                                                                                           // 61  // 91
-    return [ [xAll[0], yAll[0]], [xAll[xAll.length - 1], yAll[yAll.length - 1]] ]                          // 62  // 92
-  }                                                                                                        // 63  // 93
-                                                                                                           // 64  // 94
-  gju.pointInBoundingBox = function (point, bounds) {                                                      // 65  // 95
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                                         //
+// packages/geojson-utils/pre.js                                                                           //
+//                                                                                                         //
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+                                                                                                           //
+// Define an object named exports. This will cause geojson-utils.js to put `gju`                           // 1
+// as a field on it, instead of in the global namespace.  See also post.js.                                // 2
+module = {exports:{}};                                                                                     // 3
+                                                                                                           // 4
+                                                                                                           // 5
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+}).call(this);
+
+
+
+
+
+
+(function(){
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                                         //
+// packages/geojson-utils/geojson-utils.js                                                                 //
+//                                                                                                         //
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+                                                                                                           //
+(function () {                                                                                             // 1
+  var gju = {};                                                                                            // 2
+                                                                                                           // 3
+  // Export the geojson object for **CommonJS**                                                            // 4
+  if (typeof module !== 'undefined' && module.exports) {                                                   // 5
+    module.exports = gju;                                                                                  // 6
+  }                                                                                                        // 7
+                                                                                                           // 8
+  // adapted from http://www.kevlindev.com/gui/math/intersection/Intersection.js                           // 9
+  gju.lineStringsIntersect = function (l1, l2) {                                                           // 10
+    var intersects = [];                                                                                   // 11
+    for (var i = 0; i <= l1.coordinates.length - 2; ++i) {                                                 // 12
+      for (var j = 0; j <= l2.coordinates.length - 2; ++j) {                                               // 13
+        var a1 = {                                                                                         // 14
+          x: l1.coordinates[i][1],                                                                         // 15
+          y: l1.coordinates[i][0]                                                                          // 16
+        },                                                                                                 // 17
+          a2 = {                                                                                           // 18
+            x: l1.coordinates[i + 1][1],                                                                   // 19
+            y: l1.coordinates[i + 1][0]                                                                    // 20
+          },                                                                                               // 21
+          b1 = {                                                                                           // 22
+            x: l2.coordinates[j][1],                                                                       // 23
+            y: l2.coordinates[j][0]                                                                        // 24
+          },                                                                                               // 25
+          b2 = {                                                                                           // 26
+            x: l2.coordinates[j + 1][1],                                                                   // 27
+            y: l2.coordinates[j + 1][0]                                                                    // 28
+          },                                                                                               // 29
+          ua_t = (b2.x - b1.x) * (a1.y - b1.y) - (b2.y - b1.y) * (a1.x - b1.x),                            // 30
+          ub_t = (a2.x - a1.x) * (a1.y - b1.y) - (a2.y - a1.y) * (a1.x - b1.x),                            // 31
+          u_b = (b2.y - b1.y) * (a2.x - a1.x) - (b2.x - b1.x) * (a2.y - a1.y);                             // 32
+        if (u_b != 0) {                                                                                    // 33
+          var ua = ua_t / u_b,                                                                             // 34
+            ub = ub_t / u_b;                                                                               // 35
+          if (0 <= ua && ua <= 1 && 0 <= ub && ub <= 1) {                                                  // 36
+            intersects.push({                                                                              // 37
+              'type': 'Point',                                                                             // 38
+              'coordinates': [a1.x + ua * (a2.x - a1.x), a1.y + ua * (a2.y - a1.y)]                        // 39
+            });                                                                                            // 40
+          }                                                                                                // 41
+        }                                                                                                  // 42
+      }                                                                                                    // 43
+    }                                                                                                      // 44
+    if (intersects.length == 0) intersects = false;                                                        // 45
+    return intersects;                                                                                     // 46
+  }                                                                                                        // 47
+                                                                                                           // 48
+  // Bounding Box                                                                                          // 49
+                                                                                                           // 50
+  function boundingBoxAroundPolyCoords (coords) {                                                          // 51
+    var xAll = [], yAll = []                                                                               // 52
+                                                                                                           // 53
+    for (var i = 0; i < coords[0].length; i++) {                                                           // 54
+      xAll.push(coords[0][i][1])                                                                           // 55
+      yAll.push(coords[0][i][0])                                                                           // 56
+    }                                                                                                      // 57
+                                                                                                           // 58
+    xAll = xAll.sort(function (a,b) { return a - b })                                                      // 59
+    yAll = yAll.sort(function (a,b) { return a - b })                                                      // 60
+                                                                                                           // 61
+    return [ [xAll[0], yAll[0]], [xAll[xAll.length - 1], yAll[yAll.length - 1]] ]                          // 62
+  }                                                                                                        // 63
+                                                                                                           // 64
+  gju.pointInBoundingBox = function (point, bounds) {                                                      // 65
     return !(point.coordinates[1] < bounds[0][0] || point.coordinates[1] > bounds[1][0] || point.coordinates[0] < bounds[0][1] || point.coordinates[0] > bounds[1][1]) 
-  }                                                                                                        // 67  // 97
-                                                                                                           // 68  // 98
-  // Point in Polygon                                                                                      // 69  // 99
-  // http://www.ecse.rpi.edu/Homepages/wrf/Research/Short_Notes/pnpoly.html#Listing the Vertices           // 70  // 100
-                                                                                                           // 71  // 101
-  function pnpoly (x,y,coords) {                                                                           // 72  // 102
-    var vert = [ [0,0] ]                                                                                   // 73  // 103
-                                                                                                           // 74  // 104
-    for (var i = 0; i < coords.length; i++) {                                                              // 75  // 105
-      for (var j = 0; j < coords[i].length; j++) {                                                         // 76  // 106
-        vert.push(coords[i][j])                                                                            // 77  // 107
-      }                                                                                                    // 78  // 108
-      vert.push([0,0])                                                                                     // 79  // 109
-    }                                                                                                      // 80  // 110
-                                                                                                           // 81  // 111
-    var inside = false                                                                                     // 82  // 112
-    for (var i = 0, j = vert.length - 1; i < vert.length; j = i++) {                                       // 83  // 113
+  }                                                                                                        // 67
+                                                                                                           // 68
+  // Point in Polygon                                                                                      // 69
+  // http://www.ecse.rpi.edu/Homepages/wrf/Research/Short_Notes/pnpoly.html#Listing the Vertices           // 70
+                                                                                                           // 71
+  function pnpoly (x,y,coords) {                                                                           // 72
+    var vert = [ [0,0] ]                                                                                   // 73
+                                                                                                           // 74
+    for (var i = 0; i < coords.length; i++) {                                                              // 75
+      for (var j = 0; j < coords[i].length; j++) {                                                         // 76
+        vert.push(coords[i][j])                                                                            // 77
+      }                                                                                                    // 78
+      vert.push([0,0])                                                                                     // 79
+    }                                                                                                      // 80
+                                                                                                           // 81
+    var inside = false                                                                                     // 82
+    for (var i = 0, j = vert.length - 1; i < vert.length; j = i++) {                                       // 83
       if (((vert[i][0] > y) != (vert[j][0] > y)) && (x < (vert[j][1] - vert[i][1]) * (y - vert[i][0]) / (vert[j][0] - vert[i][0]) + vert[i][1])) inside = !inside
-    }                                                                                                      // 85  // 115
-                                                                                                           // 86  // 116
-    return inside                                                                                          // 87  // 117
-  }                                                                                                        // 88  // 118
-                                                                                                           // 89  // 119
-  gju.pointInPolygon = function (p, poly) {                                                                // 90  // 120
-    var coords = (poly.type == "Polygon") ? [ poly.coordinates ] : poly.coordinates                        // 91  // 121
-                                                                                                           // 92  // 122
-    var insideBox = false                                                                                  // 93  // 123
-    for (var i = 0; i < coords.length; i++) {                                                              // 94  // 124
-      if (gju.pointInBoundingBox(p, boundingBoxAroundPolyCoords(coords[i]))) insideBox = true              // 95  // 125
-    }                                                                                                      // 96  // 126
-    if (!insideBox) return false                                                                           // 97  // 127
-                                                                                                           // 98  // 128
-    var insidePoly = false                                                                                 // 99  // 129
+    }                                                                                                      // 85
+                                                                                                           // 86
+    return inside                                                                                          // 87
+  }                                                                                                        // 88
+                                                                                                           // 89
+  gju.pointInPolygon = function (p, poly) {                                                                // 90
+    var coords = (poly.type == "Polygon") ? [ poly.coordinates ] : poly.coordinates                        // 91
+                                                                                                           // 92
+    var insideBox = false                                                                                  // 93
+    for (var i = 0; i < coords.length; i++) {                                                              // 94
+      if (gju.pointInBoundingBox(p, boundingBoxAroundPolyCoords(coords[i]))) insideBox = true              // 95
+    }                                                                                                      // 96
+    if (!insideBox) return false                                                                           // 97
+                                                                                                           // 98
+    var insidePoly = false                                                                                 // 99
     for (var i = 0; i < coords.length; i++) {                                                              // 100
       if (pnpoly(p.coordinates[1], p.coordinates[0], coords[i])) insidePoly = true                         // 101
     }                                                                                                      // 102
@@ -304,7 +296,7 @@ module = {exports:{}};                                                          
                                                                                                            // 248
   gju.simplify = function (source, kink) { /* source[] array of geojson points */                          // 249
     /* kink	in metres, kinks above this depth kept  */                                                     // 250
-    /* kink depth is the height of the triangle abc where a-b and b-c are two consecutive line segments */        // 281
+    /* kink depth is the height of the triangle abc where a-b and b-c are two consecutive line segments */
     kink = kink || 20;                                                                                     // 252
     source = source.map(function (o) {                                                                     // 253
       return {                                                                                             // 254
@@ -435,33 +427,29 @@ module = {exports:{}};                                                          
                                                                                                            // 379
 })();                                                                                                      // 380
                                                                                                            // 381
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////     // 412
-                                                                                                                  // 413
-}).call(this);                                                                                                    // 414
-                                                                                                                  // 415
-                                                                                                                  // 416
-                                                                                                                  // 417
-                                                                                                                  // 418
-                                                                                                                  // 419
-                                                                                                                  // 420
-(function(){                                                                                                      // 421
-                                                                                                                  // 422
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////     // 423
-//                                                                                                         //     // 424
-// packages/geojson-utils/post.js                                                                          //     // 425
-//                                                                                                         //     // 426
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////     // 427
-                                                                                                           //     // 428
-// This exports object was created in pre.js.  Now copy the `exports` object                               // 1   // 429
-// from it into the package-scope variable `GeoJSON`, which will get exported.                             // 2   // 430
-GeoJSON = module.exports;                                                                                  // 3   // 431
-                                                                                                           // 4   // 432
-                                                                                                           // 5   // 433
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////     // 434
-                                                                                                                  // 435
-}).call(this);                                                                                                    // 436
-                                                                                                                  // 437
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+}).call(this);
+
+
+
+
+
+
+(function(){
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                                         //
+// packages/geojson-utils/post.js                                                                          //
+//                                                                                                         //
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+                                                                                                           //
+// This exports object was created in pre.js.  Now copy the `exports` object                               // 1
+// from it into the package-scope variable `GeoJSON`, which will get exported.                             // 2
+GeoJSON = module.exports;                                                                                  // 3
+                                                                                                           // 4
+                                                                                                           // 5
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 }).call(this);
 

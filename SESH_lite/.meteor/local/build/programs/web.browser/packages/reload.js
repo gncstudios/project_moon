@@ -19,119 +19,111 @@ var Reload;
 
 (function(){
 
-////////////////////////////////////////////////////////////////////////////////////////////////////
-//                                                                                                //
-// packages/reload/packages/reload.js                                                             //
-//                                                                                                //
-////////////////////////////////////////////////////////////////////////////////////////////////////
-                                                                                                  //
-(function(){                                                                                      // 1
-                                                                                                  // 2
-/////////////////////////////////////////////////////////////////////////////////////////////     // 3
-//                                                                                         //     // 4
-// packages/reload/reload.js                                                               //     // 5
-//                                                                                         //     // 6
-/////////////////////////////////////////////////////////////////////////////////////////////     // 7
-                                                                                           //     // 8
-/**                                                                                        // 1   // 9
- * This code does _NOT_ support hot (session-restoring) reloads on                         // 2   // 10
- * IE6,7. It only works on browsers with sessionStorage support.                           // 3   // 11
- *                                                                                         // 4   // 12
- * There are a couple approaches to add IE6,7 support:                                     // 5   // 13
- *                                                                                         // 6   // 14
- * - use IE's "userData" mechanism in combination with window.name.                        // 7   // 15
- * This mostly works, however the problem is that it can not get to the                    // 8   // 16
- * data until after DOMReady. This is a problem for us since this API                      // 9   // 17
- * relies on the data being ready before API users run. We could                           // 10  // 18
- * refactor using Meteor.startup in all API users, but that might slow                     // 11  // 19
- * page loads as we couldn't start the stream until after DOMReady.                        // 12  // 20
- * Here are some resources on this approach:                                               // 13  // 21
- * https://github.com/hugeinc/USTORE.js                                                    // 14  // 22
- * http://thudjs.tumblr.com/post/419577524/localstorage-userdata                           // 15  // 23
- * http://www.javascriptkit.com/javatutors/domstorage2.shtml                               // 16  // 24
- *                                                                                         // 17  // 25
- * - POST the data to the server, and have the server send it back on                      // 18  // 26
- * page load. This is nice because it sidesteps all the local storage                      // 19  // 27
- * compatibility issues, however it is kinda tricky. We can use a unique                   // 20  // 28
- * token in the URL, then get rid of it with HTML5 pushstate, but that                     // 21  // 29
- * only works on pushstate browsers.                                                       // 22  // 30
- *                                                                                         // 23  // 31
- * This will all need to be reworked entirely when we add server-side                      // 24  // 32
- * HTML rendering. In that case, the server will need to have access to                    // 25  // 33
- * the client's session to render properly.                                                // 26  // 34
- */                                                                                        // 27  // 35
-                                                                                           // 28  // 36
-// XXX when making this API public, also expose a flag for the app                         // 29  // 37
-// developer to know whether a hot code push is happening. This is                         // 30  // 38
-// useful for apps using `window.onbeforeunload`. See                                      // 31  // 39
-// https://github.com/meteor/meteor/pull/657                                               // 32  // 40
-                                                                                           // 33  // 41
-Reload = {};                                                                               // 34  // 42
-                                                                                           // 35  // 43
-var KEY_NAME = 'Meteor_Reload';                                                            // 36  // 44
-                                                                                           // 37  // 45
-var old_data = {};                                                                         // 38  // 46
-// read in old data at startup.                                                            // 39  // 47
-var old_json;                                                                              // 40  // 48
-                                                                                           // 41  // 49
-// This logic for sessionStorage detection is based on browserstate/history.js             // 42  // 50
-var safeSessionStorage = null;                                                             // 43  // 51
-try {                                                                                      // 44  // 52
-  // This throws a SecurityError on Chrome if cookies & localStorage are                   // 45  // 53
-  // explicitly disabled                                                                   // 46  // 54
-  //                                                                                       // 47  // 55
-  // On Firefox with dom.storage.enabled set to false, sessionStorage is null              // 48  // 56
-  //                                                                                       // 49  // 57
-  // We can't even do (typeof sessionStorage) on Chrome, it throws.  So we rely            // 50  // 58
-  // on the throw if sessionStorage == null; the alternative is browser                    // 51  // 59
-  // detection, but this seems better.                                                     // 52  // 60
-  safeSessionStorage = window.sessionStorage;                                              // 53  // 61
-                                                                                           // 54  // 62
-  // Check we can actually use it                                                          // 55  // 63
-  if (safeSessionStorage) {                                                                // 56  // 64
-    safeSessionStorage.setItem('__dummy__', '1');                                          // 57  // 65
-    safeSessionStorage.removeItem('__dummy__');                                            // 58  // 66
-  } else {                                                                                 // 59  // 67
-    // Be consistently null, for safety                                                    // 60  // 68
-    safeSessionStorage = null;                                                             // 61  // 69
-  }                                                                                        // 62  // 70
-} catch(e) {                                                                               // 63  // 71
-  // Expected on chrome with strict security, or if sessionStorage not supported           // 64  // 72
-  safeSessionStorage = null;                                                               // 65  // 73
-}                                                                                          // 66  // 74
-                                                                                           // 67  // 75
-// Exported for test.                                                                      // 68  // 76
-Reload._getData = function () {                                                            // 69  // 77
-  return safeSessionStorage && safeSessionStorage.getItem(KEY_NAME);                       // 70  // 78
-};                                                                                         // 71  // 79
-                                                                                           // 72  // 80
-if (safeSessionStorage) {                                                                  // 73  // 81
-  old_json = Reload._getData();                                                            // 74  // 82
-  safeSessionStorage.removeItem(KEY_NAME);                                                 // 75  // 83
-} else {                                                                                   // 76  // 84
-  // Unsupported browser (IE 6,7) or locked down security settings.                        // 77  // 85
-  // No session resumption.                                                                // 78  // 86
-  // Meteor._debug("XXX UNSUPPORTED BROWSER/SETTINGS");                                    // 79  // 87
-}                                                                                          // 80  // 88
-                                                                                           // 81  // 89
-if (!old_json) old_json = '{}';                                                            // 82  // 90
-var old_parsed = {};                                                                       // 83  // 91
-try {                                                                                      // 84  // 92
-  old_parsed = JSON.parse(old_json);                                                       // 85  // 93
-  if (typeof old_parsed !== "object") {                                                    // 86  // 94
-    Meteor._debug("Got bad data on reload. Ignoring.");                                    // 87  // 95
-    old_parsed = {};                                                                       // 88  // 96
-  }                                                                                        // 89  // 97
-} catch (err) {                                                                            // 90  // 98
-  Meteor._debug("Got invalid JSON on reload. Ignoring.");                                  // 91  // 99
-}                                                                                          // 92  // 100
-                                                                                           // 93  // 101
-if (old_parsed.reload && typeof old_parsed.data === "object") {                            // 94  // 102
-  // Meteor._debug("Restoring reload data.");                                              // 95  // 103
-  old_data = old_parsed.data;                                                              // 96  // 104
-}                                                                                          // 97  // 105
-                                                                                           // 98  // 106
-                                                                                           // 99  // 107
+/////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                         //
+// packages/reload/reload.js                                                               //
+//                                                                                         //
+/////////////////////////////////////////////////////////////////////////////////////////////
+                                                                                           //
+/**                                                                                        // 1
+ * This code does _NOT_ support hot (session-restoring) reloads on                         // 2
+ * IE6,7. It only works on browsers with sessionStorage support.                           // 3
+ *                                                                                         // 4
+ * There are a couple approaches to add IE6,7 support:                                     // 5
+ *                                                                                         // 6
+ * - use IE's "userData" mechanism in combination with window.name.                        // 7
+ * This mostly works, however the problem is that it can not get to the                    // 8
+ * data until after DOMReady. This is a problem for us since this API                      // 9
+ * relies on the data being ready before API users run. We could                           // 10
+ * refactor using Meteor.startup in all API users, but that might slow                     // 11
+ * page loads as we couldn't start the stream until after DOMReady.                        // 12
+ * Here are some resources on this approach:                                               // 13
+ * https://github.com/hugeinc/USTORE.js                                                    // 14
+ * http://thudjs.tumblr.com/post/419577524/localstorage-userdata                           // 15
+ * http://www.javascriptkit.com/javatutors/domstorage2.shtml                               // 16
+ *                                                                                         // 17
+ * - POST the data to the server, and have the server send it back on                      // 18
+ * page load. This is nice because it sidesteps all the local storage                      // 19
+ * compatibility issues, however it is kinda tricky. We can use a unique                   // 20
+ * token in the URL, then get rid of it with HTML5 pushstate, but that                     // 21
+ * only works on pushstate browsers.                                                       // 22
+ *                                                                                         // 23
+ * This will all need to be reworked entirely when we add server-side                      // 24
+ * HTML rendering. In that case, the server will need to have access to                    // 25
+ * the client's session to render properly.                                                // 26
+ */                                                                                        // 27
+                                                                                           // 28
+// XXX when making this API public, also expose a flag for the app                         // 29
+// developer to know whether a hot code push is happening. This is                         // 30
+// useful for apps using `window.onbeforeunload`. See                                      // 31
+// https://github.com/meteor/meteor/pull/657                                               // 32
+                                                                                           // 33
+Reload = {};                                                                               // 34
+                                                                                           // 35
+var KEY_NAME = 'Meteor_Reload';                                                            // 36
+                                                                                           // 37
+var old_data = {};                                                                         // 38
+// read in old data at startup.                                                            // 39
+var old_json;                                                                              // 40
+                                                                                           // 41
+// This logic for sessionStorage detection is based on browserstate/history.js             // 42
+var safeSessionStorage = null;                                                             // 43
+try {                                                                                      // 44
+  // This throws a SecurityError on Chrome if cookies & localStorage are                   // 45
+  // explicitly disabled                                                                   // 46
+  //                                                                                       // 47
+  // On Firefox with dom.storage.enabled set to false, sessionStorage is null              // 48
+  //                                                                                       // 49
+  // We can't even do (typeof sessionStorage) on Chrome, it throws.  So we rely            // 50
+  // on the throw if sessionStorage == null; the alternative is browser                    // 51
+  // detection, but this seems better.                                                     // 52
+  safeSessionStorage = window.sessionStorage;                                              // 53
+                                                                                           // 54
+  // Check we can actually use it                                                          // 55
+  if (safeSessionStorage) {                                                                // 56
+    safeSessionStorage.setItem('__dummy__', '1');                                          // 57
+    safeSessionStorage.removeItem('__dummy__');                                            // 58
+  } else {                                                                                 // 59
+    // Be consistently null, for safety                                                    // 60
+    safeSessionStorage = null;                                                             // 61
+  }                                                                                        // 62
+} catch(e) {                                                                               // 63
+  // Expected on chrome with strict security, or if sessionStorage not supported           // 64
+  safeSessionStorage = null;                                                               // 65
+}                                                                                          // 66
+                                                                                           // 67
+// Exported for test.                                                                      // 68
+Reload._getData = function () {                                                            // 69
+  return safeSessionStorage && safeSessionStorage.getItem(KEY_NAME);                       // 70
+};                                                                                         // 71
+                                                                                           // 72
+if (safeSessionStorage) {                                                                  // 73
+  old_json = Reload._getData();                                                            // 74
+  safeSessionStorage.removeItem(KEY_NAME);                                                 // 75
+} else {                                                                                   // 76
+  // Unsupported browser (IE 6,7) or locked down security settings.                        // 77
+  // No session resumption.                                                                // 78
+  // Meteor._debug("XXX UNSUPPORTED BROWSER/SETTINGS");                                    // 79
+}                                                                                          // 80
+                                                                                           // 81
+if (!old_json) old_json = '{}';                                                            // 82
+var old_parsed = {};                                                                       // 83
+try {                                                                                      // 84
+  old_parsed = JSON.parse(old_json);                                                       // 85
+  if (typeof old_parsed !== "object") {                                                    // 86
+    Meteor._debug("Got bad data on reload. Ignoring.");                                    // 87
+    old_parsed = {};                                                                       // 88
+  }                                                                                        // 89
+} catch (err) {                                                                            // 90
+  Meteor._debug("Got invalid JSON on reload. Ignoring.");                                  // 91
+}                                                                                          // 92
+                                                                                           // 93
+if (old_parsed.reload && typeof old_parsed.data === "object") {                            // 94
+  // Meteor._debug("Restoring reload data.");                                              // 95
+  old_data = old_parsed.data;                                                              // 96
+}                                                                                          // 97
+                                                                                           // 98
+                                                                                           // 99
 var providers = [];                                                                        // 100
                                                                                            // 101
 ////////// External API //////////                                                         // 102
@@ -220,7 +212,7 @@ Reload._migrate = function (tryReload, options) {                               
       Meteor._debug("Couldn't save data for migration to sessionStorage", err);            // 185
     }                                                                                      // 186
   } else {                                                                                 // 187
-    Meteor._debug("Browser does not support sessionStorage. Not saving migration state.");        // 196
+    Meteor._debug("Browser does not support sessionStorage. Not saving migration state.");
   }                                                                                        // 189
                                                                                            // 190
   return true;                                                                             // 191
@@ -261,37 +253,33 @@ Reload._reload = function (options) {                                           
   tryReload();                                                                             // 226
 };                                                                                         // 227
                                                                                            // 228
-/////////////////////////////////////////////////////////////////////////////////////////////     // 237
-                                                                                                  // 238
-}).call(this);                                                                                    // 239
-                                                                                                  // 240
-                                                                                                  // 241
-                                                                                                  // 242
-                                                                                                  // 243
-                                                                                                  // 244
-                                                                                                  // 245
-(function(){                                                                                      // 246
-                                                                                                  // 247
-/////////////////////////////////////////////////////////////////////////////////////////////     // 248
-//                                                                                         //     // 249
-// packages/reload/deprecated.js                                                           //     // 250
-//                                                                                         //     // 251
-/////////////////////////////////////////////////////////////////////////////////////////////     // 252
-                                                                                           //     // 253
-// Reload functionality used to live on Meteor._reload. Be nice and try not to             // 1   // 254
-// break code that uses it, even though it's internal.                                     // 2   // 255
-// XXX COMPAT WITH 0.6.4                                                                   // 3   // 256
-Meteor._reload = {                                                                         // 4   // 257
-  onMigrate: Reload._onMigrate,                                                            // 5   // 258
-  migrationData: Reload._migrationData,                                                    // 6   // 259
-  reload: Reload._reload                                                                   // 7   // 260
-};                                                                                         // 8   // 261
-                                                                                           // 9   // 262
-/////////////////////////////////////////////////////////////////////////////////////////////     // 263
-                                                                                                  // 264
-}).call(this);                                                                                    // 265
-                                                                                                  // 266
-////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////
+
+}).call(this);
+
+
+
+
+
+
+(function(){
+
+/////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                         //
+// packages/reload/deprecated.js                                                           //
+//                                                                                         //
+/////////////////////////////////////////////////////////////////////////////////////////////
+                                                                                           //
+// Reload functionality used to live on Meteor._reload. Be nice and try not to             // 1
+// break code that uses it, even though it's internal.                                     // 2
+// XXX COMPAT WITH 0.6.4                                                                   // 3
+Meteor._reload = {                                                                         // 4
+  onMigrate: Reload._onMigrate,                                                            // 5
+  migrationData: Reload._migrationData,                                                    // 6
+  reload: Reload._reload                                                                   // 7
+};                                                                                         // 8
+                                                                                           // 9
+/////////////////////////////////////////////////////////////////////////////////////////////
 
 }).call(this);
 

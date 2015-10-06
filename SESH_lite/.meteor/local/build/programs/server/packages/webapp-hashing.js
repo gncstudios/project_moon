@@ -9,29 +9,21 @@ var WebAppHashing;
 
 (function(){
 
-////////////////////////////////////////////////////////////////////////////////////
-//                                                                                //
-// packages/webapp-hashing/packages/webapp-hashing.js                             //
-//                                                                                //
-////////////////////////////////////////////////////////////////////////////////////
-                                                                                  //
-(function(){                                                                      // 1
-                                                                                  // 2
-//////////////////////////////////////////////////////////////////////////////    // 3
-//                                                                          //    // 4
-// packages/webapp-hashing/webapp-hashing.js                                //    // 5
-//                                                                          //    // 6
-//////////////////////////////////////////////////////////////////////////////    // 7
-                                                                            //    // 8
-var crypto = Npm.require("crypto");                                         // 1  // 9
-                                                                            // 2  // 10
-WebAppHashing = {};                                                         // 3  // 11
-                                                                            // 4  // 12
-// Calculate a hash of all the client resources downloaded by the           // 5  // 13
-// browser, including the application HTML, runtime config, code, and       // 6  // 14
-// static files.                                                            // 7  // 15
-//                                                                          // 8  // 16
-// This hash *must* change if any resources seen by the browser             // 9  // 17
+//////////////////////////////////////////////////////////////////////////////
+//                                                                          //
+// packages/webapp-hashing/webapp-hashing.js                                //
+//                                                                          //
+//////////////////////////////////////////////////////////////////////////////
+                                                                            //
+var crypto = Npm.require("crypto");                                         // 1
+                                                                            // 2
+WebAppHashing = {};                                                         // 3
+                                                                            // 4
+// Calculate a hash of all the client resources downloaded by the           // 5
+// browser, including the application HTML, runtime config, code, and       // 6
+// static files.                                                            // 7
+//                                                                          // 8
+// This hash *must* change if any resources seen by the browser             // 9
 // change, and ideally *doesn't* change for any server-only changes         // 10
 // (but the second is a performance enhancement, not a hard                 // 11
 // requirement).                                                            // 12
@@ -54,7 +46,7 @@ WebAppHashing.calculateClientHash =                                         // 1
                                                                             // 29
   _.each(manifest, function (resource) {                                    // 30
       if ((! includeFilter || includeFilter(resource.type)) &&              // 31
-          (resource.where === 'client' || resource.where === 'internal')) {       // 40
+          (resource.where === 'client' || resource.where === 'internal')) {
       hash.update(resource.path);                                           // 33
       hash.update(resource.hash);                                           // 34
     }                                                                       // 35
@@ -63,11 +55,7 @@ WebAppHashing.calculateClientHash =                                         // 1
 };                                                                          // 38
                                                                             // 39
                                                                             // 40
-//////////////////////////////////////////////////////////////////////////////    // 49
-                                                                                  // 50
-}).call(this);                                                                    // 51
-                                                                                  // 52
-////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
 
 }).call(this);
 

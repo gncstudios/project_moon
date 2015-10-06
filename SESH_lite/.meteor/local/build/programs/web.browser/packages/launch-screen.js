@@ -18,29 +18,21 @@ var LaunchScreen;
 
 (function(){
 
-//////////////////////////////////////////////////////////////////////////////////
-//                                                                              //
-// packages/launch-screen/packages/launch-screen.js                             //
-//                                                                              //
-//////////////////////////////////////////////////////////////////////////////////
-                                                                                //
-(function(){                                                                    // 1
-                                                                                // 2
-////////////////////////////////////////////////////////////////////////////    // 3
-//                                                                        //    // 4
-// packages/launch-screen/mobile-launch-screen.js                         //    // 5
-//                                                                        //    // 6
-////////////////////////////////////////////////////////////////////////////    // 7
-                                                                          //    // 8
-// XXX This currently implements loading screens for mobile apps only,    // 1  // 9
-// but in the future can be expanded to all apps.                         // 2  // 10
-                                                                          // 3  // 11
-var holdCount = 0;                                                        // 4  // 12
-var alreadyHidden = false;                                                // 5  // 13
-                                                                          // 6  // 14
-LaunchScreen = {                                                          // 7  // 15
-  hold: function () {                                                     // 8  // 16
-    if (! Meteor.isCordova) {                                             // 9  // 17
+////////////////////////////////////////////////////////////////////////////
+//                                                                        //
+// packages/launch-screen/mobile-launch-screen.js                         //
+//                                                                        //
+////////////////////////////////////////////////////////////////////////////
+                                                                          //
+// XXX This currently implements loading screens for mobile apps only,    // 1
+// but in the future can be expanded to all apps.                         // 2
+                                                                          // 3
+var holdCount = 0;                                                        // 4
+var alreadyHidden = false;                                                // 5
+                                                                          // 6
+LaunchScreen = {                                                          // 7
+  hold: function () {                                                     // 8
+    if (! Meteor.isCordova) {                                             // 9
       return {                                                            // 10
         release: function () { /* noop */ }                               // 11
       };                                                                  // 12
@@ -60,7 +52,7 @@ LaunchScreen = {                                                          // 7  
       if (! released) {                                                   // 26
         holdCount--;                                                      // 27
         if (holdCount === 0 &&                                            // 28
-            typeof navigator !== 'undefined' && navigator.splashscreen) {       // 37
+            typeof navigator !== 'undefined' && navigator.splashscreen) {
           alreadyHidden = true;                                           // 30
           navigator.splashscreen.hide();                                  // 31
         }                                                                 // 32
@@ -74,32 +66,32 @@ LaunchScreen = {                                                          // 7  
   }                                                                       // 40
 };                                                                        // 41
                                                                           // 42
-////////////////////////////////////////////////////////////////////////////    // 51
-                                                                                // 52
-}).call(this);                                                                  // 53
-                                                                                // 54
-                                                                                // 55
-                                                                                // 56
-                                                                                // 57
-                                                                                // 58
-                                                                                // 59
-(function(){                                                                    // 60
-                                                                                // 61
-////////////////////////////////////////////////////////////////////////////    // 62
-//                                                                        //    // 63
-// packages/launch-screen/default-behavior.js                             //    // 64
-//                                                                        //    // 65
-////////////////////////////////////////////////////////////////////////////    // 66
-                                                                          //    // 67
-// Hold launch screen on app load. This reflects the fact that Meteor     // 1  // 68
-// mobile apps that use this package always start with a launch screen    // 2  // 69
-// visible. (see XXX comment at the top of package.js for more            // 3  // 70
-// details)                                                               // 4  // 71
-var handle = LaunchScreen.hold();                                         // 5  // 72
-                                                                          // 6  // 73
-var Template = Package.templating && Package.templating.Template;         // 7  // 74
-                                                                          // 8  // 75
-Meteor.startup(function () {                                              // 9  // 76
+////////////////////////////////////////////////////////////////////////////
+
+}).call(this);
+
+
+
+
+
+
+(function(){
+
+////////////////////////////////////////////////////////////////////////////
+//                                                                        //
+// packages/launch-screen/default-behavior.js                             //
+//                                                                        //
+////////////////////////////////////////////////////////////////////////////
+                                                                          //
+// Hold launch screen on app load. This reflects the fact that Meteor     // 1
+// mobile apps that use this package always start with a launch screen    // 2
+// visible. (see XXX comment at the top of package.js for more            // 3
+// details)                                                               // 4
+var handle = LaunchScreen.hold();                                         // 5
+                                                                          // 6
+var Template = Package.templating && Package.templating.Template;         // 7
+                                                                          // 8
+Meteor.startup(function () {                                              // 9
   if (! Template) {                                                       // 10
     handle.release();                                                     // 11
   } else if (Package['iron:router']) {                                    // 12
@@ -126,11 +118,7 @@ Meteor.startup(function () {                                              // 9  
   }                                                                       // 33
 });                                                                       // 34
                                                                           // 35
-////////////////////////////////////////////////////////////////////////////    // 103
-                                                                                // 104
-}).call(this);                                                                  // 105
-                                                                                // 106
-//////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////
 
 }).call(this);
 

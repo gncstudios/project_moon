@@ -14,119 +14,111 @@ var ObserveSequence, seqChangedToEmpty, seqChangedToArray, seqChangedToCursor;
 
 (function(){
 
-//////////////////////////////////////////////////////////////////////////////////////////
-//                                                                                      //
-// packages/observe-sequence/packages/observe-sequence.js                               //
-//                                                                                      //
-//////////////////////////////////////////////////////////////////////////////////////////
-                                                                                        //
-(function(){                                                                            // 1
-                                                                                        // 2
-///////////////////////////////////////////////////////////////////////////////////     // 3
-//                                                                               //     // 4
-// packages/observe-sequence/observe_sequence.js                                 //     // 5
-//                                                                               //     // 6
-///////////////////////////////////////////////////////////////////////////////////     // 7
-                                                                                 //     // 8
-var warn = function () {                                                         // 1   // 9
-  if (ObserveSequence._suppressWarnings) {                                       // 2   // 10
-    ObserveSequence._suppressWarnings--;                                         // 3   // 11
-  } else {                                                                       // 4   // 12
-    if (typeof console !== 'undefined' && console.warn)                          // 5   // 13
-      console.warn.apply(console, arguments);                                    // 6   // 14
-                                                                                 // 7   // 15
-    ObserveSequence._loggedWarnings++;                                           // 8   // 16
-  }                                                                              // 9   // 17
-};                                                                               // 10  // 18
-                                                                                 // 11  // 19
-var idStringify = MongoID.idStringify;                                           // 12  // 20
-var idParse = MongoID.idParse;                                                   // 13  // 21
-                                                                                 // 14  // 22
-ObserveSequence = {                                                              // 15  // 23
-  _suppressWarnings: 0,                                                          // 16  // 24
-  _loggedWarnings: 0,                                                            // 17  // 25
-                                                                                 // 18  // 26
-  // A mechanism similar to cursor.observe which receives a reactive             // 19  // 27
-  // function returning a sequence type and firing appropriate callbacks         // 20  // 28
-  // when the value changes.                                                     // 21  // 29
-  //                                                                             // 22  // 30
-  // @param sequenceFunc {Function} a reactive function returning a              // 23  // 31
-  //     sequence type. The currently supported sequence types are:              // 24  // 32
-  //     Array, Cursor, and null.                                                // 25  // 33
-  //                                                                             // 26  // 34
-  // @param callbacks {Object} similar to a specific subset of                   // 27  // 35
-  //     callbacks passed to `cursor.observe`                                    // 28  // 36
-  //     (http://docs.meteor.com/#observe), with minor variations to             // 29  // 37
-  //     support the fact that not all sequences contain objects with            // 30  // 38
-  //     _id fields.  Specifically:                                              // 31  // 39
-  //                                                                             // 32  // 40
-  //     * addedAt(id, item, atIndex, beforeId)                                  // 33  // 41
-  //     * changedAt(id, newItem, oldItem, atIndex)                              // 34  // 42
-  //     * removedAt(id, oldItem, atIndex)                                       // 35  // 43
-  //     * movedTo(id, item, fromIndex, toIndex, beforeId)                       // 36  // 44
-  //                                                                             // 37  // 45
-  // @returns {Object(stop: Function)} call 'stop' on the return value           // 38  // 46
-  //     to stop observing this sequence function.                               // 39  // 47
-  //                                                                             // 40  // 48
-  // We don't make any assumptions about our ability to compare sequence         // 41  // 49
-  // elements (ie, we don't assume EJSON.equals works; maybe there is extra      // 42  // 50
-  // state/random methods on the objects) so unlike cursor.observe, we may       // 43  // 51
-  // sometimes call changedAt() when nothing actually changed.                   // 44  // 52
-  // XXX consider if we *can* make the stronger assumption and avoid             // 45  // 53
-  //     no-op changedAt calls (in some cases?)                                  // 46  // 54
-  //                                                                             // 47  // 55
-  // XXX currently only supports the callbacks used by our                       // 48  // 56
-  // implementation of {{#each}}, but this can be expanded.                      // 49  // 57
-  //                                                                             // 50  // 58
-  // XXX #each doesn't use the indices (though we'll eventually need             // 51  // 59
-  // a way to get them when we support `@index`), but calling                    // 52  // 60
-  // `cursor.observe` causes the index to be calculated on every                 // 53  // 61
-  // callback using a linear scan (unless you turn it off by passing             // 54  // 62
-  // `_no_indices`).  Any way to avoid calculating indices on a pure             // 55  // 63
-  // cursor observe like we used to?                                             // 56  // 64
-  observe: function (sequenceFunc, callbacks) {                                  // 57  // 65
-    var lastSeq = null;                                                          // 58  // 66
-    var activeObserveHandle = null;                                              // 59  // 67
-                                                                                 // 60  // 68
-    // 'lastSeqArray' contains the previous value of the sequence                // 61  // 69
-    // we're observing. It is an array of objects with '_id' and                 // 62  // 70
-    // 'item' fields.  'item' is the element in the array, or the                // 63  // 71
-    // document in the cursor.                                                   // 64  // 72
-    //                                                                           // 65  // 73
-    // '_id' is whichever of the following is relevant, unless it has            // 66  // 74
-    // already appeared -- in which case it's randomly generated.                // 67  // 75
-    //                                                                           // 68  // 76
-    // * if 'item' is an object:                                                 // 69  // 77
-    //   * an '_id' field, if present                                            // 70  // 78
-    //   * otherwise, the index in the array                                     // 71  // 79
-    //                                                                           // 72  // 80
-    // * if 'item' is a number or string, use that value                         // 73  // 81
-    //                                                                           // 74  // 82
-    // XXX this can be generalized by allowing {{#each}} to accept a             // 75  // 83
-    // general 'key' argument which could be a function, a dotted                // 76  // 84
-    // field name, or the special @index value.                                  // 77  // 85
-    var lastSeqArray = []; // elements are objects of form {_id, item}           // 78  // 86
-    var computation = Tracker.autorun(function () {                              // 79  // 87
-      var seq = sequenceFunc();                                                  // 80  // 88
-                                                                                 // 81  // 89
-      Tracker.nonreactive(function () {                                          // 82  // 90
-        var seqArray; // same structure as `lastSeqArray` above.                 // 83  // 91
-                                                                                 // 84  // 92
-        if (activeObserveHandle) {                                               // 85  // 93
-          // If we were previously observing a cursor, replace lastSeqArray with        // 94
-          // more up-to-date information.  Then stop the old observe.            // 87  // 95
-          lastSeqArray = _.map(lastSeq.fetch(), function (doc) {                 // 88  // 96
-            return {_id: doc._id, item: doc};                                    // 89  // 97
-          });                                                                    // 90  // 98
-          activeObserveHandle.stop();                                            // 91  // 99
-          activeObserveHandle = null;                                            // 92  // 100
-        }                                                                        // 93  // 101
-                                                                                 // 94  // 102
-        if (!seq) {                                                              // 95  // 103
-          seqArray = seqChangedToEmpty(lastSeqArray, callbacks);                 // 96  // 104
-        } else if (seq instanceof Array) {                                       // 97  // 105
-          seqArray = seqChangedToArray(lastSeqArray, seq, callbacks);            // 98  // 106
-        } else if (isStoreCursor(seq)) {                                         // 99  // 107
+///////////////////////////////////////////////////////////////////////////////////
+//                                                                               //
+// packages/observe-sequence/observe_sequence.js                                 //
+//                                                                               //
+///////////////////////////////////////////////////////////////////////////////////
+                                                                                 //
+var warn = function () {                                                         // 1
+  if (ObserveSequence._suppressWarnings) {                                       // 2
+    ObserveSequence._suppressWarnings--;                                         // 3
+  } else {                                                                       // 4
+    if (typeof console !== 'undefined' && console.warn)                          // 5
+      console.warn.apply(console, arguments);                                    // 6
+                                                                                 // 7
+    ObserveSequence._loggedWarnings++;                                           // 8
+  }                                                                              // 9
+};                                                                               // 10
+                                                                                 // 11
+var idStringify = MongoID.idStringify;                                           // 12
+var idParse = MongoID.idParse;                                                   // 13
+                                                                                 // 14
+ObserveSequence = {                                                              // 15
+  _suppressWarnings: 0,                                                          // 16
+  _loggedWarnings: 0,                                                            // 17
+                                                                                 // 18
+  // A mechanism similar to cursor.observe which receives a reactive             // 19
+  // function returning a sequence type and firing appropriate callbacks         // 20
+  // when the value changes.                                                     // 21
+  //                                                                             // 22
+  // @param sequenceFunc {Function} a reactive function returning a              // 23
+  //     sequence type. The currently supported sequence types are:              // 24
+  //     Array, Cursor, and null.                                                // 25
+  //                                                                             // 26
+  // @param callbacks {Object} similar to a specific subset of                   // 27
+  //     callbacks passed to `cursor.observe`                                    // 28
+  //     (http://docs.meteor.com/#observe), with minor variations to             // 29
+  //     support the fact that not all sequences contain objects with            // 30
+  //     _id fields.  Specifically:                                              // 31
+  //                                                                             // 32
+  //     * addedAt(id, item, atIndex, beforeId)                                  // 33
+  //     * changedAt(id, newItem, oldItem, atIndex)                              // 34
+  //     * removedAt(id, oldItem, atIndex)                                       // 35
+  //     * movedTo(id, item, fromIndex, toIndex, beforeId)                       // 36
+  //                                                                             // 37
+  // @returns {Object(stop: Function)} call 'stop' on the return value           // 38
+  //     to stop observing this sequence function.                               // 39
+  //                                                                             // 40
+  // We don't make any assumptions about our ability to compare sequence         // 41
+  // elements (ie, we don't assume EJSON.equals works; maybe there is extra      // 42
+  // state/random methods on the objects) so unlike cursor.observe, we may       // 43
+  // sometimes call changedAt() when nothing actually changed.                   // 44
+  // XXX consider if we *can* make the stronger assumption and avoid             // 45
+  //     no-op changedAt calls (in some cases?)                                  // 46
+  //                                                                             // 47
+  // XXX currently only supports the callbacks used by our                       // 48
+  // implementation of {{#each}}, but this can be expanded.                      // 49
+  //                                                                             // 50
+  // XXX #each doesn't use the indices (though we'll eventually need             // 51
+  // a way to get them when we support `@index`), but calling                    // 52
+  // `cursor.observe` causes the index to be calculated on every                 // 53
+  // callback using a linear scan (unless you turn it off by passing             // 54
+  // `_no_indices`).  Any way to avoid calculating indices on a pure             // 55
+  // cursor observe like we used to?                                             // 56
+  observe: function (sequenceFunc, callbacks) {                                  // 57
+    var lastSeq = null;                                                          // 58
+    var activeObserveHandle = null;                                              // 59
+                                                                                 // 60
+    // 'lastSeqArray' contains the previous value of the sequence                // 61
+    // we're observing. It is an array of objects with '_id' and                 // 62
+    // 'item' fields.  'item' is the element in the array, or the                // 63
+    // document in the cursor.                                                   // 64
+    //                                                                           // 65
+    // '_id' is whichever of the following is relevant, unless it has            // 66
+    // already appeared -- in which case it's randomly generated.                // 67
+    //                                                                           // 68
+    // * if 'item' is an object:                                                 // 69
+    //   * an '_id' field, if present                                            // 70
+    //   * otherwise, the index in the array                                     // 71
+    //                                                                           // 72
+    // * if 'item' is a number or string, use that value                         // 73
+    //                                                                           // 74
+    // XXX this can be generalized by allowing {{#each}} to accept a             // 75
+    // general 'key' argument which could be a function, a dotted                // 76
+    // field name, or the special @index value.                                  // 77
+    var lastSeqArray = []; // elements are objects of form {_id, item}           // 78
+    var computation = Tracker.autorun(function () {                              // 79
+      var seq = sequenceFunc();                                                  // 80
+                                                                                 // 81
+      Tracker.nonreactive(function () {                                          // 82
+        var seqArray; // same structure as `lastSeqArray` above.                 // 83
+                                                                                 // 84
+        if (activeObserveHandle) {                                               // 85
+          // If we were previously observing a cursor, replace lastSeqArray with
+          // more up-to-date information.  Then stop the old observe.            // 87
+          lastSeqArray = _.map(lastSeq.fetch(), function (doc) {                 // 88
+            return {_id: doc._id, item: doc};                                    // 89
+          });                                                                    // 90
+          activeObserveHandle.stop();                                            // 91
+          activeObserveHandle = null;                                            // 92
+        }                                                                        // 93
+                                                                                 // 94
+        if (!seq) {                                                              // 95
+          seqArray = seqChangedToEmpty(lastSeqArray, callbacks);                 // 96
+        } else if (seq instanceof Array) {                                       // 97
+          seqArray = seqChangedToArray(lastSeqArray, seq, callbacks);            // 98
+        } else if (isStoreCursor(seq)) {                                         // 99
           var result /* [seqArray, activeObserveHandle] */ =                     // 100
                 seqChangedToCursor(lastSeqArray, seq, callbacks);                // 101
           seqArray = result[0];                                                  // 102
@@ -249,7 +241,7 @@ var diffArray = function (lastSeqArray, seqArray, callbacks) {                  
       // There are two cases:                                                    // 219
       //   1. The element is moved forward. Then all the positions in between    // 220
       //   are moved back.                                                       // 221
-      //   2. The element is moved back. Then the positions in between *and* the        // 230
+      //   2. The element is moved back. Then the positions in between *and* the
       //   element that is currently standing on the moved element's future      // 223
       //   position are moved forward.                                           // 224
       _.each(posCur, function (elCurPosition, id) {                              // 225
@@ -376,11 +368,7 @@ seqChangedToCursor = function (lastSeqArray, cursor, callbacks) {               
   return [seqArray, observeHandle];                                              // 346
 };                                                                               // 347
                                                                                  // 348
-///////////////////////////////////////////////////////////////////////////////////     // 357
-                                                                                        // 358
-}).call(this);                                                                          // 359
-                                                                                        // 360
-//////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////
 
 }).call(this);
 

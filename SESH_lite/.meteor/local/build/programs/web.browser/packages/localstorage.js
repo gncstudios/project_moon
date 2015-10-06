@@ -16,29 +16,21 @@ var Random = Package.random.Random;
 
 (function(){
 
-////////////////////////////////////////////////////////////////////////////////////////////
-//                                                                                        //
-// packages/localstorage/packages/localstorage.js                                         //
-//                                                                                        //
-////////////////////////////////////////////////////////////////////////////////////////////
-                                                                                          //
-(function(){                                                                              // 1
-                                                                                          // 2
-//////////////////////////////////////////////////////////////////////////////////////    // 3
-//                                                                                  //    // 4
-// packages/localstorage/localstorage.js                                            //    // 5
-//                                                                                  //    // 6
-//////////////////////////////////////////////////////////////////////////////////////    // 7
-                                                                                    //    // 8
-// Meteor._localStorage is not an ideal name, but we can change it later.           // 1  // 9
-                                                                                    // 2  // 10
-// Let's test to make sure that localStorage actually works. For example, in        // 3  // 11
-// Safari with private browsing on, window.localStorage exists but actually         // 4  // 12
-// trying to use it throws.                                                         // 5  // 13
-// Accessing window.localStorage can also immediately throw an error in IE (#1291).       // 14
-                                                                                    // 7  // 15
-var key = '_localstorage_test_' + Random.id();                                      // 8  // 16
-var retrieved;                                                                      // 9  // 17
+//////////////////////////////////////////////////////////////////////////////////////
+//                                                                                  //
+// packages/localstorage/localstorage.js                                            //
+//                                                                                  //
+//////////////////////////////////////////////////////////////////////////////////////
+                                                                                    //
+// Meteor._localStorage is not an ideal name, but we can change it later.           // 1
+                                                                                    // 2
+// Let's test to make sure that localStorage actually works. For example, in        // 3
+// Safari with private browsing on, window.localStorage exists but actually         // 4
+// trying to use it throws.                                                         // 5
+// Accessing window.localStorage can also immediately throw an error in IE (#1291).
+                                                                                    // 7
+var key = '_localstorage_test_' + Random.id();                                      // 8
+var retrieved;                                                                      // 9
 try {                                                                               // 10
   if (window.localStorage) {                                                        // 11
     window.localStorage.setItem(key, key);                                          // 12
@@ -87,11 +79,7 @@ if (!Meteor._localStorage) {                                                    
   };                                                                                // 55
 }                                                                                   // 56
                                                                                     // 57
-//////////////////////////////////////////////////////////////////////////////////////    // 66
-                                                                                          // 67
-}).call(this);                                                                            // 68
-                                                                                          // 69
-////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////
 
 }).call(this);
 

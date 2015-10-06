@@ -13,119 +13,111 @@ var WebApp, WebAppInternals, main;
 
 (function(){
 
-/////////////////////////////////////////////////////////////////////////////////////////////
-//                                                                                         //
-// packages/webapp/packages/webapp.js                                                      //
-//                                                                                         //
-/////////////////////////////////////////////////////////////////////////////////////////////
-                                                                                           //
-(function(){                                                                               // 1
-                                                                                           // 2
-//////////////////////////////////////////////////////////////////////////////////////     // 3
-//                                                                                  //     // 4
-// packages/webapp/webapp_server.js                                                 //     // 5
-//                                                                                  //     // 6
-//////////////////////////////////////////////////////////////////////////////////////     // 7
-                                                                                    //     // 8
-////////// Requires //////////                                                      // 1   // 9
-                                                                                    // 2   // 10
-var fs = Npm.require("fs");                                                         // 3   // 11
-var http = Npm.require("http");                                                     // 4   // 12
-var os = Npm.require("os");                                                         // 5   // 13
-var path = Npm.require("path");                                                     // 6   // 14
-var url = Npm.require("url");                                                       // 7   // 15
-var crypto = Npm.require("crypto");                                                 // 8   // 16
-                                                                                    // 9   // 17
-var connect = Npm.require('connect');                                               // 10  // 18
-var useragent = Npm.require('useragent');                                           // 11  // 19
-var send = Npm.require('send');                                                     // 12  // 20
-                                                                                    // 13  // 21
-var Future = Npm.require('fibers/future');                                          // 14  // 22
-var Fiber = Npm.require('fibers');                                                  // 15  // 23
-                                                                                    // 16  // 24
-var SHORT_SOCKET_TIMEOUT = 5*1000;                                                  // 17  // 25
-var LONG_SOCKET_TIMEOUT = 120*1000;                                                 // 18  // 26
-                                                                                    // 19  // 27
-WebApp = {};                                                                        // 20  // 28
-WebAppInternals = {};                                                               // 21  // 29
-                                                                                    // 22  // 30
-WebAppInternals.NpmModules = {                                                      // 23  // 31
-  connect: {                                                                        // 24  // 32
-    version: Npm.require('connect/package.json').version,                           // 25  // 33
-    module: connect                                                                 // 26  // 34
-  }                                                                                 // 27  // 35
-};                                                                                  // 28  // 36
-                                                                                    // 29  // 37
-WebApp.defaultArch = 'web.browser';                                                 // 30  // 38
-                                                                                    // 31  // 39
-// XXX maps archs to manifests                                                      // 32  // 40
-WebApp.clientPrograms = {};                                                         // 33  // 41
-                                                                                    // 34  // 42
-// XXX maps archs to program path on filesystem                                     // 35  // 43
-var archPath = {};                                                                  // 36  // 44
-                                                                                    // 37  // 45
-var bundledJsCssPrefix;                                                             // 38  // 46
-                                                                                    // 39  // 47
-var sha1 = function (contents) {                                                    // 40  // 48
-  var hash = crypto.createHash('sha1');                                             // 41  // 49
-  hash.update(contents);                                                            // 42  // 50
-  return hash.digest('hex');                                                        // 43  // 51
-};                                                                                  // 44  // 52
-                                                                                    // 45  // 53
-var readUtf8FileSync = function (filename) {                                        // 46  // 54
-  return Meteor.wrapAsync(fs.readFile)(filename, 'utf8');                           // 47  // 55
-};                                                                                  // 48  // 56
-                                                                                    // 49  // 57
-// #BrowserIdentification                                                           // 50  // 58
-//                                                                                  // 51  // 59
-// We have multiple places that want to identify the browser: the                   // 52  // 60
-// unsupported browser page, the appcache package, and, eventually                  // 53  // 61
-// delivering browser polyfills only as needed.                                     // 54  // 62
-//                                                                                  // 55  // 63
-// To avoid detecting the browser in multiple places ad-hoc, we create a            // 56  // 64
-// Meteor "browser" object. It uses but does not expose the npm                     // 57  // 65
-// useragent module (we could choose a different mechanism to identify              // 58  // 66
-// the browser in the future if we wanted to).  The browser object                  // 59  // 67
-// contains                                                                         // 60  // 68
-//                                                                                  // 61  // 69
-// * `name`: the name of the browser in camel case                                  // 62  // 70
-// * `major`, `minor`, `patch`: integers describing the browser version             // 63  // 71
-//                                                                                  // 64  // 72
-// Also here is an early version of a Meteor `request` object, intended             // 65  // 73
-// to be a high-level description of the request without exposing                   // 66  // 74
-// details of connect's low-level `req`.  Currently it contains:                    // 67  // 75
-//                                                                                  // 68  // 76
-// * `browser`: browser identification object described above                       // 69  // 77
-// * `url`: parsed url, including parsed query params                               // 70  // 78
-//                                                                                  // 71  // 79
-// As a temporary hack there is a `categorizeRequest` function on WebApp which      // 72  // 80
-// converts a connect `req` to a Meteor `request`. This can go away once smart      // 73  // 81
-// packages such as appcache are being passed a `request` object directly when      // 74  // 82
-// they serve content.                                                              // 75  // 83
-//                                                                                  // 76  // 84
-// This allows `request` to be used uniformly: it is passed to the html             // 77  // 85
-// attributes hook, and the appcache package can use it when deciding               // 78  // 86
-// whether to generate a 404 for the manifest.                                      // 79  // 87
-//                                                                                  // 80  // 88
-// Real routing / server side rendering will probably refactor this                 // 81  // 89
-// heavily.                                                                         // 82  // 90
-                                                                                    // 83  // 91
-                                                                                    // 84  // 92
-// e.g. "Mobile Safari" => "mobileSafari"                                           // 85  // 93
-var camelCase = function (name) {                                                   // 86  // 94
-  var parts = name.split(' ');                                                      // 87  // 95
-  parts[0] = parts[0].toLowerCase();                                                // 88  // 96
-  for (var i = 1;  i < parts.length;  ++i) {                                        // 89  // 97
-    parts[i] = parts[i].charAt(0).toUpperCase() + parts[i].substr(1);               // 90  // 98
-  }                                                                                 // 91  // 99
-  return parts.join('');                                                            // 92  // 100
-};                                                                                  // 93  // 101
-                                                                                    // 94  // 102
-var identifyBrowser = function (userAgentString) {                                  // 95  // 103
-  var userAgent = useragent.lookup(userAgentString);                                // 96  // 104
-  return {                                                                          // 97  // 105
-    name: camelCase(userAgent.family),                                              // 98  // 106
-    major: +userAgent.major,                                                        // 99  // 107
+//////////////////////////////////////////////////////////////////////////////////////
+//                                                                                  //
+// packages/webapp/webapp_server.js                                                 //
+//                                                                                  //
+//////////////////////////////////////////////////////////////////////////////////////
+                                                                                    //
+////////// Requires //////////                                                      // 1
+                                                                                    // 2
+var fs = Npm.require("fs");                                                         // 3
+var http = Npm.require("http");                                                     // 4
+var os = Npm.require("os");                                                         // 5
+var path = Npm.require("path");                                                     // 6
+var url = Npm.require("url");                                                       // 7
+var crypto = Npm.require("crypto");                                                 // 8
+                                                                                    // 9
+var connect = Npm.require('connect');                                               // 10
+var useragent = Npm.require('useragent');                                           // 11
+var send = Npm.require('send');                                                     // 12
+                                                                                    // 13
+var Future = Npm.require('fibers/future');                                          // 14
+var Fiber = Npm.require('fibers');                                                  // 15
+                                                                                    // 16
+var SHORT_SOCKET_TIMEOUT = 5*1000;                                                  // 17
+var LONG_SOCKET_TIMEOUT = 120*1000;                                                 // 18
+                                                                                    // 19
+WebApp = {};                                                                        // 20
+WebAppInternals = {};                                                               // 21
+                                                                                    // 22
+WebAppInternals.NpmModules = {                                                      // 23
+  connect: {                                                                        // 24
+    version: Npm.require('connect/package.json').version,                           // 25
+    module: connect                                                                 // 26
+  }                                                                                 // 27
+};                                                                                  // 28
+                                                                                    // 29
+WebApp.defaultArch = 'web.browser';                                                 // 30
+                                                                                    // 31
+// XXX maps archs to manifests                                                      // 32
+WebApp.clientPrograms = {};                                                         // 33
+                                                                                    // 34
+// XXX maps archs to program path on filesystem                                     // 35
+var archPath = {};                                                                  // 36
+                                                                                    // 37
+var bundledJsCssPrefix;                                                             // 38
+                                                                                    // 39
+var sha1 = function (contents) {                                                    // 40
+  var hash = crypto.createHash('sha1');                                             // 41
+  hash.update(contents);                                                            // 42
+  return hash.digest('hex');                                                        // 43
+};                                                                                  // 44
+                                                                                    // 45
+var readUtf8FileSync = function (filename) {                                        // 46
+  return Meteor.wrapAsync(fs.readFile)(filename, 'utf8');                           // 47
+};                                                                                  // 48
+                                                                                    // 49
+// #BrowserIdentification                                                           // 50
+//                                                                                  // 51
+// We have multiple places that want to identify the browser: the                   // 52
+// unsupported browser page, the appcache package, and, eventually                  // 53
+// delivering browser polyfills only as needed.                                     // 54
+//                                                                                  // 55
+// To avoid detecting the browser in multiple places ad-hoc, we create a            // 56
+// Meteor "browser" object. It uses but does not expose the npm                     // 57
+// useragent module (we could choose a different mechanism to identify              // 58
+// the browser in the future if we wanted to).  The browser object                  // 59
+// contains                                                                         // 60
+//                                                                                  // 61
+// * `name`: the name of the browser in camel case                                  // 62
+// * `major`, `minor`, `patch`: integers describing the browser version             // 63
+//                                                                                  // 64
+// Also here is an early version of a Meteor `request` object, intended             // 65
+// to be a high-level description of the request without exposing                   // 66
+// details of connect's low-level `req`.  Currently it contains:                    // 67
+//                                                                                  // 68
+// * `browser`: browser identification object described above                       // 69
+// * `url`: parsed url, including parsed query params                               // 70
+//                                                                                  // 71
+// As a temporary hack there is a `categorizeRequest` function on WebApp which      // 72
+// converts a connect `req` to a Meteor `request`. This can go away once smart      // 73
+// packages such as appcache are being passed a `request` object directly when      // 74
+// they serve content.                                                              // 75
+//                                                                                  // 76
+// This allows `request` to be used uniformly: it is passed to the html             // 77
+// attributes hook, and the appcache package can use it when deciding               // 78
+// whether to generate a 404 for the manifest.                                      // 79
+//                                                                                  // 80
+// Real routing / server side rendering will probably refactor this                 // 81
+// heavily.                                                                         // 82
+                                                                                    // 83
+                                                                                    // 84
+// e.g. "Mobile Safari" => "mobileSafari"                                           // 85
+var camelCase = function (name) {                                                   // 86
+  var parts = name.split(' ');                                                      // 87
+  parts[0] = parts[0].toLowerCase();                                                // 88
+  for (var i = 1;  i < parts.length;  ++i) {                                        // 89
+    parts[i] = parts[i].charAt(0).toUpperCase() + parts[i].substr(1);               // 90
+  }                                                                                 // 91
+  return parts.join('');                                                            // 92
+};                                                                                  // 93
+                                                                                    // 94
+var identifyBrowser = function (userAgentString) {                                  // 95
+  var userAgent = useragent.lookup(userAgentString);                                // 96
+  return {                                                                          // 97
+    name: camelCase(userAgent.family),                                              // 98
+    major: +userAgent.major,                                                        // 99
     minor: +userAgent.minor,                                                        // 100
     patch: +userAgent.patch                                                         // 101
   };                                                                                // 102
@@ -629,7 +621,7 @@ var runWebAppServer = function () {                                             
     // after the path prefix must start with a / if it exists.)                     // 600
     if (pathPrefix && pathname.substring(0, pathPrefix.length) === pathPrefix &&    // 601
        (pathname.length == pathPrefix.length                                        // 602
-        || pathname.substring(pathPrefix.length, pathPrefix.length + 1) === "/")) {        // 611
+        || pathname.substring(pathPrefix.length, pathPrefix.length + 1) === "/")) {
       request.url = request.url.substring(pathPrefix.length);                       // 604
       next();                                                                       // 605
     } else if (pathname === "/favicon.ico" || pathname === "/robots.txt") {         // 606
@@ -837,11 +829,7 @@ WebAppInternals.addStaticJs = function (contents) {                             
 WebAppInternals.getBoilerplate = getBoilerplate;                                    // 808
 WebAppInternals.additionalStaticJs = additionalStaticJs;                            // 809
                                                                                     // 810
-//////////////////////////////////////////////////////////////////////////////////////     // 819
-                                                                                           // 820
-}).call(this);                                                                             // 821
-                                                                                           // 822
-/////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////
 
 }).call(this);
 

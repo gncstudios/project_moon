@@ -24,119 +24,111 @@ var _ = Package.underscore._;
 
 (function(){
 
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//                                                                                                                   //
-// packages/accounts-password/packages/accounts-password.js                                                          //
-//                                                                                                                   //
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-                                                                                                                     //
-(function(){                                                                                                         // 1
-                                                                                                                     // 2
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////     // 3
-//                                                                                                            //     // 4
-// packages/accounts-password/password_client.js                                                              //     // 5
-//                                                                                                            //     // 6
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////     // 7
-                                                                                                              //     // 8
-// Attempt to log in with a password.                                                                         // 1   // 9
-//                                                                                                            // 2   // 10
-// @param selector {String|Object} One of the following:                                                      // 3   // 11
-//   - {username: (username)}                                                                                 // 4   // 12
-//   - {email: (email)}                                                                                       // 5   // 13
-//   - a string which may be a username or email, depending on whether                                        // 6   // 14
-//     it contains "@".                                                                                       // 7   // 15
-// @param password {String}                                                                                   // 8   // 16
-// @param callback {Function(error|undefined)}                                                                // 9   // 17
-                                                                                                              // 10  // 18
-/**                                                                                                           // 11  // 19
- * @summary Log the user in with a password.                                                                  // 12  // 20
- * @locus Client                                                                                              // 13  // 21
- * @param {Object | String} user                                                                              // 14  // 22
- *   Either a string interpreted as a username or an email; or an object with a                               // 15  // 23
- *   single key: `email`, `username` or `id`. Username or email match in a case                               // 16  // 24
- *   insensitive manner.                                                                                      // 17  // 25
- * @param {String} password The user's password.                                                              // 18  // 26
- * @param {Function} [callback] Optional callback.                                                            // 19  // 27
- *   Called with no arguments on success, or with a single `Error` argument                                   // 20  // 28
- *   on failure.                                                                                              // 21  // 29
- */                                                                                                           // 22  // 30
-Meteor.loginWithPassword = function (selector, password, callback) {                                          // 23  // 31
-  if (typeof selector === 'string')                                                                           // 24  // 32
-    if (selector.indexOf('@') === -1)                                                                         // 25  // 33
-      selector = {username: selector};                                                                        // 26  // 34
-    else                                                                                                      // 27  // 35
-      selector = {email: selector};                                                                           // 28  // 36
-                                                                                                              // 29  // 37
-  Accounts.callLoginMethod({                                                                                  // 30  // 38
-    methodArguments: [{                                                                                       // 31  // 39
-      user: selector,                                                                                         // 32  // 40
-      password: Accounts._hashPassword(password)                                                              // 33  // 41
-    }],                                                                                                       // 34  // 42
-    userCallback: function (error, result) {                                                                  // 35  // 43
-      if (error && error.error === 400 &&                                                                     // 36  // 44
-          error.reason === 'old password format') {                                                           // 37  // 45
-        // The "reason" string should match the error thrown in the                                           // 38  // 46
-        // password login handler in password_server.js.                                                      // 39  // 47
-                                                                                                              // 40  // 48
-        // XXX COMPAT WITH 0.8.1.3                                                                            // 41  // 49
-        // If this user's last login was with a previous version of                                           // 42  // 50
-        // Meteor that used SRP, then the server throws this error to                                         // 43  // 51
-        // indicate that we should try again. The error includes the                                          // 44  // 52
-        // user's SRP identity. We provide a value derived from the                                           // 45  // 53
-        // identity and the password to prove to the server that we know                                      // 46  // 54
-        // the password without requiring a full SRP flow, as well as                                         // 47  // 55
-        // SHA256(password), which the server bcrypts and stores in                                           // 48  // 56
-        // place of the old SRP information for this user.                                                    // 49  // 57
-        srpUpgradePath({                                                                                      // 50  // 58
-          upgradeError: error,                                                                                // 51  // 59
-          userSelector: selector,                                                                             // 52  // 60
-          plaintextPassword: password                                                                         // 53  // 61
-        }, callback);                                                                                         // 54  // 62
-      }                                                                                                       // 55  // 63
-      else if (error) {                                                                                       // 56  // 64
-        callback && callback(error);                                                                          // 57  // 65
-      } else {                                                                                                // 58  // 66
-        callback && callback();                                                                               // 59  // 67
-      }                                                                                                       // 60  // 68
-    }                                                                                                         // 61  // 69
-  });                                                                                                         // 62  // 70
-};                                                                                                            // 63  // 71
-                                                                                                              // 64  // 72
-Accounts._hashPassword = function (password) {                                                                // 65  // 73
-  return {                                                                                                    // 66  // 74
-    digest: SHA256(password),                                                                                 // 67  // 75
-    algorithm: "sha-256"                                                                                      // 68  // 76
-  };                                                                                                          // 69  // 77
-};                                                                                                            // 70  // 78
-                                                                                                              // 71  // 79
-// XXX COMPAT WITH 0.8.1.3                                                                                    // 72  // 80
-// The server requested an upgrade from the old SRP password format,                                          // 73  // 81
-// so supply the needed SRP identity to login. Options:                                                       // 74  // 82
-//   - upgradeError: the error object that the server returned to tell                                        // 75  // 83
-//     us to upgrade from SRP to bcrypt.                                                                      // 76  // 84
-//   - userSelector: selector to retrieve the user object                                                     // 77  // 85
-//   - plaintextPassword: the password as a string                                                            // 78  // 86
-var srpUpgradePath = function (options, callback) {                                                           // 79  // 87
-  var details;                                                                                                // 80  // 88
-  try {                                                                                                       // 81  // 89
-    details = EJSON.parse(options.upgradeError.details);                                                      // 82  // 90
-  } catch (e) {}                                                                                              // 83  // 91
-  if (!(details && details.format === 'srp')) {                                                               // 84  // 92
-    callback && callback(                                                                                     // 85  // 93
-      new Meteor.Error(400, "Password is old. Please reset your " +                                           // 86  // 94
-                       "password."));                                                                         // 87  // 95
-  } else {                                                                                                    // 88  // 96
-    Accounts.callLoginMethod({                                                                                // 89  // 97
-      methodArguments: [{                                                                                     // 90  // 98
-        user: options.userSelector,                                                                           // 91  // 99
-        srp: SHA256(details.identity + ":" + options.plaintextPassword),                                      // 92  // 100
-        password: Accounts._hashPassword(options.plaintextPassword)                                           // 93  // 101
-      }],                                                                                                     // 94  // 102
-      userCallback: callback                                                                                  // 95  // 103
-    });                                                                                                       // 96  // 104
-  }                                                                                                           // 97  // 105
-};                                                                                                            // 98  // 106
-                                                                                                              // 99  // 107
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                                            //
+// packages/accounts-password/password_client.js                                                              //
+//                                                                                                            //
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+                                                                                                              //
+// Attempt to log in with a password.                                                                         // 1
+//                                                                                                            // 2
+// @param selector {String|Object} One of the following:                                                      // 3
+//   - {username: (username)}                                                                                 // 4
+//   - {email: (email)}                                                                                       // 5
+//   - a string which may be a username or email, depending on whether                                        // 6
+//     it contains "@".                                                                                       // 7
+// @param password {String}                                                                                   // 8
+// @param callback {Function(error|undefined)}                                                                // 9
+                                                                                                              // 10
+/**                                                                                                           // 11
+ * @summary Log the user in with a password.                                                                  // 12
+ * @locus Client                                                                                              // 13
+ * @param {Object | String} user                                                                              // 14
+ *   Either a string interpreted as a username or an email; or an object with a                               // 15
+ *   single key: `email`, `username` or `id`. Username or email match in a case                               // 16
+ *   insensitive manner.                                                                                      // 17
+ * @param {String} password The user's password.                                                              // 18
+ * @param {Function} [callback] Optional callback.                                                            // 19
+ *   Called with no arguments on success, or with a single `Error` argument                                   // 20
+ *   on failure.                                                                                              // 21
+ */                                                                                                           // 22
+Meteor.loginWithPassword = function (selector, password, callback) {                                          // 23
+  if (typeof selector === 'string')                                                                           // 24
+    if (selector.indexOf('@') === -1)                                                                         // 25
+      selector = {username: selector};                                                                        // 26
+    else                                                                                                      // 27
+      selector = {email: selector};                                                                           // 28
+                                                                                                              // 29
+  Accounts.callLoginMethod({                                                                                  // 30
+    methodArguments: [{                                                                                       // 31
+      user: selector,                                                                                         // 32
+      password: Accounts._hashPassword(password)                                                              // 33
+    }],                                                                                                       // 34
+    userCallback: function (error, result) {                                                                  // 35
+      if (error && error.error === 400 &&                                                                     // 36
+          error.reason === 'old password format') {                                                           // 37
+        // The "reason" string should match the error thrown in the                                           // 38
+        // password login handler in password_server.js.                                                      // 39
+                                                                                                              // 40
+        // XXX COMPAT WITH 0.8.1.3                                                                            // 41
+        // If this user's last login was with a previous version of                                           // 42
+        // Meteor that used SRP, then the server throws this error to                                         // 43
+        // indicate that we should try again. The error includes the                                          // 44
+        // user's SRP identity. We provide a value derived from the                                           // 45
+        // identity and the password to prove to the server that we know                                      // 46
+        // the password without requiring a full SRP flow, as well as                                         // 47
+        // SHA256(password), which the server bcrypts and stores in                                           // 48
+        // place of the old SRP information for this user.                                                    // 49
+        srpUpgradePath({                                                                                      // 50
+          upgradeError: error,                                                                                // 51
+          userSelector: selector,                                                                             // 52
+          plaintextPassword: password                                                                         // 53
+        }, callback);                                                                                         // 54
+      }                                                                                                       // 55
+      else if (error) {                                                                                       // 56
+        callback && callback(error);                                                                          // 57
+      } else {                                                                                                // 58
+        callback && callback();                                                                               // 59
+      }                                                                                                       // 60
+    }                                                                                                         // 61
+  });                                                                                                         // 62
+};                                                                                                            // 63
+                                                                                                              // 64
+Accounts._hashPassword = function (password) {                                                                // 65
+  return {                                                                                                    // 66
+    digest: SHA256(password),                                                                                 // 67
+    algorithm: "sha-256"                                                                                      // 68
+  };                                                                                                          // 69
+};                                                                                                            // 70
+                                                                                                              // 71
+// XXX COMPAT WITH 0.8.1.3                                                                                    // 72
+// The server requested an upgrade from the old SRP password format,                                          // 73
+// so supply the needed SRP identity to login. Options:                                                       // 74
+//   - upgradeError: the error object that the server returned to tell                                        // 75
+//     us to upgrade from SRP to bcrypt.                                                                      // 76
+//   - userSelector: selector to retrieve the user object                                                     // 77
+//   - plaintextPassword: the password as a string                                                            // 78
+var srpUpgradePath = function (options, callback) {                                                           // 79
+  var details;                                                                                                // 80
+  try {                                                                                                       // 81
+    details = EJSON.parse(options.upgradeError.details);                                                      // 82
+  } catch (e) {}                                                                                              // 83
+  if (!(details && details.format === 'srp')) {                                                               // 84
+    callback && callback(                                                                                     // 85
+      new Meteor.Error(400, "Password is old. Please reset your " +                                           // 86
+                       "password."));                                                                         // 87
+  } else {                                                                                                    // 88
+    Accounts.callLoginMethod({                                                                                // 89
+      methodArguments: [{                                                                                     // 90
+        user: options.userSelector,                                                                           // 91
+        srp: SHA256(details.identity + ":" + options.plaintextPassword),                                      // 92
+        password: Accounts._hashPassword(options.plaintextPassword)                                           // 93
+      }],                                                                                                     // 94
+      userCallback: callback                                                                                  // 95
+    });                                                                                                       // 96
+  }                                                                                                           // 97
+};                                                                                                            // 98
+                                                                                                              // 99
                                                                                                               // 100
 // Attempt to log in as a new user.                                                                           // 101
                                                                                                               // 102
@@ -181,8 +173,8 @@ Accounts.createUser = function (options, callback) {                            
 /**                                                                                                           // 141
  * @summary Change the current user's password. Must be logged in.                                            // 142
  * @locus Client                                                                                              // 143
- * @param {String} oldPassword The user's current password. This is __not__ sent in plain text over the wire.        // 152
- * @param {String} newPassword A new password for the user. This is __not__ sent in plain text over the wire.        // 153
+ * @param {String} oldPassword The user's current password. This is __not__ sent in plain text over the wire.
+ * @param {String} newPassword A new password for the user. This is __not__ sent in plain text over the wire.
  * @param {Function} [callback] Optional callback. Called with no arguments on success, or with a single `Error` argument on failure.
  */                                                                                                           // 147
 Accounts.changePassword = function (oldPassword, newPassword, callback) {                                     // 148
@@ -264,7 +256,7 @@ Accounts.forgotPassword = function(options, callback) {                         
  * @summary Reset the password for a user using a token received in email. Logs the user in afterwards.       // 224
  * @locus Client                                                                                              // 225
  * @param {String} token The token retrieved from the reset password URL.                                     // 226
- * @param {String} newPassword A new password for the user. This is __not__ sent in plain text over the wire.        // 235
+ * @param {String} newPassword A new password for the user. This is __not__ sent in plain text over the wire.
  * @param {Function} [callback] Optional callback. Called with no arguments on success, or with a single `Error` argument on failure.
  */                                                                                                           // 229
 Accounts.resetPassword = function(token, newPassword, callback) {                                             // 230
@@ -304,11 +296,7 @@ Accounts.verifyEmail = function(token, callback) {                              
     userCallback: callback});                                                                                 // 264
 };                                                                                                            // 265
                                                                                                               // 266
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////     // 275
-                                                                                                                     // 276
-}).call(this);                                                                                                       // 277
-                                                                                                                     // 278
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 }).call(this);
 

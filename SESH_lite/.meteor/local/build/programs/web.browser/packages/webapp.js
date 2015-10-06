@@ -19,29 +19,21 @@ var WebApp;
 
 (function(){
 
-/////////////////////////////////////////////////////////////////////////////
-//                                                                         //
-// packages/webapp/packages/webapp.js                                      //
-//                                                                         //
-/////////////////////////////////////////////////////////////////////////////
-                                                                           //
-(function(){                                                               // 1
-                                                                           // 2
-///////////////////////////////////////////////////////////////////////    // 3
-//                                                                   //    // 4
-// packages/webapp/webapp_client.js                                  //    // 5
-//                                                                   //    // 6
-///////////////////////////////////////////////////////////////////////    // 7
-                                                                     //    // 8
-WebApp = {                                                           // 1  // 9
-                                                                     // 2  // 10
-  _isCssLoaded: function () {                                        // 3  // 11
-    if (document.styleSheets.length === 0)                           // 4  // 12
-      return true;                                                   // 5  // 13
-                                                                     // 6  // 14
-    return _.find(document.styleSheets, function (sheet) {           // 7  // 15
-      if (sheet.cssText && !sheet.cssRules) // IE8                   // 8  // 16
-        return !sheet.cssText.match(/meteor-css-not-found-error/);   // 9  // 17
+///////////////////////////////////////////////////////////////////////
+//                                                                   //
+// packages/webapp/webapp_client.js                                  //
+//                                                                   //
+///////////////////////////////////////////////////////////////////////
+                                                                     //
+WebApp = {                                                           // 1
+                                                                     // 2
+  _isCssLoaded: function () {                                        // 3
+    if (document.styleSheets.length === 0)                           // 4
+      return true;                                                   // 5
+                                                                     // 6
+    return _.find(document.styleSheets, function (sheet) {           // 7
+      if (sheet.cssText && !sheet.cssRules) // IE8                   // 8
+        return !sheet.cssText.match(/meteor-css-not-found-error/);   // 9
       return !_.find(sheet.cssRules, function (rule) {               // 10
         return rule.selectorText === '.meteor-css-not-found-error';  // 11
       });                                                            // 12
@@ -49,11 +41,7 @@ WebApp = {                                                           // 1  // 9
   }                                                                  // 14
 };                                                                   // 15
                                                                      // 16
-///////////////////////////////////////////////////////////////////////    // 25
-                                                                           // 26
-}).call(this);                                                             // 27
-                                                                           // 28
-/////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////
 
 }).call(this);
 

@@ -57,22 +57,22 @@ Template["header"] = new Template("Template.header", (function() {
     }, "\n            ", HTML.LI({
       "class": function() {
         return Spacebars.mustache(view.lookup("isActiveRoute"), Spacebars.kw({
-          regex: "/login"
+          regex: "/sign-in"
         }));
       }
     }, HTML.A({
       href: function() {
-        return Spacebars.mustache(view.lookup("pathFor"), "login");
+        return Spacebars.mustache(view.lookup("pathFor"), "atSignIn");
       }
     }, "Login")), "\n            ", HTML.LI({
       "class": function() {
         return Spacebars.mustache(view.lookup("isActiveRoute"), Spacebars.kw({
-          regex: "/signup"
+          regex: "/sign-up"
         }));
       }
     }, HTML.A({
       href: function() {
-        return Spacebars.mustache(view.lookup("pathFor"), "signup");
+        return Spacebars.mustache(view.lookup("pathFor"), "atSignUp");
       }
     }, "Sign Up")), "\n          "), "\n        " ];
   }), "\n\n        ", HTML.UL({

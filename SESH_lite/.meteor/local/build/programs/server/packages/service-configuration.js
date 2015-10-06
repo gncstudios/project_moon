@@ -12,29 +12,21 @@ var ServiceConfiguration;
 
 (function(){
 
-//////////////////////////////////////////////////////////////////////////////////////////////
-//                                                                                          //
-// packages/service-configuration/packages/service-configuration.js                         //
-//                                                                                          //
-//////////////////////////////////////////////////////////////////////////////////////////////
-                                                                                            //
-(function(){                                                                                // 1
-                                                                                            // 2
-////////////////////////////////////////////////////////////////////////////////////////    // 3
-//                                                                                    //    // 4
-// packages/service-configuration/service_configuration_common.js                     //    // 5
-//                                                                                    //    // 6
-////////////////////////////////////////////////////////////////////////////////////////    // 7
-                                                                                      //    // 8
-if (typeof ServiceConfiguration === 'undefined') {                                    // 1  // 9
-  ServiceConfiguration = {};                                                          // 2  // 10
-}                                                                                     // 3  // 11
-                                                                                      // 4  // 12
-                                                                                      // 5  // 13
-// Table containing documents with configuration options for each                     // 6  // 14
-// login service                                                                      // 7  // 15
-ServiceConfiguration.configurations = new Mongo.Collection(                           // 8  // 16
-  "meteor_accounts_loginServiceConfiguration", {                                      // 9  // 17
+////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                    //
+// packages/service-configuration/service_configuration_common.js                     //
+//                                                                                    //
+////////////////////////////////////////////////////////////////////////////////////////
+                                                                                      //
+if (typeof ServiceConfiguration === 'undefined') {                                    // 1
+  ServiceConfiguration = {};                                                          // 2
+}                                                                                     // 3
+                                                                                      // 4
+                                                                                      // 5
+// Table containing documents with configuration options for each                     // 6
+// login service                                                                      // 7
+ServiceConfiguration.configurations = new Mongo.Collection(                           // 8
+  "meteor_accounts_loginServiceConfiguration", {                                      // 9
     _preventAutopublish: true,                                                        // 10
     connection: Meteor.isClient ? Accounts.connection : Meteor.connection             // 11
   });                                                                                 // 12
@@ -56,34 +48,34 @@ ServiceConfiguration.ConfigError = function (serviceName) {                     
   }                                                                                   // 28
 };                                                                                    // 29
 ServiceConfiguration.ConfigError.prototype = new Error();                             // 30
-ServiceConfiguration.ConfigError.prototype.name = 'ServiceConfiguration.ConfigError';       // 39
+ServiceConfiguration.ConfigError.prototype.name = 'ServiceConfiguration.ConfigError';
                                                                                       // 32
-////////////////////////////////////////////////////////////////////////////////////////    // 41
-                                                                                            // 42
-}).call(this);                                                                              // 43
-                                                                                            // 44
-                                                                                            // 45
-                                                                                            // 46
-                                                                                            // 47
-                                                                                            // 48
-                                                                                            // 49
-(function(){                                                                                // 50
-                                                                                            // 51
-////////////////////////////////////////////////////////////////////////////////////////    // 52
-//                                                                                    //    // 53
-// packages/service-configuration/service_configuration_server.js                     //    // 54
-//                                                                                    //    // 55
-////////////////////////////////////////////////////////////////////////////////////////    // 56
-                                                                                      //    // 57
-// Only one configuration should ever exist for each service.                         // 1  // 58
-// A unique index helps avoid various race conditions which could                     // 2  // 59
-// otherwise lead to an inconsistent database state (when there are multiple          // 3  // 60
-// configurations for a single service, which configuration is correct?)              // 4  // 61
-try {                                                                                 // 5  // 62
-    ServiceConfiguration.configurations._ensureIndex(                                 // 6  // 63
-        { "service": 1 },                                                             // 7  // 64
-        { unique: true }                                                              // 8  // 65
-    );                                                                                // 9  // 66
+////////////////////////////////////////////////////////////////////////////////////////
+
+}).call(this);
+
+
+
+
+
+
+(function(){
+
+////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                    //
+// packages/service-configuration/service_configuration_server.js                     //
+//                                                                                    //
+////////////////////////////////////////////////////////////////////////////////////////
+                                                                                      //
+// Only one configuration should ever exist for each service.                         // 1
+// A unique index helps avoid various race conditions which could                     // 2
+// otherwise lead to an inconsistent database state (when there are multiple          // 3
+// configurations for a single service, which configuration is correct?)              // 4
+try {                                                                                 // 5
+    ServiceConfiguration.configurations._ensureIndex(                                 // 6
+        { "service": 1 },                                                             // 7
+        { unique: true }                                                              // 8
+    );                                                                                // 9
 } catch (err) {                                                                       // 10
     console.error(                                                                    // 11
         "The service-configuration package persists configuration in the " +          // 12
@@ -106,11 +98,7 @@ try {                                                                           
     throw err;                                                                        // 29
 }                                                                                     // 30
                                                                                       // 31
-////////////////////////////////////////////////////////////////////////////////////////    // 89
-                                                                                            // 90
-}).call(this);                                                                              // 91
-                                                                                            // 92
-//////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////
 
 }).call(this);
 

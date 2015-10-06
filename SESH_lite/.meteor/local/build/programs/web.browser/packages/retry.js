@@ -20,29 +20,21 @@ var Retry;
 
 (function(){
 
-///////////////////////////////////////////////////////////////////////////////////
-//                                                                               //
-// packages/retry/packages/retry.js                                              //
-//                                                                               //
-///////////////////////////////////////////////////////////////////////////////////
-                                                                                 //
-(function(){                                                                     // 1
-                                                                                 // 2
-/////////////////////////////////////////////////////////////////////////////    // 3
-//                                                                         //    // 4
-// packages/retry/retry.js                                                 //    // 5
-//                                                                         //    // 6
-/////////////////////////////////////////////////////////////////////////////    // 7
-                                                                           //    // 8
-// Retry logic with an exponential backoff.                                // 1  // 9
-//                                                                         // 2  // 10
-// options:                                                                // 3  // 11
-//  baseTimeout: time for initial reconnect attempt (ms).                  // 4  // 12
-//  exponent: exponential factor to increase timeout each attempt.         // 5  // 13
-//  maxTimeout: maximum time between retries (ms).                         // 6  // 14
-//  minCount: how many times to reconnect "instantly".                     // 7  // 15
-//  minTimeout: time to wait for the first `minCount` retries (ms).        // 8  // 16
-//  fuzz: factor to randomize retry times by (to avoid retry storms).      // 9  // 17
+/////////////////////////////////////////////////////////////////////////////
+//                                                                         //
+// packages/retry/retry.js                                                 //
+//                                                                         //
+/////////////////////////////////////////////////////////////////////////////
+                                                                           //
+// Retry logic with an exponential backoff.                                // 1
+//                                                                         // 2
+// options:                                                                // 3
+//  baseTimeout: time for initial reconnect attempt (ms).                  // 4
+//  exponent: exponential factor to increase timeout each attempt.         // 5
+//  maxTimeout: maximum time between retries (ms).                         // 6
+//  minCount: how many times to reconnect "instantly".                     // 7
+//  minTimeout: time to wait for the first `minCount` retries (ms).        // 8
+//  fuzz: factor to randomize retry times by (to avoid retry storms).      // 9
                                                                            // 10
 Retry = function (options) {                                               // 11
   var self = this;                                                         // 12
@@ -87,7 +79,7 @@ _.extend(Retry.prototype, {                                                // 26
     return timeout;                                                        // 51
   },                                                                       // 52
                                                                            // 53
-  // Call `fn` after a delay, based on the `count` of which retry this is.       // 62
+  // Call `fn` after a delay, based on the `count` of which retry this is.
   retryLater: function (count, fn) {                                       // 55
     var self = this;                                                       // 56
     var timeout = self._timeout(count);                                    // 57
@@ -99,11 +91,7 @@ _.extend(Retry.prototype, {                                                // 26
                                                                            // 63
 });                                                                        // 64
                                                                            // 65
-/////////////////////////////////////////////////////////////////////////////    // 74
-                                                                                 // 75
-}).call(this);                                                                   // 76
-                                                                                 // 77
-///////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////
 
 }).call(this);
 

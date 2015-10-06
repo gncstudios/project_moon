@@ -12,119 +12,111 @@ var SpacebarsCompiler, TemplateTag, ReactComponentSiblingForbidder;
 
 (function(){
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//                                                                                                            //
-// packages/spacebars-compiler/packages/spacebars-compiler.js                                                 //
-//                                                                                                            //
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-                                                                                                              //
-(function(){                                                                                                  // 1
-                                                                                                              // 2
-/////////////////////////////////////////////////////////////////////////////////////////////////////////     // 3
-//                                                                                                     //     // 4
-// packages/spacebars-compiler/templatetag.js                                                          //     // 5
-//                                                                                                     //     // 6
-/////////////////////////////////////////////////////////////////////////////////////////////////////////     // 7
-                                                                                                       //     // 8
-SpacebarsCompiler = {};                                                                                // 1   // 9
-                                                                                                       // 2   // 10
-// A TemplateTag is the result of parsing a single `{{...}}` tag.                                      // 3   // 11
-//                                                                                                     // 4   // 12
-// The `.type` of a TemplateTag is one of:                                                             // 5   // 13
-//                                                                                                     // 6   // 14
-// - `"DOUBLE"` - `{{foo}}`                                                                            // 7   // 15
-// - `"TRIPLE"` - `{{{foo}}}`                                                                          // 8   // 16
-// - `"EXPR"` - `(foo)`                                                                                // 9   // 17
-// - `"COMMENT"` - `{{! foo}}`                                                                         // 10  // 18
-// - `"BLOCKCOMMENT" - `{{!-- foo--}}`                                                                 // 11  // 19
-// - `"INCLUSION"` - `{{> foo}}`                                                                       // 12  // 20
-// - `"BLOCKOPEN"` - `{{#foo}}`                                                                        // 13  // 21
-// - `"BLOCKCLOSE"` - `{{/foo}}`                                                                       // 14  // 22
-// - `"ELSE"` - `{{else}}`                                                                             // 15  // 23
-// - `"ESCAPE"` - `{{|`, `{{{|`, `{{{{|` and so on                                                     // 16  // 24
-//                                                                                                     // 17  // 25
-// Besides `type`, the mandatory properties of a TemplateTag are:                                      // 18  // 26
-//                                                                                                     // 19  // 27
-// - `path` - An array of one or more strings.  The path of `{{foo.bar}}`                              // 20  // 28
-//   is `["foo", "bar"]`.  Applies to DOUBLE, TRIPLE, INCLUSION, BLOCKOPEN,                            // 21  // 29
-//   and BLOCKCLOSE.                                                                                   // 22  // 30
-//                                                                                                     // 23  // 31
-// - `args` - An array of zero or more argument specs.  An argument spec                               // 24  // 32
-//   is a two or three element array, consisting of a type, value, and                                 // 25  // 33
-//   optional keyword name.  For example, the `args` of `{{foo "bar" x=3}}`                            // 26  // 34
-//   are `[["STRING", "bar"], ["NUMBER", 3, "x"]]`.  Applies to DOUBLE,                                // 27  // 35
-//   TRIPLE, INCLUSION, and BLOCKOPEN.                                                                 // 28  // 36
-//                                                                                                     // 29  // 37
-// - `value` - A string of the comment's text. Applies to COMMENT and                                  // 30  // 38
-//   BLOCKCOMMENT.                                                                                     // 31  // 39
-//                                                                                                     // 32  // 40
-// These additional are typically set during parsing:                                                  // 33  // 41
-//                                                                                                     // 34  // 42
-// - `position` - The HTMLTools.TEMPLATE_TAG_POSITION specifying at what sort                          // 35  // 43
-//   of site the TemplateTag was encountered (e.g. at element level or as                              // 36  // 44
-//   part of an attribute value). Its absence implies                                                  // 37  // 45
-//   TEMPLATE_TAG_POSITION.ELEMENT.                                                                    // 38  // 46
-//                                                                                                     // 39  // 47
-// - `content` and `elseContent` - When a BLOCKOPEN tag's contents are                                 // 40  // 48
-//   parsed, they are put here.  `elseContent` will only be present if                                 // 41  // 49
-//   an `{{else}}` was found.                                                                          // 42  // 50
-                                                                                                       // 43  // 51
-var TEMPLATE_TAG_POSITION = HTMLTools.TEMPLATE_TAG_POSITION;                                           // 44  // 52
-                                                                                                       // 45  // 53
-TemplateTag = SpacebarsCompiler.TemplateTag = function () {                                            // 46  // 54
-  HTMLTools.TemplateTag.apply(this, arguments);                                                        // 47  // 55
-};                                                                                                     // 48  // 56
-TemplateTag.prototype = new HTMLTools.TemplateTag;                                                     // 49  // 57
-TemplateTag.prototype.constructorName = 'SpacebarsCompiler.TemplateTag';                               // 50  // 58
-                                                                                                       // 51  // 59
-var makeStacheTagStartRegex = function (r) {                                                           // 52  // 60
-  return new RegExp(r.source + /(?![{>!#/])/.source,                                                   // 53  // 61
-                    r.ignoreCase ? 'i' : '');                                                          // 54  // 62
-};                                                                                                     // 55  // 63
-                                                                                                       // 56  // 64
-// "starts" regexes are used to see what type of template                                              // 57  // 65
-// tag the parser is looking at.  They must match a non-empty                                          // 58  // 66
-// result, but not the interesting part of the tag.                                                    // 59  // 67
-var starts = {                                                                                         // 60  // 68
-  ESCAPE: /^\{\{(?=\{*\|)/,                                                                            // 61  // 69
-  ELSE: makeStacheTagStartRegex(/^\{\{\s*else(?=[\s}])/i),                                             // 62  // 70
-  DOUBLE: makeStacheTagStartRegex(/^\{\{\s*(?!\s)/),                                                   // 63  // 71
-  TRIPLE: makeStacheTagStartRegex(/^\{\{\{\s*(?!\s)/),                                                 // 64  // 72
-  BLOCKCOMMENT: makeStacheTagStartRegex(/^\{\{\s*!--/),                                                // 65  // 73
-  COMMENT: makeStacheTagStartRegex(/^\{\{\s*!/),                                                       // 66  // 74
-  INCLUSION: makeStacheTagStartRegex(/^\{\{\s*>\s*(?!\s)/),                                            // 67  // 75
-  BLOCKOPEN: makeStacheTagStartRegex(/^\{\{\s*#\s*(?!\s)/),                                            // 68  // 76
-  BLOCKCLOSE: makeStacheTagStartRegex(/^\{\{\s*\/\s*(?!\s)/)                                           // 69  // 77
-};                                                                                                     // 70  // 78
-                                                                                                       // 71  // 79
-var ends = {                                                                                           // 72  // 80
-  DOUBLE: /^\s*\}\}/,                                                                                  // 73  // 81
-  TRIPLE: /^\s*\}\}\}/,                                                                                // 74  // 82
-  EXPR: /^\s*\)/                                                                                       // 75  // 83
-};                                                                                                     // 76  // 84
-                                                                                                       // 77  // 85
-var endsString = {                                                                                     // 78  // 86
-  DOUBLE: '}}',                                                                                        // 79  // 87
-  TRIPLE: '}}}',                                                                                       // 80  // 88
-  EXPR: ')'                                                                                            // 81  // 89
-};                                                                                                     // 82  // 90
-                                                                                                       // 83  // 91
-// Parse a tag from the provided scanner or string.  If the input                                      // 84  // 92
-// doesn't start with `{{`, returns null.  Otherwise, either succeeds                                  // 85  // 93
-// and returns a SpacebarsCompiler.TemplateTag, or throws an error (using                              // 86  // 94
-// `scanner.fatal` if a scanner is provided).                                                          // 87  // 95
-TemplateTag.parse = function (scannerOrString) {                                                       // 88  // 96
-  var scanner = scannerOrString;                                                                       // 89  // 97
-  if (typeof scanner === 'string')                                                                     // 90  // 98
-    scanner = new HTMLTools.Scanner(scannerOrString);                                                  // 91  // 99
-                                                                                                       // 92  // 100
-  if (! (scanner.peek() === '{' &&                                                                     // 93  // 101
-         (scanner.rest()).slice(0, 2) === '{{'))                                                       // 94  // 102
-    return null;                                                                                       // 95  // 103
-                                                                                                       // 96  // 104
-  var run = function (regex) {                                                                         // 97  // 105
-    // regex is assumed to start with `^`                                                              // 98  // 106
-    var result = regex.exec(scanner.rest());                                                           // 99  // 107
+/////////////////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                                     //
+// packages/spacebars-compiler/templatetag.js                                                          //
+//                                                                                                     //
+/////////////////////////////////////////////////////////////////////////////////////////////////////////
+                                                                                                       //
+SpacebarsCompiler = {};                                                                                // 1
+                                                                                                       // 2
+// A TemplateTag is the result of parsing a single `{{...}}` tag.                                      // 3
+//                                                                                                     // 4
+// The `.type` of a TemplateTag is one of:                                                             // 5
+//                                                                                                     // 6
+// - `"DOUBLE"` - `{{foo}}`                                                                            // 7
+// - `"TRIPLE"` - `{{{foo}}}`                                                                          // 8
+// - `"EXPR"` - `(foo)`                                                                                // 9
+// - `"COMMENT"` - `{{! foo}}`                                                                         // 10
+// - `"BLOCKCOMMENT" - `{{!-- foo--}}`                                                                 // 11
+// - `"INCLUSION"` - `{{> foo}}`                                                                       // 12
+// - `"BLOCKOPEN"` - `{{#foo}}`                                                                        // 13
+// - `"BLOCKCLOSE"` - `{{/foo}}`                                                                       // 14
+// - `"ELSE"` - `{{else}}`                                                                             // 15
+// - `"ESCAPE"` - `{{|`, `{{{|`, `{{{{|` and so on                                                     // 16
+//                                                                                                     // 17
+// Besides `type`, the mandatory properties of a TemplateTag are:                                      // 18
+//                                                                                                     // 19
+// - `path` - An array of one or more strings.  The path of `{{foo.bar}}`                              // 20
+//   is `["foo", "bar"]`.  Applies to DOUBLE, TRIPLE, INCLUSION, BLOCKOPEN,                            // 21
+//   and BLOCKCLOSE.                                                                                   // 22
+//                                                                                                     // 23
+// - `args` - An array of zero or more argument specs.  An argument spec                               // 24
+//   is a two or three element array, consisting of a type, value, and                                 // 25
+//   optional keyword name.  For example, the `args` of `{{foo "bar" x=3}}`                            // 26
+//   are `[["STRING", "bar"], ["NUMBER", 3, "x"]]`.  Applies to DOUBLE,                                // 27
+//   TRIPLE, INCLUSION, and BLOCKOPEN.                                                                 // 28
+//                                                                                                     // 29
+// - `value` - A string of the comment's text. Applies to COMMENT and                                  // 30
+//   BLOCKCOMMENT.                                                                                     // 31
+//                                                                                                     // 32
+// These additional are typically set during parsing:                                                  // 33
+//                                                                                                     // 34
+// - `position` - The HTMLTools.TEMPLATE_TAG_POSITION specifying at what sort                          // 35
+//   of site the TemplateTag was encountered (e.g. at element level or as                              // 36
+//   part of an attribute value). Its absence implies                                                  // 37
+//   TEMPLATE_TAG_POSITION.ELEMENT.                                                                    // 38
+//                                                                                                     // 39
+// - `content` and `elseContent` - When a BLOCKOPEN tag's contents are                                 // 40
+//   parsed, they are put here.  `elseContent` will only be present if                                 // 41
+//   an `{{else}}` was found.                                                                          // 42
+                                                                                                       // 43
+var TEMPLATE_TAG_POSITION = HTMLTools.TEMPLATE_TAG_POSITION;                                           // 44
+                                                                                                       // 45
+TemplateTag = SpacebarsCompiler.TemplateTag = function () {                                            // 46
+  HTMLTools.TemplateTag.apply(this, arguments);                                                        // 47
+};                                                                                                     // 48
+TemplateTag.prototype = new HTMLTools.TemplateTag;                                                     // 49
+TemplateTag.prototype.constructorName = 'SpacebarsCompiler.TemplateTag';                               // 50
+                                                                                                       // 51
+var makeStacheTagStartRegex = function (r) {                                                           // 52
+  return new RegExp(r.source + /(?![{>!#/])/.source,                                                   // 53
+                    r.ignoreCase ? 'i' : '');                                                          // 54
+};                                                                                                     // 55
+                                                                                                       // 56
+// "starts" regexes are used to see what type of template                                              // 57
+// tag the parser is looking at.  They must match a non-empty                                          // 58
+// result, but not the interesting part of the tag.                                                    // 59
+var starts = {                                                                                         // 60
+  ESCAPE: /^\{\{(?=\{*\|)/,                                                                            // 61
+  ELSE: makeStacheTagStartRegex(/^\{\{\s*else(?=[\s}])/i),                                             // 62
+  DOUBLE: makeStacheTagStartRegex(/^\{\{\s*(?!\s)/),                                                   // 63
+  TRIPLE: makeStacheTagStartRegex(/^\{\{\{\s*(?!\s)/),                                                 // 64
+  BLOCKCOMMENT: makeStacheTagStartRegex(/^\{\{\s*!--/),                                                // 65
+  COMMENT: makeStacheTagStartRegex(/^\{\{\s*!/),                                                       // 66
+  INCLUSION: makeStacheTagStartRegex(/^\{\{\s*>\s*(?!\s)/),                                            // 67
+  BLOCKOPEN: makeStacheTagStartRegex(/^\{\{\s*#\s*(?!\s)/),                                            // 68
+  BLOCKCLOSE: makeStacheTagStartRegex(/^\{\{\s*\/\s*(?!\s)/)                                           // 69
+};                                                                                                     // 70
+                                                                                                       // 71
+var ends = {                                                                                           // 72
+  DOUBLE: /^\s*\}\}/,                                                                                  // 73
+  TRIPLE: /^\s*\}\}\}/,                                                                                // 74
+  EXPR: /^\s*\)/                                                                                       // 75
+};                                                                                                     // 76
+                                                                                                       // 77
+var endsString = {                                                                                     // 78
+  DOUBLE: '}}',                                                                                        // 79
+  TRIPLE: '}}}',                                                                                       // 80
+  EXPR: ')'                                                                                            // 81
+};                                                                                                     // 82
+                                                                                                       // 83
+// Parse a tag from the provided scanner or string.  If the input                                      // 84
+// doesn't start with `{{`, returns null.  Otherwise, either succeeds                                  // 85
+// and returns a SpacebarsCompiler.TemplateTag, or throws an error (using                              // 86
+// `scanner.fatal` if a scanner is provided).                                                          // 87
+TemplateTag.parse = function (scannerOrString) {                                                       // 88
+  var scanner = scannerOrString;                                                                       // 89
+  if (typeof scanner === 'string')                                                                     // 90
+    scanner = new HTMLTools.Scanner(scannerOrString);                                                  // 91
+                                                                                                       // 92
+  if (! (scanner.peek() === '{' &&                                                                     // 93
+         (scanner.rest()).slice(0, 2) === '{{'))                                                       // 94
+    return null;                                                                                       // 95
+                                                                                                       // 96
+  var run = function (regex) {                                                                         // 97
+    // regex is assumed to start with `^`                                                              // 98
+    var result = regex.exec(scanner.rest());                                                           // 99
     if (! result)                                                                                      // 100
       return null;                                                                                     // 101
     var ret = result[0];                                                                               // 102
@@ -260,7 +252,7 @@ TemplateTag.parse = function (scannerOrString) {                                
         return ['PATH', scanPath()];                                                                   // 232
       }                                                                                                // 233
     } else {                                                                                           // 234
-      expected('identifier, number, string, boolean, null, or a sub expression enclosed in "(", ")"');        // 243
+      expected('identifier, number, string, boolean, null, or a sub expression enclosed in "(", ")"');
     }                                                                                                  // 236
   };                                                                                                   // 237
                                                                                                        // 238
@@ -533,122 +525,122 @@ var validateTag = function (ttag, scanner) {                                    
                                                                                                        // 505
 };                                                                                                     // 506
                                                                                                        // 507
-/////////////////////////////////////////////////////////////////////////////////////////////////////////     // 516
-                                                                                                              // 517
-}).call(this);                                                                                                // 518
-                                                                                                              // 519
-                                                                                                              // 520
-                                                                                                              // 521
-                                                                                                              // 522
-                                                                                                              // 523
-                                                                                                              // 524
-(function(){                                                                                                  // 525
-                                                                                                              // 526
-/////////////////////////////////////////////////////////////////////////////////////////////////////////     // 527
-//                                                                                                     //     // 528
-// packages/spacebars-compiler/optimizer.js                                                            //     // 529
-//                                                                                                     //     // 530
-/////////////////////////////////////////////////////////////////////////////////////////////////////////     // 531
-                                                                                                       //     // 532
-// Optimize parts of an HTMLjs tree into raw HTML strings when they don't                              // 1   // 533
-// contain template tags.                                                                              // 2   // 534
-                                                                                                       // 3   // 535
-var constant = function (value) {                                                                      // 4   // 536
-  return function () { return value; };                                                                // 5   // 537
-};                                                                                                     // 6   // 538
-                                                                                                       // 7   // 539
-var OPTIMIZABLE = {                                                                                    // 8   // 540
-  NONE: 0,                                                                                             // 9   // 541
-  PARTS: 1,                                                                                            // 10  // 542
-  FULL: 2                                                                                              // 11  // 543
-};                                                                                                     // 12  // 544
-                                                                                                       // 13  // 545
-// We can only turn content into an HTML string if it contains no template                             // 14  // 546
-// tags and no "tricky" HTML tags.  If we can optimize the entire content                              // 15  // 547
-// into a string, we return OPTIMIZABLE.FULL.  If the we are given an                                  // 16  // 548
-// unoptimizable node, we return OPTIMIZABLE.NONE.  If we are given a tree                             // 17  // 549
-// that contains an unoptimizable node somewhere, we return OPTIMIZABLE.PARTS.                         // 18  // 550
-//                                                                                                     // 19  // 551
-// For example, we always create SVG elements programmatically, since SVG                              // 20  // 552
-// doesn't have innerHTML.  If we are given an SVG element, we return NONE.                            // 21  // 553
-// However, if we are given a big tree that contains SVG somewhere, we                                 // 22  // 554
-// return PARTS so that the optimizer can descend into the tree and optimize                           // 23  // 555
-// other parts of it.                                                                                  // 24  // 556
-var CanOptimizeVisitor = HTML.Visitor.extend();                                                        // 25  // 557
-CanOptimizeVisitor.def({                                                                               // 26  // 558
-  visitNull: constant(OPTIMIZABLE.FULL),                                                               // 27  // 559
-  visitPrimitive: constant(OPTIMIZABLE.FULL),                                                          // 28  // 560
-  visitComment: constant(OPTIMIZABLE.FULL),                                                            // 29  // 561
-  visitCharRef: constant(OPTIMIZABLE.FULL),                                                            // 30  // 562
-  visitRaw: constant(OPTIMIZABLE.FULL),                                                                // 31  // 563
-  visitObject: constant(OPTIMIZABLE.NONE),                                                             // 32  // 564
-  visitFunction: constant(OPTIMIZABLE.NONE),                                                           // 33  // 565
-  visitArray: function (x) {                                                                           // 34  // 566
-    for (var i = 0; i < x.length; i++)                                                                 // 35  // 567
-      if (this.visit(x[i]) !== OPTIMIZABLE.FULL)                                                       // 36  // 568
-        return OPTIMIZABLE.PARTS;                                                                      // 37  // 569
-    return OPTIMIZABLE.FULL;                                                                           // 38  // 570
-  },                                                                                                   // 39  // 571
-  visitTag: function (tag) {                                                                           // 40  // 572
-    var tagName = tag.tagName;                                                                         // 41  // 573
-    if (tagName === 'textarea') {                                                                      // 42  // 574
-      // optimizing into a TEXTAREA's RCDATA would require being a little                              // 43  // 575
-      // more clever.                                                                                  // 44  // 576
-      return OPTIMIZABLE.NONE;                                                                         // 45  // 577
-    } else if (tagName === 'script') {                                                                 // 46  // 578
-      // script tags don't work when rendered from strings                                             // 47  // 579
-      return OPTIMIZABLE.NONE;                                                                         // 48  // 580
-    } else if (! (HTML.isKnownElement(tagName) &&                                                      // 49  // 581
-                  ! HTML.isKnownSVGElement(tagName))) {                                                // 50  // 582
-      // foreign elements like SVG can't be stringified for innerHTML.                                 // 51  // 583
-      return OPTIMIZABLE.NONE;                                                                         // 52  // 584
-    } else if (tagName === 'table') {                                                                  // 53  // 585
-      // Avoid ever producing HTML containing `<table><tr>...`, because the                            // 54  // 586
-      // browser will insert a TBODY.  If we just `createElement("table")` and                         // 55  // 587
-      // `createElement("tr")`, on the other hand, no TBODY is necessary                               // 56  // 588
-      // (assuming IE 8+).                                                                             // 57  // 589
-      return OPTIMIZABLE.NONE;                                                                         // 58  // 590
-    }                                                                                                  // 59  // 591
-                                                                                                       // 60  // 592
-    var children = tag.children;                                                                       // 61  // 593
-    for (var i = 0; i < children.length; i++)                                                          // 62  // 594
-      if (this.visit(children[i]) !== OPTIMIZABLE.FULL)                                                // 63  // 595
-        return OPTIMIZABLE.PARTS;                                                                      // 64  // 596
-                                                                                                       // 65  // 597
-    if (this.visitAttributes(tag.attrs) !== OPTIMIZABLE.FULL)                                          // 66  // 598
-      return OPTIMIZABLE.PARTS;                                                                        // 67  // 599
-                                                                                                       // 68  // 600
-    return OPTIMIZABLE.FULL;                                                                           // 69  // 601
-  },                                                                                                   // 70  // 602
-  visitAttributes: function (attrs) {                                                                  // 71  // 603
-    if (attrs) {                                                                                       // 72  // 604
-      var isArray = HTML.isArray(attrs);                                                               // 73  // 605
-      for (var i = 0; i < (isArray ? attrs.length : 1); i++) {                                         // 74  // 606
-        var a = (isArray ? attrs[i] : attrs);                                                          // 75  // 607
-        if ((typeof a !== 'object') || (a instanceof HTMLTools.TemplateTag))                           // 76  // 608
-          return OPTIMIZABLE.PARTS;                                                                    // 77  // 609
-        for (var k in a)                                                                               // 78  // 610
-          if (this.visit(a[k]) !== OPTIMIZABLE.FULL)                                                   // 79  // 611
-            return OPTIMIZABLE.PARTS;                                                                  // 80  // 612
-      }                                                                                                // 81  // 613
-    }                                                                                                  // 82  // 614
-    return OPTIMIZABLE.FULL;                                                                           // 83  // 615
-  }                                                                                                    // 84  // 616
-});                                                                                                    // 85  // 617
-                                                                                                       // 86  // 618
-var getOptimizability = function (content) {                                                           // 87  // 619
-  return (new CanOptimizeVisitor).visit(content);                                                      // 88  // 620
-};                                                                                                     // 89  // 621
-                                                                                                       // 90  // 622
-var toRaw = function (x) {                                                                             // 91  // 623
-  return HTML.Raw(HTML.toHTML(x));                                                                     // 92  // 624
-};                                                                                                     // 93  // 625
-                                                                                                       // 94  // 626
-var TreeTransformer = HTML.TransformingVisitor.extend();                                               // 95  // 627
-TreeTransformer.def({                                                                                  // 96  // 628
-  visitAttributes: function (attrs/*, ...*/) {                                                         // 97  // 629
-    // pass template tags through by default                                                           // 98  // 630
-    if (attrs instanceof HTMLTools.TemplateTag)                                                        // 99  // 631
+/////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+}).call(this);
+
+
+
+
+
+
+(function(){
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                                     //
+// packages/spacebars-compiler/optimizer.js                                                            //
+//                                                                                                     //
+/////////////////////////////////////////////////////////////////////////////////////////////////////////
+                                                                                                       //
+// Optimize parts of an HTMLjs tree into raw HTML strings when they don't                              // 1
+// contain template tags.                                                                              // 2
+                                                                                                       // 3
+var constant = function (value) {                                                                      // 4
+  return function () { return value; };                                                                // 5
+};                                                                                                     // 6
+                                                                                                       // 7
+var OPTIMIZABLE = {                                                                                    // 8
+  NONE: 0,                                                                                             // 9
+  PARTS: 1,                                                                                            // 10
+  FULL: 2                                                                                              // 11
+};                                                                                                     // 12
+                                                                                                       // 13
+// We can only turn content into an HTML string if it contains no template                             // 14
+// tags and no "tricky" HTML tags.  If we can optimize the entire content                              // 15
+// into a string, we return OPTIMIZABLE.FULL.  If the we are given an                                  // 16
+// unoptimizable node, we return OPTIMIZABLE.NONE.  If we are given a tree                             // 17
+// that contains an unoptimizable node somewhere, we return OPTIMIZABLE.PARTS.                         // 18
+//                                                                                                     // 19
+// For example, we always create SVG elements programmatically, since SVG                              // 20
+// doesn't have innerHTML.  If we are given an SVG element, we return NONE.                            // 21
+// However, if we are given a big tree that contains SVG somewhere, we                                 // 22
+// return PARTS so that the optimizer can descend into the tree and optimize                           // 23
+// other parts of it.                                                                                  // 24
+var CanOptimizeVisitor = HTML.Visitor.extend();                                                        // 25
+CanOptimizeVisitor.def({                                                                               // 26
+  visitNull: constant(OPTIMIZABLE.FULL),                                                               // 27
+  visitPrimitive: constant(OPTIMIZABLE.FULL),                                                          // 28
+  visitComment: constant(OPTIMIZABLE.FULL),                                                            // 29
+  visitCharRef: constant(OPTIMIZABLE.FULL),                                                            // 30
+  visitRaw: constant(OPTIMIZABLE.FULL),                                                                // 31
+  visitObject: constant(OPTIMIZABLE.NONE),                                                             // 32
+  visitFunction: constant(OPTIMIZABLE.NONE),                                                           // 33
+  visitArray: function (x) {                                                                           // 34
+    for (var i = 0; i < x.length; i++)                                                                 // 35
+      if (this.visit(x[i]) !== OPTIMIZABLE.FULL)                                                       // 36
+        return OPTIMIZABLE.PARTS;                                                                      // 37
+    return OPTIMIZABLE.FULL;                                                                           // 38
+  },                                                                                                   // 39
+  visitTag: function (tag) {                                                                           // 40
+    var tagName = tag.tagName;                                                                         // 41
+    if (tagName === 'textarea') {                                                                      // 42
+      // optimizing into a TEXTAREA's RCDATA would require being a little                              // 43
+      // more clever.                                                                                  // 44
+      return OPTIMIZABLE.NONE;                                                                         // 45
+    } else if (tagName === 'script') {                                                                 // 46
+      // script tags don't work when rendered from strings                                             // 47
+      return OPTIMIZABLE.NONE;                                                                         // 48
+    } else if (! (HTML.isKnownElement(tagName) &&                                                      // 49
+                  ! HTML.isKnownSVGElement(tagName))) {                                                // 50
+      // foreign elements like SVG can't be stringified for innerHTML.                                 // 51
+      return OPTIMIZABLE.NONE;                                                                         // 52
+    } else if (tagName === 'table') {                                                                  // 53
+      // Avoid ever producing HTML containing `<table><tr>...`, because the                            // 54
+      // browser will insert a TBODY.  If we just `createElement("table")` and                         // 55
+      // `createElement("tr")`, on the other hand, no TBODY is necessary                               // 56
+      // (assuming IE 8+).                                                                             // 57
+      return OPTIMIZABLE.NONE;                                                                         // 58
+    }                                                                                                  // 59
+                                                                                                       // 60
+    var children = tag.children;                                                                       // 61
+    for (var i = 0; i < children.length; i++)                                                          // 62
+      if (this.visit(children[i]) !== OPTIMIZABLE.FULL)                                                // 63
+        return OPTIMIZABLE.PARTS;                                                                      // 64
+                                                                                                       // 65
+    if (this.visitAttributes(tag.attrs) !== OPTIMIZABLE.FULL)                                          // 66
+      return OPTIMIZABLE.PARTS;                                                                        // 67
+                                                                                                       // 68
+    return OPTIMIZABLE.FULL;                                                                           // 69
+  },                                                                                                   // 70
+  visitAttributes: function (attrs) {                                                                  // 71
+    if (attrs) {                                                                                       // 72
+      var isArray = HTML.isArray(attrs);                                                               // 73
+      for (var i = 0; i < (isArray ? attrs.length : 1); i++) {                                         // 74
+        var a = (isArray ? attrs[i] : attrs);                                                          // 75
+        if ((typeof a !== 'object') || (a instanceof HTMLTools.TemplateTag))                           // 76
+          return OPTIMIZABLE.PARTS;                                                                    // 77
+        for (var k in a)                                                                               // 78
+          if (this.visit(a[k]) !== OPTIMIZABLE.FULL)                                                   // 79
+            return OPTIMIZABLE.PARTS;                                                                  // 80
+      }                                                                                                // 81
+    }                                                                                                  // 82
+    return OPTIMIZABLE.FULL;                                                                           // 83
+  }                                                                                                    // 84
+});                                                                                                    // 85
+                                                                                                       // 86
+var getOptimizability = function (content) {                                                           // 87
+  return (new CanOptimizeVisitor).visit(content);                                                      // 88
+};                                                                                                     // 89
+                                                                                                       // 90
+var toRaw = function (x) {                                                                             // 91
+  return HTML.Raw(HTML.toHTML(x));                                                                     // 92
+};                                                                                                     // 93
+                                                                                                       // 94
+var TreeTransformer = HTML.TransformingVisitor.extend();                                               // 95
+TreeTransformer.def({                                                                                  // 96
+  visitAttributes: function (attrs/*, ...*/) {                                                         // 97
+    // pass template tags through by default                                                           // 98
+    if (attrs instanceof HTMLTools.TemplateTag)                                                        // 99
       return attrs;                                                                                    // 100
                                                                                                        // 101
     return HTML.TransformingVisitor.prototype.visitAttributes.apply(                                   // 102
@@ -740,184 +732,184 @@ SpacebarsCompiler.optimize = function (tree) {                                  
   return tree;                                                                                         // 188
 };                                                                                                     // 189
                                                                                                        // 190
-/////////////////////////////////////////////////////////////////////////////////////////////////////////     // 723
-                                                                                                              // 724
-}).call(this);                                                                                                // 725
-                                                                                                              // 726
-                                                                                                              // 727
-                                                                                                              // 728
-                                                                                                              // 729
-                                                                                                              // 730
-                                                                                                              // 731
-(function(){                                                                                                  // 732
-                                                                                                              // 733
-/////////////////////////////////////////////////////////////////////////////////////////////////////////     // 734
-//                                                                                                     //     // 735
-// packages/spacebars-compiler/react.js                                                                //     // 736
-//                                                                                                     //     // 737
-/////////////////////////////////////////////////////////////////////////////////////////////////////////     // 738
-                                                                                                       //     // 739
-// A visitor to ensure that React components included via the `{{>                                     // 1   // 740
-// React}}` template defined in the react-template-helper package are                                  // 2   // 741
-// the only child in their parent component. Otherwise `React.render`                                  // 3   // 742
-// would eliminate all of their sibling nodes.                                                         // 4   // 743
-//                                                                                                     // 5   // 744
-// It's a little strange that this logic is in spacebars-compiler if                                   // 6   // 745
-// it's only relevant to a specific package but there's no way to have                                 // 7   // 746
-// a package hook into a build plugin.                                                                 // 8   // 747
-ReactComponentSiblingForbidder = HTML.Visitor.extend();                                                // 9   // 748
-ReactComponentSiblingForbidder.def({                                                                   // 10  // 749
-  visitArray: function (array, parentTag) {                                                            // 11  // 750
-    for (var i = 0; i < array.length; i++) {                                                           // 12  // 751
-      this.visit(array[i], parentTag);                                                                 // 13  // 752
-    }                                                                                                  // 14  // 753
-  },                                                                                                   // 15  // 754
-  visitObject: function (obj, parentTag) {                                                             // 16  // 755
-    if (obj.type === "INCLUSION" && obj.path.length === 1 && obj.path[0] === "React") {                // 17  // 756
-      if (!parentTag) {                                                                                // 18  // 757
-        throw new Error(                                                                               // 19  // 758
-          "{{> React}} must be used in a container element"                                            // 20  // 759
-            + (this.sourceName ? (" in " + this.sourceName) : "")                                      // 21  // 760
+/////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+}).call(this);
+
+
+
+
+
+
+(function(){
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                                     //
+// packages/spacebars-compiler/react.js                                                                //
+//                                                                                                     //
+/////////////////////////////////////////////////////////////////////////////////////////////////////////
+                                                                                                       //
+// A visitor to ensure that React components included via the `{{>                                     // 1
+// React}}` template defined in the react-template-helper package are                                  // 2
+// the only child in their parent component. Otherwise `React.render`                                  // 3
+// would eliminate all of their sibling nodes.                                                         // 4
+//                                                                                                     // 5
+// It's a little strange that this logic is in spacebars-compiler if                                   // 6
+// it's only relevant to a specific package but there's no way to have                                 // 7
+// a package hook into a build plugin.                                                                 // 8
+ReactComponentSiblingForbidder = HTML.Visitor.extend();                                                // 9
+ReactComponentSiblingForbidder.def({                                                                   // 10
+  visitArray: function (array, parentTag) {                                                            // 11
+    for (var i = 0; i < array.length; i++) {                                                           // 12
+      this.visit(array[i], parentTag);                                                                 // 13
+    }                                                                                                  // 14
+  },                                                                                                   // 15
+  visitObject: function (obj, parentTag) {                                                             // 16
+    if (obj.type === "INCLUSION" && obj.path.length === 1 && obj.path[0] === "React") {                // 17
+      if (!parentTag) {                                                                                // 18
+        throw new Error(                                                                               // 19
+          "{{> React}} must be used in a container element"                                            // 20
+            + (this.sourceName ? (" in " + this.sourceName) : "")                                      // 21
                + ". Learn more at https://github.com/meteor/meteor/wiki/React-components-must-be-the-only-thing-in-their-wrapper-element");
-      }                                                                                                // 23  // 762
-                                                                                                       // 24  // 763
-      var numSiblings = 0;                                                                             // 25  // 764
-      for (var i = 0; i < parentTag.children.length; i++) {                                            // 26  // 765
-        var child = parentTag.children[i];                                                             // 27  // 766
-        if (child !== obj && !(typeof child === "string" && child.match(/^\s*$/))) {                   // 28  // 767
-          numSiblings++;                                                                               // 29  // 768
-        }                                                                                              // 30  // 769
-      }                                                                                                // 31  // 770
-                                                                                                       // 32  // 771
-      if (numSiblings > 0) {                                                                           // 33  // 772
-        throw new Error(                                                                               // 34  // 773
-          "{{> React}} must be used as the only child in a container element"                          // 35  // 774
-            + (this.sourceName ? (" in " + this.sourceName) : "")                                      // 36  // 775
+      }                                                                                                // 23
+                                                                                                       // 24
+      var numSiblings = 0;                                                                             // 25
+      for (var i = 0; i < parentTag.children.length; i++) {                                            // 26
+        var child = parentTag.children[i];                                                             // 27
+        if (child !== obj && !(typeof child === "string" && child.match(/^\s*$/))) {                   // 28
+          numSiblings++;                                                                               // 29
+        }                                                                                              // 30
+      }                                                                                                // 31
+                                                                                                       // 32
+      if (numSiblings > 0) {                                                                           // 33
+        throw new Error(                                                                               // 34
+          "{{> React}} must be used as the only child in a container element"                          // 35
+            + (this.sourceName ? (" in " + this.sourceName) : "")                                      // 36
                + ". Learn more at https://github.com/meteor/meteor/wiki/React-components-must-be-the-only-thing-in-their-wrapper-element");
-      }                                                                                                // 38  // 777
-    }                                                                                                  // 39  // 778
-  },                                                                                                   // 40  // 779
-  visitTag: function (tag) {                                                                           // 41  // 780
-    this.visitArray(tag.children, tag /*parentTag*/);                                                  // 42  // 781
-  }                                                                                                    // 43  // 782
-});                                                                                                    // 44  // 783
-                                                                                                       // 45  // 784
-/////////////////////////////////////////////////////////////////////////////////////////////////////////     // 785
-                                                                                                              // 786
-}).call(this);                                                                                                // 787
-                                                                                                              // 788
-                                                                                                              // 789
-                                                                                                              // 790
-                                                                                                              // 791
-                                                                                                              // 792
-                                                                                                              // 793
-(function(){                                                                                                  // 794
-                                                                                                              // 795
-/////////////////////////////////////////////////////////////////////////////////////////////////////////     // 796
-//                                                                                                     //     // 797
-// packages/spacebars-compiler/codegen.js                                                              //     // 798
-//                                                                                                     //     // 799
-/////////////////////////////////////////////////////////////////////////////////////////////////////////     // 800
-                                                                                                       //     // 801
-// ============================================================                                        // 1   // 802
-// Code-generation of template tags                                                                    // 2   // 803
-                                                                                                       // 3   // 804
-// The `CodeGen` class currently has no instance state, but in theory                                  // 4   // 805
-// it could be useful to track per-function state, like whether we                                     // 5   // 806
-// need to emit `var self = this` or not.                                                              // 6   // 807
-var CodeGen = SpacebarsCompiler.CodeGen = function () {};                                              // 7   // 808
-                                                                                                       // 8   // 809
-var builtInBlockHelpers = SpacebarsCompiler._builtInBlockHelpers = {                                   // 9   // 810
-  'if': 'Blaze.If',                                                                                    // 10  // 811
-  'unless': 'Blaze.Unless',                                                                            // 11  // 812
-  'with': 'Spacebars.With',                                                                            // 12  // 813
-  'each': 'Blaze.Each',                                                                                // 13  // 814
-  'let': 'Blaze.Let'                                                                                   // 14  // 815
-};                                                                                                     // 15  // 816
-                                                                                                       // 16  // 817
-                                                                                                       // 17  // 818
-// Mapping of "macros" which, when preceded by `Template.`, expand                                     // 18  // 819
-// to special code rather than following the lookup rules for dotted                                   // 19  // 820
-// symbols.                                                                                            // 20  // 821
-var builtInTemplateMacros = {                                                                          // 21  // 822
-  // `view` is a local variable defined in the generated render                                        // 22  // 823
-  // function for the template in which `Template.contentBlock` or                                     // 23  // 824
-  // `Template.elseBlock` is invoked.                                                                  // 24  // 825
-  'contentBlock': 'view.templateContentBlock',                                                         // 25  // 826
-  'elseBlock': 'view.templateElseBlock',                                                               // 26  // 827
-                                                                                                       // 27  // 828
-  // Confusingly, this makes `{{> Template.dynamic}}` an alias                                         // 28  // 829
-  // for `{{> __dynamic}}`, where "__dynamic" is the template that                                     // 29  // 830
-  // implements the dynamic template feature.                                                          // 30  // 831
-  'dynamic': 'Template.__dynamic',                                                                     // 31  // 832
-                                                                                                       // 32  // 833
-  'subscriptionsReady': 'view.templateInstance().subscriptionsReady()'                                 // 33  // 834
-};                                                                                                     // 34  // 835
-                                                                                                       // 35  // 836
-var additionalReservedNames = ["body", "toString", "instance",  "constructor",                         // 36  // 837
-  "toString", "toLocaleString", "valueOf", "hasOwnProperty", "isPrototypeOf",                          // 37  // 838
-  "propertyIsEnumerable", "__defineGetter__", "__lookupGetter__",                                      // 38  // 839
-  "__defineSetter__", "__lookupSetter__", "__proto__", "dynamic",                                      // 39  // 840
-  "registerHelper", "currentData", "parentData"];                                                      // 40  // 841
-                                                                                                       // 41  // 842
-// A "reserved name" can't be used as a <template> name.  This                                         // 42  // 843
-// function is used by the template file scanner.                                                      // 43  // 844
-//                                                                                                     // 44  // 845
-// Note that the runtime imposes additional restrictions, for example                                  // 45  // 846
-// banning the name "body" and names of built-in object properties                                     // 46  // 847
-// like "toString".                                                                                    // 47  // 848
-SpacebarsCompiler.isReservedName = function (name) {                                                   // 48  // 849
-  return builtInBlockHelpers.hasOwnProperty(name) ||                                                   // 49  // 850
-    builtInTemplateMacros.hasOwnProperty(name) ||                                                      // 50  // 851
-    _.indexOf(additionalReservedNames, name) > -1;                                                     // 51  // 852
-};                                                                                                     // 52  // 853
-                                                                                                       // 53  // 854
-var makeObjectLiteral = function (obj) {                                                               // 54  // 855
-  var parts = [];                                                                                      // 55  // 856
-  for (var k in obj)                                                                                   // 56  // 857
-    parts.push(BlazeTools.toObjectLiteralKey(k) + ': ' + obj[k]);                                      // 57  // 858
-  return '{' + parts.join(', ') + '}';                                                                 // 58  // 859
-};                                                                                                     // 59  // 860
-                                                                                                       // 60  // 861
-_.extend(CodeGen.prototype, {                                                                          // 61  // 862
-  codeGenTemplateTag: function (tag) {                                                                 // 62  // 863
-    var self = this;                                                                                   // 63  // 864
-    if (tag.position === HTMLTools.TEMPLATE_TAG_POSITION.IN_START_TAG) {                               // 64  // 865
-      // Special dynamic attributes: `<div {{attrs}}>...`                                              // 65  // 866
-      // only `tag.type === 'DOUBLE'` allowed (by earlier validation)                                  // 66  // 867
-      return BlazeTools.EmitCode('function () { return ' +                                             // 67  // 868
-          self.codeGenMustache(tag.path, tag.args, 'attrMustache')                                     // 68  // 869
-          + '; }');                                                                                    // 69  // 870
-    } else {                                                                                           // 70  // 871
-      if (tag.type === 'DOUBLE' || tag.type === 'TRIPLE') {                                            // 71  // 872
-        var code = self.codeGenMustache(tag.path, tag.args);                                           // 72  // 873
-        if (tag.type === 'TRIPLE') {                                                                   // 73  // 874
-          code = 'Spacebars.makeRaw(' + code + ')';                                                    // 74  // 875
-        }                                                                                              // 75  // 876
-        if (tag.position !== HTMLTools.TEMPLATE_TAG_POSITION.IN_ATTRIBUTE) {                           // 76  // 877
-          // Reactive attributes are already wrapped in a function,                                    // 77  // 878
-          // and there's no fine-grained reactivity.                                                   // 78  // 879
-          // Anywhere else, we need to create a View.                                                  // 79  // 880
-          code = 'Blaze.View(' +                                                                       // 80  // 881
-            BlazeTools.toJSLiteral('lookup:' + tag.path.join('.')) + ', ' +                            // 81  // 882
-            'function () { return ' + code + '; })';                                                   // 82  // 883
-        }                                                                                              // 83  // 884
-        return BlazeTools.EmitCode(code);                                                              // 84  // 885
-      } else if (tag.type === 'INCLUSION' || tag.type === 'BLOCKOPEN') {                               // 85  // 886
-        var path = tag.path;                                                                           // 86  // 887
-        var args = tag.args;                                                                           // 87  // 888
-                                                                                                       // 88  // 889
-        if (tag.type === 'BLOCKOPEN' &&                                                                // 89  // 890
-            builtInBlockHelpers.hasOwnProperty(path[0])) {                                             // 90  // 891
-          // if, unless, with, each.                                                                   // 91  // 892
-          //                                                                                           // 92  // 893
-          // If someone tries to do `{{> if}}`, we don't                                               // 93  // 894
-          // get here, but an error is thrown when we try to codegen the path.                         // 94  // 895
-                                                                                                       // 95  // 896
-          // Note: If we caught these errors earlier, while scanning, we'd be able to                  // 96  // 897
-          // provide nice line numbers.                                                                // 97  // 898
-          if (path.length > 1)                                                                         // 98  // 899
-            throw new Error("Unexpected dotted path beginning with " + path[0]);                       // 99  // 900
+      }                                                                                                // 38
+    }                                                                                                  // 39
+  },                                                                                                   // 40
+  visitTag: function (tag) {                                                                           // 41
+    this.visitArray(tag.children, tag /*parentTag*/);                                                  // 42
+  }                                                                                                    // 43
+});                                                                                                    // 44
+                                                                                                       // 45
+/////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+}).call(this);
+
+
+
+
+
+
+(function(){
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                                     //
+// packages/spacebars-compiler/codegen.js                                                              //
+//                                                                                                     //
+/////////////////////////////////////////////////////////////////////////////////////////////////////////
+                                                                                                       //
+// ============================================================                                        // 1
+// Code-generation of template tags                                                                    // 2
+                                                                                                       // 3
+// The `CodeGen` class currently has no instance state, but in theory                                  // 4
+// it could be useful to track per-function state, like whether we                                     // 5
+// need to emit `var self = this` or not.                                                              // 6
+var CodeGen = SpacebarsCompiler.CodeGen = function () {};                                              // 7
+                                                                                                       // 8
+var builtInBlockHelpers = SpacebarsCompiler._builtInBlockHelpers = {                                   // 9
+  'if': 'Blaze.If',                                                                                    // 10
+  'unless': 'Blaze.Unless',                                                                            // 11
+  'with': 'Spacebars.With',                                                                            // 12
+  'each': 'Blaze.Each',                                                                                // 13
+  'let': 'Blaze.Let'                                                                                   // 14
+};                                                                                                     // 15
+                                                                                                       // 16
+                                                                                                       // 17
+// Mapping of "macros" which, when preceded by `Template.`, expand                                     // 18
+// to special code rather than following the lookup rules for dotted                                   // 19
+// symbols.                                                                                            // 20
+var builtInTemplateMacros = {                                                                          // 21
+  // `view` is a local variable defined in the generated render                                        // 22
+  // function for the template in which `Template.contentBlock` or                                     // 23
+  // `Template.elseBlock` is invoked.                                                                  // 24
+  'contentBlock': 'view.templateContentBlock',                                                         // 25
+  'elseBlock': 'view.templateElseBlock',                                                               // 26
+                                                                                                       // 27
+  // Confusingly, this makes `{{> Template.dynamic}}` an alias                                         // 28
+  // for `{{> __dynamic}}`, where "__dynamic" is the template that                                     // 29
+  // implements the dynamic template feature.                                                          // 30
+  'dynamic': 'Template.__dynamic',                                                                     // 31
+                                                                                                       // 32
+  'subscriptionsReady': 'view.templateInstance().subscriptionsReady()'                                 // 33
+};                                                                                                     // 34
+                                                                                                       // 35
+var additionalReservedNames = ["body", "toString", "instance",  "constructor",                         // 36
+  "toString", "toLocaleString", "valueOf", "hasOwnProperty", "isPrototypeOf",                          // 37
+  "propertyIsEnumerable", "__defineGetter__", "__lookupGetter__",                                      // 38
+  "__defineSetter__", "__lookupSetter__", "__proto__", "dynamic",                                      // 39
+  "registerHelper", "currentData", "parentData"];                                                      // 40
+                                                                                                       // 41
+// A "reserved name" can't be used as a <template> name.  This                                         // 42
+// function is used by the template file scanner.                                                      // 43
+//                                                                                                     // 44
+// Note that the runtime imposes additional restrictions, for example                                  // 45
+// banning the name "body" and names of built-in object properties                                     // 46
+// like "toString".                                                                                    // 47
+SpacebarsCompiler.isReservedName = function (name) {                                                   // 48
+  return builtInBlockHelpers.hasOwnProperty(name) ||                                                   // 49
+    builtInTemplateMacros.hasOwnProperty(name) ||                                                      // 50
+    _.indexOf(additionalReservedNames, name) > -1;                                                     // 51
+};                                                                                                     // 52
+                                                                                                       // 53
+var makeObjectLiteral = function (obj) {                                                               // 54
+  var parts = [];                                                                                      // 55
+  for (var k in obj)                                                                                   // 56
+    parts.push(BlazeTools.toObjectLiteralKey(k) + ': ' + obj[k]);                                      // 57
+  return '{' + parts.join(', ') + '}';                                                                 // 58
+};                                                                                                     // 59
+                                                                                                       // 60
+_.extend(CodeGen.prototype, {                                                                          // 61
+  codeGenTemplateTag: function (tag) {                                                                 // 62
+    var self = this;                                                                                   // 63
+    if (tag.position === HTMLTools.TEMPLATE_TAG_POSITION.IN_START_TAG) {                               // 64
+      // Special dynamic attributes: `<div {{attrs}}>...`                                              // 65
+      // only `tag.type === 'DOUBLE'` allowed (by earlier validation)                                  // 66
+      return BlazeTools.EmitCode('function () { return ' +                                             // 67
+          self.codeGenMustache(tag.path, tag.args, 'attrMustache')                                     // 68
+          + '; }');                                                                                    // 69
+    } else {                                                                                           // 70
+      if (tag.type === 'DOUBLE' || tag.type === 'TRIPLE') {                                            // 71
+        var code = self.codeGenMustache(tag.path, tag.args);                                           // 72
+        if (tag.type === 'TRIPLE') {                                                                   // 73
+          code = 'Spacebars.makeRaw(' + code + ')';                                                    // 74
+        }                                                                                              // 75
+        if (tag.position !== HTMLTools.TEMPLATE_TAG_POSITION.IN_ATTRIBUTE) {                           // 76
+          // Reactive attributes are already wrapped in a function,                                    // 77
+          // and there's no fine-grained reactivity.                                                   // 78
+          // Anywhere else, we need to create a View.                                                  // 79
+          code = 'Blaze.View(' +                                                                       // 80
+            BlazeTools.toJSLiteral('lookup:' + tag.path.join('.')) + ', ' +                            // 81
+            'function () { return ' + code + '; })';                                                   // 82
+        }                                                                                              // 83
+        return BlazeTools.EmitCode(code);                                                              // 84
+      } else if (tag.type === 'INCLUSION' || tag.type === 'BLOCKOPEN') {                               // 85
+        var path = tag.path;                                                                           // 86
+        var args = tag.args;                                                                           // 87
+                                                                                                       // 88
+        if (tag.type === 'BLOCKOPEN' &&                                                                // 89
+            builtInBlockHelpers.hasOwnProperty(path[0])) {                                             // 90
+          // if, unless, with, each.                                                                   // 91
+          //                                                                                           // 92
+          // If someone tries to do `{{> if}}`, we don't                                               // 93
+          // get here, but an error is thrown when we try to codegen the path.                         // 94
+                                                                                                       // 95
+          // Note: If we caught these errors earlier, while scanning, we'd be able to                  // 96
+          // provide nice line numbers.                                                                // 97
+          if (path.length > 1)                                                                         // 98
+            throw new Error("Unexpected dotted path beginning with " + path[0]);                       // 99
           if (! args.length)                                                                           // 100
             throw new Error("#" + path[0] + " requires an argument");                                  // 101
                                                                                                        // 102
@@ -1209,122 +1201,122 @@ _.extend(CodeGen.prototype, {                                                   
                                                                                                        // 388
 });                                                                                                    // 389
                                                                                                        // 390
-/////////////////////////////////////////////////////////////////////////////////////////////////////////     // 1192
-                                                                                                              // 1193
-}).call(this);                                                                                                // 1194
-                                                                                                              // 1195
-                                                                                                              // 1196
-                                                                                                              // 1197
-                                                                                                              // 1198
-                                                                                                              // 1199
-                                                                                                              // 1200
-(function(){                                                                                                  // 1201
-                                                                                                              // 1202
-/////////////////////////////////////////////////////////////////////////////////////////////////////////     // 1203
-//                                                                                                     //     // 1204
-// packages/spacebars-compiler/compiler.js                                                             //     // 1205
-//                                                                                                     //     // 1206
-/////////////////////////////////////////////////////////////////////////////////////////////////////////     // 1207
-                                                                                                       //     // 1208
-                                                                                                       // 1   // 1209
-SpacebarsCompiler.parse = function (input) {                                                           // 2   // 1210
-                                                                                                       // 3   // 1211
-  var tree = HTMLTools.parseFragment(                                                                  // 4   // 1212
-    input,                                                                                             // 5   // 1213
-    { getTemplateTag: TemplateTag.parseCompleteTag });                                                 // 6   // 1214
-                                                                                                       // 7   // 1215
-  return tree;                                                                                         // 8   // 1216
-};                                                                                                     // 9   // 1217
-                                                                                                       // 10  // 1218
-SpacebarsCompiler.compile = function (input, options) {                                                // 11  // 1219
-  var tree = SpacebarsCompiler.parse(input);                                                           // 12  // 1220
-  return SpacebarsCompiler.codeGen(tree, options);                                                     // 13  // 1221
-};                                                                                                     // 14  // 1222
-                                                                                                       // 15  // 1223
-SpacebarsCompiler._TemplateTagReplacer = HTML.TransformingVisitor.extend();                            // 16  // 1224
-SpacebarsCompiler._TemplateTagReplacer.def({                                                           // 17  // 1225
-  visitObject: function (x) {                                                                          // 18  // 1226
-    if (x instanceof HTMLTools.TemplateTag) {                                                          // 19  // 1227
-                                                                                                       // 20  // 1228
-      // Make sure all TemplateTags in attributes have the right                                       // 21  // 1229
-      // `.position` set on them.  This is a bit of a hack                                             // 22  // 1230
-      // (we shouldn't be mutating that here), but it allows                                           // 23  // 1231
-      // cleaner codegen of "synthetic" attributes like TEXTAREA's                                     // 24  // 1232
-      // "value", where the template tags were originally not                                          // 25  // 1233
-      // in an attribute.                                                                              // 26  // 1234
-      if (this.inAttributeValue)                                                                       // 27  // 1235
-        x.position = HTMLTools.TEMPLATE_TAG_POSITION.IN_ATTRIBUTE;                                     // 28  // 1236
-                                                                                                       // 29  // 1237
-      return this.codegen.codeGenTemplateTag(x);                                                       // 30  // 1238
-    }                                                                                                  // 31  // 1239
-                                                                                                       // 32  // 1240
-    return HTML.TransformingVisitor.prototype.visitObject.call(this, x);                               // 33  // 1241
-  },                                                                                                   // 34  // 1242
-  visitAttributes: function (attrs) {                                                                  // 35  // 1243
-    if (attrs instanceof HTMLTools.TemplateTag)                                                        // 36  // 1244
-      return this.codegen.codeGenTemplateTag(attrs);                                                   // 37  // 1245
-                                                                                                       // 38  // 1246
-    // call super (e.g. for case where `attrs` is an array)                                            // 39  // 1247
-    return HTML.TransformingVisitor.prototype.visitAttributes.call(this, attrs);                       // 40  // 1248
-  },                                                                                                   // 41  // 1249
-  visitAttribute: function (name, value, tag) {                                                        // 42  // 1250
-    this.inAttributeValue = true;                                                                      // 43  // 1251
-    var result = this.visit(value);                                                                    // 44  // 1252
-    this.inAttributeValue = false;                                                                     // 45  // 1253
-                                                                                                       // 46  // 1254
-    if (result !== value) {                                                                            // 47  // 1255
-      // some template tags must have been replaced, because otherwise                                 // 48  // 1256
-      // we try to keep things `===` when transforming.  Wrap the code                                 // 49  // 1257
-      // in a function as per the rules.  You can't have                                               // 50  // 1258
-      // `{id: Blaze.View(...)}` as an attributes dict because the View                                // 51  // 1259
-      // would be rendered more than once; you need to wrap it in a function                           // 52  // 1260
-      // so that it's a different View each time.                                                      // 53  // 1261
-      return BlazeTools.EmitCode(this.codegen.codeGenBlock(result));                                   // 54  // 1262
-    }                                                                                                  // 55  // 1263
-    return result;                                                                                     // 56  // 1264
-  }                                                                                                    // 57  // 1265
-});                                                                                                    // 58  // 1266
-                                                                                                       // 59  // 1267
-SpacebarsCompiler.codeGen = function (parseTree, options) {                                            // 60  // 1268
-  // is this a template, rather than a block passed to                                                 // 61  // 1269
-  // a block helper, say                                                                               // 62  // 1270
-  var isTemplate = (options && options.isTemplate);                                                    // 63  // 1271
-  var isBody = (options && options.isBody);                                                            // 64  // 1272
-  var sourceName = (options && options.sourceName);                                                    // 65  // 1273
-                                                                                                       // 66  // 1274
-  var tree = parseTree;                                                                                // 67  // 1275
-                                                                                                       // 68  // 1276
-  // The flags `isTemplate` and `isBody` are kind of a hack.                                           // 69  // 1277
-  if (isTemplate || isBody) {                                                                          // 70  // 1278
-    // optimizing fragments would require being smarter about whether we are                           // 71  // 1279
-    // in a TEXTAREA, say.                                                                             // 72  // 1280
-    tree = SpacebarsCompiler.optimize(tree);                                                           // 73  // 1281
-  }                                                                                                    // 74  // 1282
-                                                                                                       // 75  // 1283
-  // throws an error if using `{{> React}}` with siblings                                              // 76  // 1284
-  new ReactComponentSiblingForbidder({sourceName: sourceName})                                         // 77  // 1285
-    .visit(tree);                                                                                      // 78  // 1286
-                                                                                                       // 79  // 1287
-  var codegen = new SpacebarsCompiler.CodeGen;                                                         // 80  // 1288
-  tree = (new SpacebarsCompiler._TemplateTagReplacer(                                                  // 81  // 1289
-    {codegen: codegen})).visit(tree);                                                                  // 82  // 1290
-                                                                                                       // 83  // 1291
-  var code = '(function () { ';                                                                        // 84  // 1292
-  if (isTemplate || isBody) {                                                                          // 85  // 1293
-    code += 'var view = this; ';                                                                       // 86  // 1294
-  }                                                                                                    // 87  // 1295
-  code += 'return ';                                                                                   // 88  // 1296
-  code += BlazeTools.toJS(tree);                                                                       // 89  // 1297
-  code += '; })';                                                                                      // 90  // 1298
-                                                                                                       // 91  // 1299
-  code = SpacebarsCompiler._beautify(code);                                                            // 92  // 1300
-                                                                                                       // 93  // 1301
-  return code;                                                                                         // 94  // 1302
-};                                                                                                     // 95  // 1303
-                                                                                                       // 96  // 1304
-SpacebarsCompiler._beautify = function (code) {                                                        // 97  // 1305
-  if (Package.minifiers && Package.minifiers.UglifyJSMinify) {                                         // 98  // 1306
-    var result = Package.minifiers.UglifyJSMinify(                                                     // 99  // 1307
+/////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+}).call(this);
+
+
+
+
+
+
+(function(){
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                                     //
+// packages/spacebars-compiler/compiler.js                                                             //
+//                                                                                                     //
+/////////////////////////////////////////////////////////////////////////////////////////////////////////
+                                                                                                       //
+                                                                                                       // 1
+SpacebarsCompiler.parse = function (input) {                                                           // 2
+                                                                                                       // 3
+  var tree = HTMLTools.parseFragment(                                                                  // 4
+    input,                                                                                             // 5
+    { getTemplateTag: TemplateTag.parseCompleteTag });                                                 // 6
+                                                                                                       // 7
+  return tree;                                                                                         // 8
+};                                                                                                     // 9
+                                                                                                       // 10
+SpacebarsCompiler.compile = function (input, options) {                                                // 11
+  var tree = SpacebarsCompiler.parse(input);                                                           // 12
+  return SpacebarsCompiler.codeGen(tree, options);                                                     // 13
+};                                                                                                     // 14
+                                                                                                       // 15
+SpacebarsCompiler._TemplateTagReplacer = HTML.TransformingVisitor.extend();                            // 16
+SpacebarsCompiler._TemplateTagReplacer.def({                                                           // 17
+  visitObject: function (x) {                                                                          // 18
+    if (x instanceof HTMLTools.TemplateTag) {                                                          // 19
+                                                                                                       // 20
+      // Make sure all TemplateTags in attributes have the right                                       // 21
+      // `.position` set on them.  This is a bit of a hack                                             // 22
+      // (we shouldn't be mutating that here), but it allows                                           // 23
+      // cleaner codegen of "synthetic" attributes like TEXTAREA's                                     // 24
+      // "value", where the template tags were originally not                                          // 25
+      // in an attribute.                                                                              // 26
+      if (this.inAttributeValue)                                                                       // 27
+        x.position = HTMLTools.TEMPLATE_TAG_POSITION.IN_ATTRIBUTE;                                     // 28
+                                                                                                       // 29
+      return this.codegen.codeGenTemplateTag(x);                                                       // 30
+    }                                                                                                  // 31
+                                                                                                       // 32
+    return HTML.TransformingVisitor.prototype.visitObject.call(this, x);                               // 33
+  },                                                                                                   // 34
+  visitAttributes: function (attrs) {                                                                  // 35
+    if (attrs instanceof HTMLTools.TemplateTag)                                                        // 36
+      return this.codegen.codeGenTemplateTag(attrs);                                                   // 37
+                                                                                                       // 38
+    // call super (e.g. for case where `attrs` is an array)                                            // 39
+    return HTML.TransformingVisitor.prototype.visitAttributes.call(this, attrs);                       // 40
+  },                                                                                                   // 41
+  visitAttribute: function (name, value, tag) {                                                        // 42
+    this.inAttributeValue = true;                                                                      // 43
+    var result = this.visit(value);                                                                    // 44
+    this.inAttributeValue = false;                                                                     // 45
+                                                                                                       // 46
+    if (result !== value) {                                                                            // 47
+      // some template tags must have been replaced, because otherwise                                 // 48
+      // we try to keep things `===` when transforming.  Wrap the code                                 // 49
+      // in a function as per the rules.  You can't have                                               // 50
+      // `{id: Blaze.View(...)}` as an attributes dict because the View                                // 51
+      // would be rendered more than once; you need to wrap it in a function                           // 52
+      // so that it's a different View each time.                                                      // 53
+      return BlazeTools.EmitCode(this.codegen.codeGenBlock(result));                                   // 54
+    }                                                                                                  // 55
+    return result;                                                                                     // 56
+  }                                                                                                    // 57
+});                                                                                                    // 58
+                                                                                                       // 59
+SpacebarsCompiler.codeGen = function (parseTree, options) {                                            // 60
+  // is this a template, rather than a block passed to                                                 // 61
+  // a block helper, say                                                                               // 62
+  var isTemplate = (options && options.isTemplate);                                                    // 63
+  var isBody = (options && options.isBody);                                                            // 64
+  var sourceName = (options && options.sourceName);                                                    // 65
+                                                                                                       // 66
+  var tree = parseTree;                                                                                // 67
+                                                                                                       // 68
+  // The flags `isTemplate` and `isBody` are kind of a hack.                                           // 69
+  if (isTemplate || isBody) {                                                                          // 70
+    // optimizing fragments would require being smarter about whether we are                           // 71
+    // in a TEXTAREA, say.                                                                             // 72
+    tree = SpacebarsCompiler.optimize(tree);                                                           // 73
+  }                                                                                                    // 74
+                                                                                                       // 75
+  // throws an error if using `{{> React}}` with siblings                                              // 76
+  new ReactComponentSiblingForbidder({sourceName: sourceName})                                         // 77
+    .visit(tree);                                                                                      // 78
+                                                                                                       // 79
+  var codegen = new SpacebarsCompiler.CodeGen;                                                         // 80
+  tree = (new SpacebarsCompiler._TemplateTagReplacer(                                                  // 81
+    {codegen: codegen})).visit(tree);                                                                  // 82
+                                                                                                       // 83
+  var code = '(function () { ';                                                                        // 84
+  if (isTemplate || isBody) {                                                                          // 85
+    code += 'var view = this; ';                                                                       // 86
+  }                                                                                                    // 87
+  code += 'return ';                                                                                   // 88
+  code += BlazeTools.toJS(tree);                                                                       // 89
+  code += '; })';                                                                                      // 90
+                                                                                                       // 91
+  code = SpacebarsCompiler._beautify(code);                                                            // 92
+                                                                                                       // 93
+  return code;                                                                                         // 94
+};                                                                                                     // 95
+                                                                                                       // 96
+SpacebarsCompiler._beautify = function (code) {                                                        // 97
+  if (Package.minifiers && Package.minifiers.UglifyJSMinify) {                                         // 98
+    var result = Package.minifiers.UglifyJSMinify(                                                     // 99
       code,                                                                                            // 100
       { fromString: true,                                                                              // 101
         mangle: false,                                                                                 // 102
@@ -1343,11 +1335,7 @@ SpacebarsCompiler._beautify = function (code) {                                 
   }                                                                                                    // 115
 };                                                                                                     // 116
                                                                                                        // 117
-/////////////////////////////////////////////////////////////////////////////////////////////////////////     // 1326
-                                                                                                              // 1327
-}).call(this);                                                                                                // 1328
-                                                                                                              // 1329
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 }).call(this);
 

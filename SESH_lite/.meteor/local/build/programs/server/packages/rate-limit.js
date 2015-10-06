@@ -10,119 +10,111 @@ var RateLimiter;
 
 (function(){
 
-/////////////////////////////////////////////////////////////////////////////////////////
-//                                                                                     //
-// packages/rate-limit/packages/rate-limit.js                                          //
-//                                                                                     //
-/////////////////////////////////////////////////////////////////////////////////////////
-                                                                                       //
-(function(){                                                                           // 1
-                                                                                       // 2
-//////////////////////////////////////////////////////////////////////////////////     // 3
-//                                                                              //     // 4
-// packages/rate-limit/rate-limit.js                                            //     // 5
-//                                                                              //     // 6
-//////////////////////////////////////////////////////////////////////////////////     // 7
-                                                                                //     // 8
-// Default time interval (in milliseconds) to reset rate limit counters         // 1   // 9
-var DEFAULT_INTERVAL_TIME_IN_MILLISECONDS = 1000;                               // 2   // 10
-// Default number of events allowed per time interval                           // 3   // 11
-var DEFAULT_REQUESTS_PER_INTERVAL = 10;                                         // 4   // 12
-                                                                                // 5   // 13
-// A rule is defined by an options object that contains two fields,             // 6   // 14
-// `numRequestsAllowed` which is the number of events allowed per interval, and        // 15
-// an `intervalTime` which is the amount of time in milliseconds before the     // 8   // 16
-// rate limit restarts its internal counters, and by a matchers object. A       // 9   // 17
-// matchers object is a POJO that contains a set of keys with values that       // 10  // 18
-// define the entire set of inputs that match for each key. The values can      // 11  // 19
-// either be null (optional), a primitive or a function that returns a boolean  // 12  // 20
-// of whether the provided input's value matches for this key.                  // 13  // 21
-//                                                                              // 14  // 22
-// Rules are uniquely assigned an `id` and they store a dictionary of counters,        // 23
-// which are records used to keep track of inputs that match the rule. If a     // 16  // 24
-// counter reaches the `numRequestsAllowed` within a given `intervalTime`, a    // 17  // 25
-// rate limit is reached and future inputs that map to that counter will        // 18  // 26
-// result in errors being returned to the client.                               // 19  // 27
-var Rule = function (options, matchers) {                                       // 20  // 28
-  var self = this;                                                              // 21  // 29
-                                                                                // 22  // 30
-  self.id = Random.id();                                                        // 23  // 31
-                                                                                // 24  // 32
-  self.options = options;                                                       // 25  // 33
-                                                                                // 26  // 34
-  self._matchers = matchers;                                                    // 27  // 35
-                                                                                // 28  // 36
-  self._lastResetTime = new Date().getTime();                                   // 29  // 37
-                                                                                // 30  // 38
-  // Dictionary of input keys to counters                                       // 31  // 39
-  self.counters = {};                                                           // 32  // 40
-};                                                                              // 33  // 41
-                                                                                // 34  // 42
-_.extend(Rule.prototype, {                                                      // 35  // 43
-  // Determine if this rule applies to the given input by comparing all         // 36  // 44
-  // rule.matchers. If the match fails, search short circuits instead of        // 37  // 45
-  // iterating through all matchers.                                            // 38  // 46
-  match: function (input) {                                                     // 39  // 47
-    var self = this;                                                            // 40  // 48
-    var ruleMatches = true;                                                     // 41  // 49
-    return _.every(self._matchers, function (matcher, key) {                    // 42  // 50
-      if (matcher !== null) {                                                   // 43  // 51
-        if (!(_.has(input,key))) {                                              // 44  // 52
-          return false;                                                         // 45  // 53
-        } else {                                                                // 46  // 54
-          if (typeof matcher === 'function') {                                  // 47  // 55
-            if (!(matcher(input[key]))) {                                       // 48  // 56
-              return false;                                                     // 49  // 57
-            }                                                                   // 50  // 58
-          } else {                                                              // 51  // 59
-            if (matcher !== input[key]) {                                       // 52  // 60
-              return false;                                                     // 53  // 61
-            }                                                                   // 54  // 62
-          }                                                                     // 55  // 63
-        }                                                                       // 56  // 64
-      }                                                                         // 57  // 65
-      return true;                                                              // 58  // 66
-    });                                                                         // 59  // 67
-  },                                                                            // 60  // 68
-                                                                                // 61  // 69
-  // Generates unique key string for provided input by concatenating all the    // 62  // 70
-  // keys in the matcher with the corresponding values in the input.            // 63  // 71
-  // Only called if rule matches input.                                         // 64  // 72
-  _generateKeyString: function (input) {                                        // 65  // 73
-    var self = this;                                                            // 66  // 74
-    var returnString = "";                                                      // 67  // 75
-    _.each(self._matchers, function (matcher, key) {                            // 68  // 76
-      if (matcher !== null) {                                                   // 69  // 77
-        if (typeof matcher === 'function') {                                    // 70  // 78
-          if (matcher(input[key])) {                                            // 71  // 79
-            returnString += key + input[key];                                   // 72  // 80
-          }                                                                     // 73  // 81
-        } else {                                                                // 74  // 82
-          returnString += key + input[key];                                     // 75  // 83
-        }                                                                       // 76  // 84
-      }                                                                         // 77  // 85
-    });                                                                         // 78  // 86
-    return returnString;                                                        // 79  // 87
-  },                                                                            // 80  // 88
-                                                                                // 81  // 89
-  // Applies the provided input and returns the key string, time since counters        // 90
-  // were last reset and time to next reset.                                    // 83  // 91
-  apply: function (input) {                                                     // 84  // 92
-    var self = this;                                                            // 85  // 93
-    var keyString = self._generateKeyString(input);                             // 86  // 94
-    var timeSinceLastReset = new Date().getTime() - self._lastResetTime;        // 87  // 95
-    var timeToNextReset = self.options.intervalTime - timeSinceLastReset;       // 88  // 96
-    return {                                                                    // 89  // 97
-      key: keyString,                                                           // 90  // 98
-      timeSinceLastReset: timeSinceLastReset,                                   // 91  // 99
-      timeToNextReset: timeToNextReset                                          // 92  // 100
-    };                                                                          // 93  // 101
-  },                                                                            // 94  // 102
-  // Reset counter dictionary for this specific rule. Called once the           // 95  // 103
-  // timeSinceLastReset has exceeded the intervalTime. _lastResetTime is        // 96  // 104
-  // set to be the current time in milliseconds.                                // 97  // 105
-  resetCounter: function () {                                                   // 98  // 106
-    var self = this;                                                            // 99  // 107
+//////////////////////////////////////////////////////////////////////////////////
+//                                                                              //
+// packages/rate-limit/rate-limit.js                                            //
+//                                                                              //
+//////////////////////////////////////////////////////////////////////////////////
+                                                                                //
+// Default time interval (in milliseconds) to reset rate limit counters         // 1
+var DEFAULT_INTERVAL_TIME_IN_MILLISECONDS = 1000;                               // 2
+// Default number of events allowed per time interval                           // 3
+var DEFAULT_REQUESTS_PER_INTERVAL = 10;                                         // 4
+                                                                                // 5
+// A rule is defined by an options object that contains two fields,             // 6
+// `numRequestsAllowed` which is the number of events allowed per interval, and
+// an `intervalTime` which is the amount of time in milliseconds before the     // 8
+// rate limit restarts its internal counters, and by a matchers object. A       // 9
+// matchers object is a POJO that contains a set of keys with values that       // 10
+// define the entire set of inputs that match for each key. The values can      // 11
+// either be null (optional), a primitive or a function that returns a boolean  // 12
+// of whether the provided input's value matches for this key.                  // 13
+//                                                                              // 14
+// Rules are uniquely assigned an `id` and they store a dictionary of counters,
+// which are records used to keep track of inputs that match the rule. If a     // 16
+// counter reaches the `numRequestsAllowed` within a given `intervalTime`, a    // 17
+// rate limit is reached and future inputs that map to that counter will        // 18
+// result in errors being returned to the client.                               // 19
+var Rule = function (options, matchers) {                                       // 20
+  var self = this;                                                              // 21
+                                                                                // 22
+  self.id = Random.id();                                                        // 23
+                                                                                // 24
+  self.options = options;                                                       // 25
+                                                                                // 26
+  self._matchers = matchers;                                                    // 27
+                                                                                // 28
+  self._lastResetTime = new Date().getTime();                                   // 29
+                                                                                // 30
+  // Dictionary of input keys to counters                                       // 31
+  self.counters = {};                                                           // 32
+};                                                                              // 33
+                                                                                // 34
+_.extend(Rule.prototype, {                                                      // 35
+  // Determine if this rule applies to the given input by comparing all         // 36
+  // rule.matchers. If the match fails, search short circuits instead of        // 37
+  // iterating through all matchers.                                            // 38
+  match: function (input) {                                                     // 39
+    var self = this;                                                            // 40
+    var ruleMatches = true;                                                     // 41
+    return _.every(self._matchers, function (matcher, key) {                    // 42
+      if (matcher !== null) {                                                   // 43
+        if (!(_.has(input,key))) {                                              // 44
+          return false;                                                         // 45
+        } else {                                                                // 46
+          if (typeof matcher === 'function') {                                  // 47
+            if (!(matcher(input[key]))) {                                       // 48
+              return false;                                                     // 49
+            }                                                                   // 50
+          } else {                                                              // 51
+            if (matcher !== input[key]) {                                       // 52
+              return false;                                                     // 53
+            }                                                                   // 54
+          }                                                                     // 55
+        }                                                                       // 56
+      }                                                                         // 57
+      return true;                                                              // 58
+    });                                                                         // 59
+  },                                                                            // 60
+                                                                                // 61
+  // Generates unique key string for provided input by concatenating all the    // 62
+  // keys in the matcher with the corresponding values in the input.            // 63
+  // Only called if rule matches input.                                         // 64
+  _generateKeyString: function (input) {                                        // 65
+    var self = this;                                                            // 66
+    var returnString = "";                                                      // 67
+    _.each(self._matchers, function (matcher, key) {                            // 68
+      if (matcher !== null) {                                                   // 69
+        if (typeof matcher === 'function') {                                    // 70
+          if (matcher(input[key])) {                                            // 71
+            returnString += key + input[key];                                   // 72
+          }                                                                     // 73
+        } else {                                                                // 74
+          returnString += key + input[key];                                     // 75
+        }                                                                       // 76
+      }                                                                         // 77
+    });                                                                         // 78
+    return returnString;                                                        // 79
+  },                                                                            // 80
+                                                                                // 81
+  // Applies the provided input and returns the key string, time since counters
+  // were last reset and time to next reset.                                    // 83
+  apply: function (input) {                                                     // 84
+    var self = this;                                                            // 85
+    var keyString = self._generateKeyString(input);                             // 86
+    var timeSinceLastReset = new Date().getTime() - self._lastResetTime;        // 87
+    var timeToNextReset = self.options.intervalTime - timeSinceLastReset;       // 88
+    return {                                                                    // 89
+      key: keyString,                                                           // 90
+      timeSinceLastReset: timeSinceLastReset,                                   // 91
+      timeToNextReset: timeToNextReset                                          // 92
+    };                                                                          // 93
+  },                                                                            // 94
+  // Reset counter dictionary for this specific rule. Called once the           // 95
+  // timeSinceLastReset has exceeded the intervalTime. _lastResetTime is        // 96
+  // set to be the current time in milliseconds.                                // 97
+  resetCounter: function () {                                                   // 98
+    var self = this;                                                            // 99
                                                                                 // 100
     // Delete the old counters dictionary to allow for garbage collection       // 101
     self.counters = {};                                                         // 102
@@ -280,11 +272,7 @@ RateLimiter.prototype.removeRule = function (id) {                              
   }                                                                             // 254
 };                                                                              // 255
                                                                                 // 256
-//////////////////////////////////////////////////////////////////////////////////     // 265
-                                                                                       // 266
-}).call(this);                                                                         // 267
-                                                                                       // 268
-/////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////
 
 }).call(this);
 

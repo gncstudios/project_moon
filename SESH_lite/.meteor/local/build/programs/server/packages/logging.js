@@ -10,119 +10,111 @@ var Log;
 
 (function(){
 
-////////////////////////////////////////////////////////////////////////////////////////////////
-//                                                                                            //
-// packages/logging/packages/logging.js                                                       //
-//                                                                                            //
-////////////////////////////////////////////////////////////////////////////////////////////////
-                                                                                              //
-(function(){                                                                                  // 1
-                                                                                              // 2
-/////////////////////////////////////////////////////////////////////////////////////////     // 3
-//                                                                                     //     // 4
-// packages/logging/logging.js                                                         //     // 5
-//                                                                                     //     // 6
-/////////////////////////////////////////////////////////////////////////////////////////     // 7
-                                                                                       //     // 8
-Log = function () {                                                                    // 1   // 9
-  return Log.info.apply(this, arguments);                                              // 2   // 10
-};                                                                                     // 3   // 11
-                                                                                       // 4   // 12
-/// FOR TESTING                                                                        // 5   // 13
-var intercept = 0;                                                                     // 6   // 14
-var interceptedLines = [];                                                             // 7   // 15
-var suppress = 0;                                                                      // 8   // 16
-                                                                                       // 9   // 17
-// Intercept the next 'count' calls to a Log function. The actual                      // 10  // 18
-// lines printed to the console can be cleared and read by calling                     // 11  // 19
-// Log._intercepted().                                                                 // 12  // 20
-Log._intercept = function (count) {                                                    // 13  // 21
-  intercept += count;                                                                  // 14  // 22
-};                                                                                     // 15  // 23
-                                                                                       // 16  // 24
-// Suppress the next 'count' calls to a Log function. Use this to stop                 // 17  // 25
-// tests from spamming the console, especially with red errors that                    // 18  // 26
-// might look like a failing test.                                                     // 19  // 27
-Log._suppress = function (count) {                                                     // 20  // 28
-  suppress += count;                                                                   // 21  // 29
-};                                                                                     // 22  // 30
-                                                                                       // 23  // 31
-// Returns intercepted lines and resets the intercept counter.                         // 24  // 32
-Log._intercepted = function () {                                                       // 25  // 33
-  var lines = interceptedLines;                                                        // 26  // 34
-  interceptedLines = [];                                                               // 27  // 35
-  intercept = 0;                                                                       // 28  // 36
-  return lines;                                                                        // 29  // 37
-};                                                                                     // 30  // 38
-                                                                                       // 31  // 39
-// Either 'json' or 'colored-text'.                                                    // 32  // 40
-//                                                                                     // 33  // 41
-// When this is set to 'json', print JSON documents that are parsed by another         // 34  // 42
-// process ('satellite' or 'meteor run'). This other process should call               // 35  // 43
-// 'Log.format' for nice output.                                                       // 36  // 44
-//                                                                                     // 37  // 45
-// When this is set to 'colored-text', call 'Log.format' before printing.              // 38  // 46
-// This should be used for logging from within satellite, since there is no            // 39  // 47
-// other process that will be reading its standard output.                             // 40  // 48
-Log.outputFormat = 'json';                                                             // 41  // 49
-                                                                                       // 42  // 50
-var LEVEL_COLORS = {                                                                   // 43  // 51
-  debug: 'green',                                                                      // 44  // 52
-  // leave info as the default color                                                   // 45  // 53
-  warn: 'magenta',                                                                     // 46  // 54
-  error: 'red'                                                                         // 47  // 55
-};                                                                                     // 48  // 56
-                                                                                       // 49  // 57
-var META_COLOR = 'blue';                                                               // 50  // 58
-                                                                                       // 51  // 59
-// XXX package                                                                         // 52  // 60
-var RESTRICTED_KEYS = ['time', 'timeInexact', 'level', 'file', 'line',                 // 53  // 61
-                        'program', 'originApp', 'satellite', 'stderr'];                // 54  // 62
-                                                                                       // 55  // 63
-var FORMATTED_KEYS = RESTRICTED_KEYS.concat(['app', 'message']);                       // 56  // 64
-                                                                                       // 57  // 65
-var logInBrowser = function (obj) {                                                    // 58  // 66
-  var str = Log.format(obj);                                                           // 59  // 67
-                                                                                       // 60  // 68
-  // XXX Some levels should be probably be sent to the server                          // 61  // 69
-  var level = obj.level;                                                               // 62  // 70
-                                                                                       // 63  // 71
-  if ((typeof console !== 'undefined') && console[level]) {                            // 64  // 72
-    console[level](str);                                                               // 65  // 73
-  } else {                                                                             // 66  // 74
-    // XXX Uses of Meteor._debug should probably be replaced by Log.debug or           // 67  // 75
-    //     Log.info, and we should have another name for "do your best to              // 68  // 76
-    //     call call console.log".                                                     // 69  // 77
-    Meteor._debug(str);                                                                // 70  // 78
-  }                                                                                    // 71  // 79
-};                                                                                     // 72  // 80
-                                                                                       // 73  // 81
-// @returns {Object: { line: Number, file: String }}                                   // 74  // 82
-Log._getCallerDetails = function () {                                                  // 75  // 83
-  var getStack = function () {                                                         // 76  // 84
-    // We do NOT use Error.prepareStackTrace here (a V8 extension that gets us a       // 77  // 85
-    // pre-parsed stack) since it's impossible to compose it with the use of           // 78  // 86
-    // Error.prepareStackTrace used on the server for source maps.                     // 79  // 87
-    var err = new Error;                                                               // 80  // 88
-    var stack = err.stack;                                                             // 81  // 89
-    return stack;                                                                      // 82  // 90
-  };                                                                                   // 83  // 91
-                                                                                       // 84  // 92
-  var stack = getStack();                                                              // 85  // 93
-                                                                                       // 86  // 94
-  if (!stack) return {};                                                               // 87  // 95
-                                                                                       // 88  // 96
-  var lines = stack.split('\n');                                                       // 89  // 97
-                                                                                       // 90  // 98
-  // looking for the first line outside the logging package (or an                     // 91  // 99
-  // eval if we find that first)                                                       // 92  // 100
-  var line;                                                                            // 93  // 101
-  for (var i = 1; i < lines.length; ++i) {                                             // 94  // 102
-    line = lines[i];                                                                   // 95  // 103
-    if (line.match(/^\s*at eval \(eval/)) {                                            // 96  // 104
-      return {file: "eval"};                                                           // 97  // 105
-    }                                                                                  // 98  // 106
-                                                                                       // 99  // 107
+/////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                     //
+// packages/logging/logging.js                                                         //
+//                                                                                     //
+/////////////////////////////////////////////////////////////////////////////////////////
+                                                                                       //
+Log = function () {                                                                    // 1
+  return Log.info.apply(this, arguments);                                              // 2
+};                                                                                     // 3
+                                                                                       // 4
+/// FOR TESTING                                                                        // 5
+var intercept = 0;                                                                     // 6
+var interceptedLines = [];                                                             // 7
+var suppress = 0;                                                                      // 8
+                                                                                       // 9
+// Intercept the next 'count' calls to a Log function. The actual                      // 10
+// lines printed to the console can be cleared and read by calling                     // 11
+// Log._intercepted().                                                                 // 12
+Log._intercept = function (count) {                                                    // 13
+  intercept += count;                                                                  // 14
+};                                                                                     // 15
+                                                                                       // 16
+// Suppress the next 'count' calls to a Log function. Use this to stop                 // 17
+// tests from spamming the console, especially with red errors that                    // 18
+// might look like a failing test.                                                     // 19
+Log._suppress = function (count) {                                                     // 20
+  suppress += count;                                                                   // 21
+};                                                                                     // 22
+                                                                                       // 23
+// Returns intercepted lines and resets the intercept counter.                         // 24
+Log._intercepted = function () {                                                       // 25
+  var lines = interceptedLines;                                                        // 26
+  interceptedLines = [];                                                               // 27
+  intercept = 0;                                                                       // 28
+  return lines;                                                                        // 29
+};                                                                                     // 30
+                                                                                       // 31
+// Either 'json' or 'colored-text'.                                                    // 32
+//                                                                                     // 33
+// When this is set to 'json', print JSON documents that are parsed by another         // 34
+// process ('satellite' or 'meteor run'). This other process should call               // 35
+// 'Log.format' for nice output.                                                       // 36
+//                                                                                     // 37
+// When this is set to 'colored-text', call 'Log.format' before printing.              // 38
+// This should be used for logging from within satellite, since there is no            // 39
+// other process that will be reading its standard output.                             // 40
+Log.outputFormat = 'json';                                                             // 41
+                                                                                       // 42
+var LEVEL_COLORS = {                                                                   // 43
+  debug: 'green',                                                                      // 44
+  // leave info as the default color                                                   // 45
+  warn: 'magenta',                                                                     // 46
+  error: 'red'                                                                         // 47
+};                                                                                     // 48
+                                                                                       // 49
+var META_COLOR = 'blue';                                                               // 50
+                                                                                       // 51
+// XXX package                                                                         // 52
+var RESTRICTED_KEYS = ['time', 'timeInexact', 'level', 'file', 'line',                 // 53
+                        'program', 'originApp', 'satellite', 'stderr'];                // 54
+                                                                                       // 55
+var FORMATTED_KEYS = RESTRICTED_KEYS.concat(['app', 'message']);                       // 56
+                                                                                       // 57
+var logInBrowser = function (obj) {                                                    // 58
+  var str = Log.format(obj);                                                           // 59
+                                                                                       // 60
+  // XXX Some levels should be probably be sent to the server                          // 61
+  var level = obj.level;                                                               // 62
+                                                                                       // 63
+  if ((typeof console !== 'undefined') && console[level]) {                            // 64
+    console[level](str);                                                               // 65
+  } else {                                                                             // 66
+    // XXX Uses of Meteor._debug should probably be replaced by Log.debug or           // 67
+    //     Log.info, and we should have another name for "do your best to              // 68
+    //     call call console.log".                                                     // 69
+    Meteor._debug(str);                                                                // 70
+  }                                                                                    // 71
+};                                                                                     // 72
+                                                                                       // 73
+// @returns {Object: { line: Number, file: String }}                                   // 74
+Log._getCallerDetails = function () {                                                  // 75
+  var getStack = function () {                                                         // 76
+    // We do NOT use Error.prepareStackTrace here (a V8 extension that gets us a       // 77
+    // pre-parsed stack) since it's impossible to compose it with the use of           // 78
+    // Error.prepareStackTrace used on the server for source maps.                     // 79
+    var err = new Error;                                                               // 80
+    var stack = err.stack;                                                             // 81
+    return stack;                                                                      // 82
+  };                                                                                   // 83
+                                                                                       // 84
+  var stack = getStack();                                                              // 85
+                                                                                       // 86
+  if (!stack) return {};                                                               // 87
+                                                                                       // 88
+  var lines = stack.split('\n');                                                       // 89
+                                                                                       // 90
+  // looking for the first line outside the logging package (or an                     // 91
+  // eval if we find that first)                                                       // 92
+  var line;                                                                            // 93
+  for (var i = 1; i < lines.length; ++i) {                                             // 94
+    line = lines[i];                                                                   // 95
+    if (line.match(/^\s*at eval \(eval/)) {                                            // 96
+      return {file: "eval"};                                                           // 97
+    }                                                                                  // 98
+                                                                                       // 99
     if (!line.match(/packages\/(?:local-test[:_])?logging(?:\/|\.js)/))                // 100
       break;                                                                           // 101
   }                                                                                    // 102
@@ -195,7 +187,7 @@ _.each(['debug', 'info', 'warn', 'error'], function (level) {                   
   };                                                                                   // 169
 });                                                                                    // 170
                                                                                        // 171
-// tries to parse line as EJSON. returns object if parse is successful, or null if not        // 180
+// tries to parse line as EJSON. returns object if parse is successful, or null if not
 Log.parse = function (line) {                                                          // 173
   var obj = null;                                                                      // 174
   if (line && line.charAt(0) === '{') { // might be json generated from calling 'Log'  // 175
@@ -301,11 +293,7 @@ Log.objFromText = function (line, override) {                                   
   return _.extend(obj, override);                                                      // 275
 };                                                                                     // 276
                                                                                        // 277
-/////////////////////////////////////////////////////////////////////////////////////////     // 286
-                                                                                              // 287
-}).call(this);                                                                                // 288
-                                                                                              // 289
-////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////
 
 }).call(this);
 

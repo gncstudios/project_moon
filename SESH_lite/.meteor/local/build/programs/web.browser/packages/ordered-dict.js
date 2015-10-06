@@ -19,119 +19,111 @@ var OrderedDict;
 
 (function(){
 
-//////////////////////////////////////////////////////////////////////////////////////////
-//                                                                                      //
-// packages/ordered-dict/packages/ordered-dict.js                                       //
-//                                                                                      //
-//////////////////////////////////////////////////////////////////////////////////////////
-                                                                                        //
-(function(){                                                                            // 1
-                                                                                        // 2
-///////////////////////////////////////////////////////////////////////////////////     // 3
-//                                                                               //     // 4
-// packages/ordered-dict/ordered_dict.js                                         //     // 5
-//                                                                               //     // 6
-///////////////////////////////////////////////////////////////////////////////////     // 7
-                                                                                 //     // 8
-// This file defines an ordered dictionary abstraction that is useful for        // 1   // 9
-// maintaining a dataset backed by observeChanges.  It supports ordering items   // 2   // 10
-// by specifying the item they now come before.                                  // 3   // 11
-                                                                                 // 4   // 12
-// The implementation is a dictionary that contains nodes of a doubly-linked     // 5   // 13
-// list as its values.                                                           // 6   // 14
-                                                                                 // 7   // 15
-// constructs a new element struct                                               // 8   // 16
-// next and prev are whole elements, not keys.                                   // 9   // 17
-var element = function (key, value, next, prev) {                                // 10  // 18
-  return {                                                                       // 11  // 19
-    key: key,                                                                    // 12  // 20
-    value: value,                                                                // 13  // 21
-    next: next,                                                                  // 14  // 22
-    prev: prev                                                                   // 15  // 23
-  };                                                                             // 16  // 24
-};                                                                               // 17  // 25
-OrderedDict = function (/* ... */) {                                             // 18  // 26
-  var self = this;                                                               // 19  // 27
-  self._dict = {};                                                               // 20  // 28
-  self._first = null;                                                            // 21  // 29
-  self._last = null;                                                             // 22  // 30
-  self._size = 0;                                                                // 23  // 31
-  var args = _.toArray(arguments);                                               // 24  // 32
-  self._stringify = function (x) { return x; };                                  // 25  // 33
-  if (typeof args[0] === 'function')                                             // 26  // 34
-    self._stringify = args.shift();                                              // 27  // 35
-  _.each(args, function (kv) {                                                   // 28  // 36
-    self.putBefore(kv[0], kv[1], null);                                          // 29  // 37
-  });                                                                            // 30  // 38
-};                                                                               // 31  // 39
-                                                                                 // 32  // 40
-_.extend(OrderedDict.prototype, {                                                // 33  // 41
-  // the "prefix keys with a space" thing comes from here                        // 34  // 42
-  // https://github.com/documentcloud/underscore/issues/376#issuecomment-2815649        // 43
-  _k: function (key) { return " " + this._stringify(key); },                     // 36  // 44
-                                                                                 // 37  // 45
-  empty: function () {                                                           // 38  // 46
-    var self = this;                                                             // 39  // 47
-    return !self._first;                                                         // 40  // 48
-  },                                                                             // 41  // 49
-  size: function () {                                                            // 42  // 50
-    var self = this;                                                             // 43  // 51
-    return self._size;                                                           // 44  // 52
-  },                                                                             // 45  // 53
-  _linkEltIn: function (elt) {                                                   // 46  // 54
-    var self = this;                                                             // 47  // 55
-    if (!elt.next) {                                                             // 48  // 56
-      elt.prev = self._last;                                                     // 49  // 57
-      if (self._last)                                                            // 50  // 58
-        self._last.next = elt;                                                   // 51  // 59
-      self._last = elt;                                                          // 52  // 60
-    } else {                                                                     // 53  // 61
-      elt.prev = elt.next.prev;                                                  // 54  // 62
-      elt.next.prev = elt;                                                       // 55  // 63
-      if (elt.prev)                                                              // 56  // 64
-        elt.prev.next = elt;                                                     // 57  // 65
-    }                                                                            // 58  // 66
-    if (self._first === null || self._first === elt.next)                        // 59  // 67
-      self._first = elt;                                                         // 60  // 68
-  },                                                                             // 61  // 69
-  _linkEltOut: function (elt) {                                                  // 62  // 70
-    var self = this;                                                             // 63  // 71
-    if (elt.next)                                                                // 64  // 72
-      elt.next.prev = elt.prev;                                                  // 65  // 73
-    if (elt.prev)                                                                // 66  // 74
-      elt.prev.next = elt.next;                                                  // 67  // 75
-    if (elt === self._last)                                                      // 68  // 76
-      self._last = elt.prev;                                                     // 69  // 77
-    if (elt === self._first)                                                     // 70  // 78
-      self._first = elt.next;                                                    // 71  // 79
-  },                                                                             // 72  // 80
-  putBefore: function (key, item, before) {                                      // 73  // 81
-    var self = this;                                                             // 74  // 82
-    if (self._dict[self._k(key)])                                                // 75  // 83
-      throw new Error("Item " + key + " already present in OrderedDict");        // 76  // 84
-    var elt = before ?                                                           // 77  // 85
-          element(key, item, self._dict[self._k(before)]) :                      // 78  // 86
-          element(key, item, null);                                              // 79  // 87
-    if (elt.next === undefined)                                                  // 80  // 88
-      throw new Error("could not find item to put this one before");             // 81  // 89
-    self._linkEltIn(elt);                                                        // 82  // 90
-    self._dict[self._k(key)] = elt;                                              // 83  // 91
-    self._size++;                                                                // 84  // 92
-  },                                                                             // 85  // 93
-  append: function (key, item) {                                                 // 86  // 94
-    var self = this;                                                             // 87  // 95
-    self.putBefore(key, item, null);                                             // 88  // 96
-  },                                                                             // 89  // 97
-  remove: function (key) {                                                       // 90  // 98
-    var self = this;                                                             // 91  // 99
-    var elt = self._dict[self._k(key)];                                          // 92  // 100
-    if (elt === undefined)                                                       // 93  // 101
-      throw new Error("Item " + key + " not present in OrderedDict");            // 94  // 102
-    self._linkEltOut(elt);                                                       // 95  // 103
-    self._size--;                                                                // 96  // 104
-    delete self._dict[self._k(key)];                                             // 97  // 105
-    return elt.value;                                                            // 98  // 106
-  },                                                                             // 99  // 107
+///////////////////////////////////////////////////////////////////////////////////
+//                                                                               //
+// packages/ordered-dict/ordered_dict.js                                         //
+//                                                                               //
+///////////////////////////////////////////////////////////////////////////////////
+                                                                                 //
+// This file defines an ordered dictionary abstraction that is useful for        // 1
+// maintaining a dataset backed by observeChanges.  It supports ordering items   // 2
+// by specifying the item they now come before.                                  // 3
+                                                                                 // 4
+// The implementation is a dictionary that contains nodes of a doubly-linked     // 5
+// list as its values.                                                           // 6
+                                                                                 // 7
+// constructs a new element struct                                               // 8
+// next and prev are whole elements, not keys.                                   // 9
+var element = function (key, value, next, prev) {                                // 10
+  return {                                                                       // 11
+    key: key,                                                                    // 12
+    value: value,                                                                // 13
+    next: next,                                                                  // 14
+    prev: prev                                                                   // 15
+  };                                                                             // 16
+};                                                                               // 17
+OrderedDict = function (/* ... */) {                                             // 18
+  var self = this;                                                               // 19
+  self._dict = {};                                                               // 20
+  self._first = null;                                                            // 21
+  self._last = null;                                                             // 22
+  self._size = 0;                                                                // 23
+  var args = _.toArray(arguments);                                               // 24
+  self._stringify = function (x) { return x; };                                  // 25
+  if (typeof args[0] === 'function')                                             // 26
+    self._stringify = args.shift();                                              // 27
+  _.each(args, function (kv) {                                                   // 28
+    self.putBefore(kv[0], kv[1], null);                                          // 29
+  });                                                                            // 30
+};                                                                               // 31
+                                                                                 // 32
+_.extend(OrderedDict.prototype, {                                                // 33
+  // the "prefix keys with a space" thing comes from here                        // 34
+  // https://github.com/documentcloud/underscore/issues/376#issuecomment-2815649
+  _k: function (key) { return " " + this._stringify(key); },                     // 36
+                                                                                 // 37
+  empty: function () {                                                           // 38
+    var self = this;                                                             // 39
+    return !self._first;                                                         // 40
+  },                                                                             // 41
+  size: function () {                                                            // 42
+    var self = this;                                                             // 43
+    return self._size;                                                           // 44
+  },                                                                             // 45
+  _linkEltIn: function (elt) {                                                   // 46
+    var self = this;                                                             // 47
+    if (!elt.next) {                                                             // 48
+      elt.prev = self._last;                                                     // 49
+      if (self._last)                                                            // 50
+        self._last.next = elt;                                                   // 51
+      self._last = elt;                                                          // 52
+    } else {                                                                     // 53
+      elt.prev = elt.next.prev;                                                  // 54
+      elt.next.prev = elt;                                                       // 55
+      if (elt.prev)                                                              // 56
+        elt.prev.next = elt;                                                     // 57
+    }                                                                            // 58
+    if (self._first === null || self._first === elt.next)                        // 59
+      self._first = elt;                                                         // 60
+  },                                                                             // 61
+  _linkEltOut: function (elt) {                                                  // 62
+    var self = this;                                                             // 63
+    if (elt.next)                                                                // 64
+      elt.next.prev = elt.prev;                                                  // 65
+    if (elt.prev)                                                                // 66
+      elt.prev.next = elt.next;                                                  // 67
+    if (elt === self._last)                                                      // 68
+      self._last = elt.prev;                                                     // 69
+    if (elt === self._first)                                                     // 70
+      self._first = elt.next;                                                    // 71
+  },                                                                             // 72
+  putBefore: function (key, item, before) {                                      // 73
+    var self = this;                                                             // 74
+    if (self._dict[self._k(key)])                                                // 75
+      throw new Error("Item " + key + " already present in OrderedDict");        // 76
+    var elt = before ?                                                           // 77
+          element(key, item, self._dict[self._k(before)]) :                      // 78
+          element(key, item, null);                                              // 79
+    if (elt.next === undefined)                                                  // 80
+      throw new Error("could not find item to put this one before");             // 81
+    self._linkEltIn(elt);                                                        // 82
+    self._dict[self._k(key)] = elt;                                              // 83
+    self._size++;                                                                // 84
+  },                                                                             // 85
+  append: function (key, item) {                                                 // 86
+    var self = this;                                                             // 87
+    self.putBefore(key, item, null);                                             // 88
+  },                                                                             // 89
+  remove: function (key) {                                                       // 90
+    var self = this;                                                             // 91
+    var elt = self._dict[self._k(key)];                                          // 92
+    if (elt === undefined)                                                       // 93
+      throw new Error("Item " + key + " not present in OrderedDict");            // 94
+    self._linkEltOut(elt);                                                       // 95
+    self._size--;                                                                // 96
+    delete self._dict[self._k(key)];                                             // 97
+    return elt.value;                                                            // 98
+  },                                                                             // 99
   get: function (key) {                                                          // 100
     var self = this;                                                             // 101
     if (self.has(key))                                                           // 102
@@ -243,11 +235,7 @@ _.extend(OrderedDict.prototype, {                                               
 });                                                                              // 208
 OrderedDict.BREAK = {"break": true};                                             // 209
                                                                                  // 210
-///////////////////////////////////////////////////////////////////////////////////     // 219
-                                                                                        // 220
-}).call(this);                                                                          // 221
-                                                                                        // 222
-//////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////
 
 }).call(this);
 

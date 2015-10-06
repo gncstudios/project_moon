@@ -10,29 +10,21 @@ var ReactiveVar;
 
 (function(){
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//                                                                                                                    //
-// packages/reactive-var/packages/reactive-var.js                                                                     //
-//                                                                                                                    //
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-                                                                                                                      //
-(function(){                                                                                                          // 1
-                                                                                                                      // 2
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////    // 3
-//                                                                                                              //    // 4
-// packages/reactive-var/reactive-var.js                                                                        //    // 5
-//                                                                                                              //    // 6
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////    // 7
-                                                                                                                //    // 8
-/*                                                                                                              // 1  // 9
- * ## [new] ReactiveVar(initialValue, [equalsFunc])                                                             // 2  // 10
- *                                                                                                              // 3  // 11
- * A ReactiveVar holds a single value that can be get and set,                                                  // 4  // 12
- * such that calling `set` will invalidate any Computations that                                                // 5  // 13
- * called `get`, according to the usual contract for reactive                                                   // 6  // 14
- * data sources.                                                                                                // 7  // 15
- *                                                                                                              // 8  // 16
- * A ReactiveVar is much like a Session variable -- compare `foo.get()`                                         // 9  // 17
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                                              //
+// packages/reactive-var/reactive-var.js                                                                        //
+//                                                                                                              //
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+                                                                                                                //
+/*                                                                                                              // 1
+ * ## [new] ReactiveVar(initialValue, [equalsFunc])                                                             // 2
+ *                                                                                                              // 3
+ * A ReactiveVar holds a single value that can be get and set,                                                  // 4
+ * such that calling `set` will invalidate any Computations that                                                // 5
+ * called `get`, according to the usual contract for reactive                                                   // 6
+ * data sources.                                                                                                // 7
+ *                                                                                                              // 8
+ * A ReactiveVar is much like a Session variable -- compare `foo.get()`                                         // 9
  * to `Session.get("foo")` -- but it doesn't have a global name and isn't                                       // 10
  * automatically migrated across hot code pushes.  Also, while Session                                          // 11
  * variables can only hold JSON or EJSON, ReactiveVars can hold any value.                                      // 12
@@ -57,7 +49,7 @@ var ReactiveVar;
  * @instanceName reactiveVar                                                                                    // 31
  * @summary Constructor for a ReactiveVar, which represents a single reactive variable.                         // 32
  * @locus Client                                                                                                // 33
- * @param {Any} initialValue The initial value to set.  `equalsFunc` is ignored when setting the initial value.       // 42
+ * @param {Any} initialValue The initial value to set.  `equalsFunc` is ignored when setting the initial value.
  * @param {Function} [equalsFunc] Optional.  A function of two arguments, called on the old value and the new value whenever the ReactiveVar is set.  If it returns true, no set is performed.  If omitted, the default `equalsFunc` returns true if its arguments are `===` and are of type number, boolean, string, undefined, or null.
  */                                                                                                             // 36
 ReactiveVar = function (initialValue, equalsFunc) {                                                             // 37
@@ -121,11 +113,7 @@ ReactiveVar.prototype._numListeners = function() {                              
   return count;                                                                                                 // 95
 };                                                                                                              // 96
                                                                                                                 // 97
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////    // 106
-                                                                                                                      // 107
-}).call(this);                                                                                                        // 108
-                                                                                                                      // 109
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 }).call(this);
 

@@ -9,29 +9,21 @@ var DDPRateLimiter;
 
 (function(){
 
-////////////////////////////////////////////////////////////////////////////////////////
-//                                                                                    //
-// packages/ddp-rate-limiter/packages/ddp-rate-limiter.js                             //
-//                                                                                    //
-////////////////////////////////////////////////////////////////////////////////////////
-                                                                                      //
-(function(){                                                                          // 1
-                                                                                      // 2
-//////////////////////////////////////////////////////////////////////////////////    // 3
-//                                                                              //    // 4
-// packages/ddp-rate-limiter/ddp-rate-limiter.js                                //    // 5
-//                                                                              //    // 6
-//////////////////////////////////////////////////////////////////////////////////    // 7
-                                                                                //    // 8
-// Rate Limiter built into DDP with a default error message. See README or      // 1  // 9
-// online documentation for more details.                                       // 2  // 10
-DDPRateLimiter = {};                                                            // 3  // 11
-                                                                                // 4  // 12
-var errorMessage = function (rateLimitResult) {                                 // 5  // 13
-  return "Error, too many requests. Please slow down. You must wait " +         // 6  // 14
-    Math.ceil(rateLimitResult.timeToReset / 1000) + " seconds before " +        // 7  // 15
-    "trying again.";                                                            // 8  // 16
-};                                                                              // 9  // 17
+//////////////////////////////////////////////////////////////////////////////////
+//                                                                              //
+// packages/ddp-rate-limiter/ddp-rate-limiter.js                                //
+//                                                                              //
+//////////////////////////////////////////////////////////////////////////////////
+                                                                                //
+// Rate Limiter built into DDP with a default error message. See README or      // 1
+// online documentation for more details.                                       // 2
+DDPRateLimiter = {};                                                            // 3
+                                                                                // 4
+var errorMessage = function (rateLimitResult) {                                 // 5
+  return "Error, too many requests. Please slow down. You must wait " +         // 6
+    Math.ceil(rateLimitResult.timeToReset / 1000) + " seconds before " +        // 7
+    "trying again.";                                                            // 8
+};                                                                              // 9
 var rateLimiter = new RateLimiter();                                            // 10
                                                                                 // 11
 DDPRateLimiter.getErrorMessage = function (rateLimitResult) {                   // 12
@@ -45,7 +37,7 @@ DDPRateLimiter.getErrorMessage = function (rateLimitResult) {                   
  * @summary Set error message text when method or subscription rate limit       // 20
  * exceeded.                                                                    // 21
  * @param {string|function} message Functions are passed in an object with a    // 22
- * `timeToReset` field that specifies the number of milliseconds until the next       // 31
+ * `timeToReset` field that specifies the number of milliseconds until the next
  * method or subscription is allowed to run. The function must return a string  // 24
  * of the error message.                                                        // 25
  */                                                                             // 26
@@ -69,10 +61,10 @@ DDPRateLimiter.setErrorMessage = function (message) {                           
  *                                                                              // 44
  * @param {Object} matcher                                                      // 45
  *   Matchers specify which events are counted towards a rate limit. A matcher  // 46
- *   is an object that has a subset of the same properties as the event objects       // 55
+ *   is an object that has a subset of the same properties as the event objects
  *   described above. Each value in a matcher object is one of the following:   // 48
  *                                                                              // 49
- *   - a string: for the event to satisfy the matcher, this value must be equal       // 58
+ *   - a string: for the event to satisfy the matcher, this value must be equal
  *   to the value of the same property in the event object                      // 51
  *                                                                              // 52
  *   - a function: for the event to satisfy the matcher, the function must      // 53
@@ -117,11 +109,7 @@ DDPRateLimiter._check = function (input) {                                      
   return rateLimiter.check(input);                                              // 92
 };                                                                              // 93
                                                                                 // 94
-//////////////////////////////////////////////////////////////////////////////////    // 103
-                                                                                      // 104
-}).call(this);                                                                        // 105
-                                                                                      // 106
-////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////
 
 }).call(this);
 

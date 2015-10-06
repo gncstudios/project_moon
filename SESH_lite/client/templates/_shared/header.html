@@ -28,8 +28,8 @@
           </ul>
         {{else}}
           <div class="nav navbar-nav navbar-right">
-            <li class="{{ isActiveRoute regex='/login' }}"><a href="{{ pathFor 'login' }}" >Login</a></li>
-            <li class="{{ isActiveRoute regex='/signup' }}"><a href="{{ pathFor 'signup' }}" >Sign Up</a></li>
+            <li class="{{ isActiveRoute regex='/sign-in' }}"><a href="{{ pathFor 'atSignIn' }}" >Login</a></li>
+            <li class="{{ isActiveRoute regex='/sign-up' }}"><a href="{{ pathFor 'atSignUp' }}" >Sign Up</a></li>
           </div>
         {{/if}}
 

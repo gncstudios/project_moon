@@ -23,14 +23,6 @@ var BigInteger, SRP;
 
 (function(){
 
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//                                                                                                                     //
-// packages/srp/packages/srp.js                                                                                        //
-//                                                                                                                     //
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-                                                                                                                       //
-(function(){                                                                                                           // 1
-                                                                                                                       // 2
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                                                  //
 // packages/srp/biginteger.js                                                                                       //
@@ -1316,16 +1308,16 @@ return BigInteger;                                                              
 })();                                                                                                               // 1277
                                                                                                                     // 1278
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-                                                                                                                       // 1288
-}).call(this);                                                                                                         // 1289
-                                                                                                                       // 1290
-                                                                                                                       // 1291
-                                                                                                                       // 1292
-                                                                                                                       // 1293
-                                                                                                                       // 1294
-                                                                                                                       // 1295
-(function(){                                                                                                           // 1296
-                                                                                                                       // 1297
+
+}).call(this);
+
+
+
+
+
+
+(function(){
+
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                                                  //
 // packages/srp/srp.js                                                                                              //
@@ -1347,7 +1339,7 @@ SRP = {};                                                                       
  * options is optional and can include:                                                                             // 13
  * - identity: String. The SRP username to user. Mostly this is passed                                              // 14
  *   in for testing.  Random UUID if not provided.                                                                  // 15
- * - hashedIdentityAndPassword: combined identity and password, already hashed, for the SRP to bcrypt upgrade path.    // 1319
+ * - hashedIdentityAndPassword: combined identity and password, already hashed, for the SRP to bcrypt upgrade path.
  * - salt: String. A salt to use.  Mostly this is passed in for                                                     // 17
  *   testing.  Random UUID if not provided.                                                                         // 18
  * - SRP parameters (see _defaults and paramsFromOptions below)                                                     // 19
@@ -1435,10 +1427,6 @@ var paramsFromOptions = function (options) {                                    
 };                                                                                                                  // 101
                                                                                                                     // 102
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-                                                                                                                       // 1407
-}).call(this);                                                                                                         // 1408
-                                                                                                                       // 1409
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 }).call(this);
 

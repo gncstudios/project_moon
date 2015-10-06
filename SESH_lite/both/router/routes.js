@@ -13,10 +13,7 @@ Router.route('/dashboard', {
     items: Items.find({})
   },
   onBeforeAction: function (pause) {
-    if(!Meteor.userId()) {
-      Router.go("/login");
-    }
-    this.next();
+    AccountsTemplates.ensureSignedIn.call(this, pause);
   },
   onAfterAction: function () {
 
@@ -28,11 +25,3 @@ Router.route('/profile', {
   name: 'profile'
 });
 
-// Login Route
-Router.route('/login', {
-  name: 'login'
-});
-// Signup Route
-Router.route('/signup', {
-  name: 'signup'
-});

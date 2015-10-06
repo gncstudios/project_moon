@@ -9,119 +9,111 @@ var Random;
 
 (function(){
 
-/////////////////////////////////////////////////////////////////////////////////////////////
-//                                                                                         //
-// packages/random/packages/random.js                                                      //
-//                                                                                         //
-/////////////////////////////////////////////////////////////////////////////////////////////
-                                                                                           //
-(function(){                                                                               // 1
-                                                                                           // 2
-//////////////////////////////////////////////////////////////////////////////////////     // 3
-//                                                                                  //     // 4
-// packages/random/random.js                                                        //     // 5
-//                                                                                  //     // 6
-//////////////////////////////////////////////////////////////////////////////////////     // 7
-                                                                                    //     // 8
-// We use cryptographically strong PRNGs (crypto.getRandomBytes() on the server,    // 1   // 9
-// window.crypto.getRandomValues() in the browser) when available. If these         // 2   // 10
-// PRNGs fail, we fall back to the Alea PRNG, which is not cryptographically        // 3   // 11
-// strong, and we seed it with various sources such as the date, Math.random,       // 4   // 12
-// and window size on the client.  When using crypto.getRandomValues(), our         // 5   // 13
-// primitive is hexString(), from which we construct fraction(). When using         // 6   // 14
-// window.crypto.getRandomValues() or alea, the primitive is fraction and we use    // 7   // 15
-// that to construct hex string.                                                    // 8   // 16
-                                                                                    // 9   // 17
-if (Meteor.isServer)                                                                // 10  // 18
-  var nodeCrypto = Npm.require('crypto');                                           // 11  // 19
-                                                                                    // 12  // 20
-// see http://baagoe.org/en/wiki/Better_random_numbers_for_javascript               // 13  // 21
-// for a full discussion and Alea implementation.                                   // 14  // 22
-var Alea = function () {                                                            // 15  // 23
-  function Mash() {                                                                 // 16  // 24
-    var n = 0xefc8249d;                                                             // 17  // 25
-                                                                                    // 18  // 26
-    var mash = function(data) {                                                     // 19  // 27
-      data = data.toString();                                                       // 20  // 28
-      for (var i = 0; i < data.length; i++) {                                       // 21  // 29
-        n += data.charCodeAt(i);                                                    // 22  // 30
-        var h = 0.02519603282416938 * n;                                            // 23  // 31
-        n = h >>> 0;                                                                // 24  // 32
-        h -= n;                                                                     // 25  // 33
-        h *= n;                                                                     // 26  // 34
-        n = h >>> 0;                                                                // 27  // 35
-        h -= n;                                                                     // 28  // 36
-        n += h * 0x100000000; // 2^32                                               // 29  // 37
-      }                                                                             // 30  // 38
-      return (n >>> 0) * 2.3283064365386963e-10; // 2^-32                           // 31  // 39
-    };                                                                              // 32  // 40
-                                                                                    // 33  // 41
-    mash.version = 'Mash 0.9';                                                      // 34  // 42
-    return mash;                                                                    // 35  // 43
-  }                                                                                 // 36  // 44
-                                                                                    // 37  // 45
-  return (function (args) {                                                         // 38  // 46
-    var s0 = 0;                                                                     // 39  // 47
-    var s1 = 0;                                                                     // 40  // 48
-    var s2 = 0;                                                                     // 41  // 49
-    var c = 1;                                                                      // 42  // 50
-                                                                                    // 43  // 51
-    if (args.length == 0) {                                                         // 44  // 52
-      args = [+new Date];                                                           // 45  // 53
-    }                                                                               // 46  // 54
-    var mash = Mash();                                                              // 47  // 55
-    s0 = mash(' ');                                                                 // 48  // 56
-    s1 = mash(' ');                                                                 // 49  // 57
-    s2 = mash(' ');                                                                 // 50  // 58
-                                                                                    // 51  // 59
-    for (var i = 0; i < args.length; i++) {                                         // 52  // 60
-      s0 -= mash(args[i]);                                                          // 53  // 61
-      if (s0 < 0) {                                                                 // 54  // 62
-        s0 += 1;                                                                    // 55  // 63
-      }                                                                             // 56  // 64
-      s1 -= mash(args[i]);                                                          // 57  // 65
-      if (s1 < 0) {                                                                 // 58  // 66
-        s1 += 1;                                                                    // 59  // 67
-      }                                                                             // 60  // 68
-      s2 -= mash(args[i]);                                                          // 61  // 69
-      if (s2 < 0) {                                                                 // 62  // 70
-        s2 += 1;                                                                    // 63  // 71
-      }                                                                             // 64  // 72
-    }                                                                               // 65  // 73
-    mash = null;                                                                    // 66  // 74
-                                                                                    // 67  // 75
-    var random = function() {                                                       // 68  // 76
-      var t = 2091639 * s0 + c * 2.3283064365386963e-10; // 2^-32                   // 69  // 77
-      s0 = s1;                                                                      // 70  // 78
-      s1 = s2;                                                                      // 71  // 79
-      return s2 = t - (c = t | 0);                                                  // 72  // 80
-    };                                                                              // 73  // 81
-    random.uint32 = function() {                                                    // 74  // 82
-      return random() * 0x100000000; // 2^32                                        // 75  // 83
-    };                                                                              // 76  // 84
-    random.fract53 = function() {                                                   // 77  // 85
-      return random() +                                                             // 78  // 86
-        (random() * 0x200000 | 0) * 1.1102230246251565e-16; // 2^-53                // 79  // 87
-    };                                                                              // 80  // 88
-    random.version = 'Alea 0.9';                                                    // 81  // 89
-    random.args = args;                                                             // 82  // 90
-    return random;                                                                  // 83  // 91
-                                                                                    // 84  // 92
-  } (Array.prototype.slice.call(arguments)));                                       // 85  // 93
-};                                                                                  // 86  // 94
-                                                                                    // 87  // 95
-var UNMISTAKABLE_CHARS = "23456789ABCDEFGHJKLMNPQRSTWXYZabcdefghijkmnopqrstuvwxyz";        // 96
-var BASE64_CHARS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ" +         // 89  // 97
-  "0123456789-_";                                                                   // 90  // 98
-                                                                                    // 91  // 99
-// If seeds are provided, then the alea PRNG will be used, since cryptographic      // 92  // 100
-// PRNGs (Node crypto and window.crypto.getRandomValues) don't allow us to          // 93  // 101
-// specify seeds. The caller is responsible for making sure to provide a seed       // 94  // 102
-// for alea if a csprng is not available.                                           // 95  // 103
-var RandomGenerator = function (seedArray) {                                        // 96  // 104
-  var self = this;                                                                  // 97  // 105
-  if (seedArray !== undefined)                                                      // 98  // 106
-    self.alea = Alea.apply(null, seedArray);                                        // 99  // 107
+//////////////////////////////////////////////////////////////////////////////////////
+//                                                                                  //
+// packages/random/random.js                                                        //
+//                                                                                  //
+//////////////////////////////////////////////////////////////////////////////////////
+                                                                                    //
+// We use cryptographically strong PRNGs (crypto.getRandomBytes() on the server,    // 1
+// window.crypto.getRandomValues() in the browser) when available. If these         // 2
+// PRNGs fail, we fall back to the Alea PRNG, which is not cryptographically        // 3
+// strong, and we seed it with various sources such as the date, Math.random,       // 4
+// and window size on the client.  When using crypto.getRandomValues(), our         // 5
+// primitive is hexString(), from which we construct fraction(). When using         // 6
+// window.crypto.getRandomValues() or alea, the primitive is fraction and we use    // 7
+// that to construct hex string.                                                    // 8
+                                                                                    // 9
+if (Meteor.isServer)                                                                // 10
+  var nodeCrypto = Npm.require('crypto');                                           // 11
+                                                                                    // 12
+// see http://baagoe.org/en/wiki/Better_random_numbers_for_javascript               // 13
+// for a full discussion and Alea implementation.                                   // 14
+var Alea = function () {                                                            // 15
+  function Mash() {                                                                 // 16
+    var n = 0xefc8249d;                                                             // 17
+                                                                                    // 18
+    var mash = function(data) {                                                     // 19
+      data = data.toString();                                                       // 20
+      for (var i = 0; i < data.length; i++) {                                       // 21
+        n += data.charCodeAt(i);                                                    // 22
+        var h = 0.02519603282416938 * n;                                            // 23
+        n = h >>> 0;                                                                // 24
+        h -= n;                                                                     // 25
+        h *= n;                                                                     // 26
+        n = h >>> 0;                                                                // 27
+        h -= n;                                                                     // 28
+        n += h * 0x100000000; // 2^32                                               // 29
+      }                                                                             // 30
+      return (n >>> 0) * 2.3283064365386963e-10; // 2^-32                           // 31
+    };                                                                              // 32
+                                                                                    // 33
+    mash.version = 'Mash 0.9';                                                      // 34
+    return mash;                                                                    // 35
+  }                                                                                 // 36
+                                                                                    // 37
+  return (function (args) {                                                         // 38
+    var s0 = 0;                                                                     // 39
+    var s1 = 0;                                                                     // 40
+    var s2 = 0;                                                                     // 41
+    var c = 1;                                                                      // 42
+                                                                                    // 43
+    if (args.length == 0) {                                                         // 44
+      args = [+new Date];                                                           // 45
+    }                                                                               // 46
+    var mash = Mash();                                                              // 47
+    s0 = mash(' ');                                                                 // 48
+    s1 = mash(' ');                                                                 // 49
+    s2 = mash(' ');                                                                 // 50
+                                                                                    // 51
+    for (var i = 0; i < args.length; i++) {                                         // 52
+      s0 -= mash(args[i]);                                                          // 53
+      if (s0 < 0) {                                                                 // 54
+        s0 += 1;                                                                    // 55
+      }                                                                             // 56
+      s1 -= mash(args[i]);                                                          // 57
+      if (s1 < 0) {                                                                 // 58
+        s1 += 1;                                                                    // 59
+      }                                                                             // 60
+      s2 -= mash(args[i]);                                                          // 61
+      if (s2 < 0) {                                                                 // 62
+        s2 += 1;                                                                    // 63
+      }                                                                             // 64
+    }                                                                               // 65
+    mash = null;                                                                    // 66
+                                                                                    // 67
+    var random = function() {                                                       // 68
+      var t = 2091639 * s0 + c * 2.3283064365386963e-10; // 2^-32                   // 69
+      s0 = s1;                                                                      // 70
+      s1 = s2;                                                                      // 71
+      return s2 = t - (c = t | 0);                                                  // 72
+    };                                                                              // 73
+    random.uint32 = function() {                                                    // 74
+      return random() * 0x100000000; // 2^32                                        // 75
+    };                                                                              // 76
+    random.fract53 = function() {                                                   // 77
+      return random() +                                                             // 78
+        (random() * 0x200000 | 0) * 1.1102230246251565e-16; // 2^-53                // 79
+    };                                                                              // 80
+    random.version = 'Alea 0.9';                                                    // 81
+    random.args = args;                                                             // 82
+    return random;                                                                  // 83
+                                                                                    // 84
+  } (Array.prototype.slice.call(arguments)));                                       // 85
+};                                                                                  // 86
+                                                                                    // 87
+var UNMISTAKABLE_CHARS = "23456789ABCDEFGHJKLMNPQRSTWXYZabcdefghijkmnopqrstuvwxyz";
+var BASE64_CHARS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ" +         // 89
+  "0123456789-_";                                                                   // 90
+                                                                                    // 91
+// If seeds are provided, then the alea PRNG will be used, since cryptographic      // 92
+// PRNGs (Node crypto and window.crypto.getRandomValues) don't allow us to          // 93
+// specify seeds. The caller is responsible for making sure to provide a seed       // 94
+// for alea if a csprng is not available.                                           // 95
+var RandomGenerator = function (seedArray) {                                        // 96
+  var self = this;                                                                  // 97
+  if (seedArray !== undefined)                                                      // 98
+    self.alea = Alea.apply(null, seedArray);                                        // 99
 };                                                                                  // 100
                                                                                     // 101
 RandomGenerator.prototype.fraction = function () {                                  // 102
@@ -242,46 +234,42 @@ Random.createWithSeeds = function () {                                          
   return new RandomGenerator(arguments);                                            // 217
 };                                                                                  // 218
                                                                                     // 219
-//////////////////////////////////////////////////////////////////////////////////////     // 228
-                                                                                           // 229
-}).call(this);                                                                             // 230
-                                                                                           // 231
-                                                                                           // 232
-                                                                                           // 233
-                                                                                           // 234
-                                                                                           // 235
-                                                                                           // 236
-(function(){                                                                               // 237
-                                                                                           // 238
-//////////////////////////////////////////////////////////////////////////////////////     // 239
-//                                                                                  //     // 240
-// packages/random/deprecated.js                                                    //     // 241
-//                                                                                  //     // 242
-//////////////////////////////////////////////////////////////////////////////////////     // 243
-                                                                                    //     // 244
-// Before this package existed, we used to use this Meteor.uuid()                   // 1   // 245
-// implementing the RFC 4122 v4 UUID. It is no longer documented                    // 2   // 246
-// and will go away.                                                                // 3   // 247
-// XXX COMPAT WITH 0.5.6                                                            // 4   // 248
-Meteor.uuid = function () {                                                         // 5   // 249
-  var HEX_DIGITS = "0123456789abcdef";                                              // 6   // 250
-  var s = [];                                                                       // 7   // 251
-  for (var i = 0; i < 36; i++) {                                                    // 8   // 252
-    s[i] = Random.choice(HEX_DIGITS);                                               // 9   // 253
-  }                                                                                 // 10  // 254
-  s[14] = "4";                                                                      // 11  // 255
-  s[19] = HEX_DIGITS.substr((parseInt(s[19],16) & 0x3) | 0x8, 1);                   // 12  // 256
-  s[8] = s[13] = s[18] = s[23] = "-";                                               // 13  // 257
-                                                                                    // 14  // 258
-  var uuid = s.join("");                                                            // 15  // 259
-  return uuid;                                                                      // 16  // 260
-};                                                                                  // 17  // 261
-                                                                                    // 18  // 262
-//////////////////////////////////////////////////////////////////////////////////////     // 263
-                                                                                           // 264
-}).call(this);                                                                             // 265
-                                                                                           // 266
-/////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////
+
+}).call(this);
+
+
+
+
+
+
+(function(){
+
+//////////////////////////////////////////////////////////////////////////////////////
+//                                                                                  //
+// packages/random/deprecated.js                                                    //
+//                                                                                  //
+//////////////////////////////////////////////////////////////////////////////////////
+                                                                                    //
+// Before this package existed, we used to use this Meteor.uuid()                   // 1
+// implementing the RFC 4122 v4 UUID. It is no longer documented                    // 2
+// and will go away.                                                                // 3
+// XXX COMPAT WITH 0.5.6                                                            // 4
+Meteor.uuid = function () {                                                         // 5
+  var HEX_DIGITS = "0123456789abcdef";                                              // 6
+  var s = [];                                                                       // 7
+  for (var i = 0; i < 36; i++) {                                                    // 8
+    s[i] = Random.choice(HEX_DIGITS);                                               // 9
+  }                                                                                 // 10
+  s[14] = "4";                                                                      // 11
+  s[19] = HEX_DIGITS.substr((parseInt(s[19],16) & 0x3) | 0x8, 1);                   // 12
+  s[8] = s[13] = s[18] = s[23] = "-";                                               // 13
+                                                                                    // 14
+  var uuid = s.join("");                                                            // 15
+  return uuid;                                                                      // 16
+};                                                                                  // 17
+                                                                                    // 18
+//////////////////////////////////////////////////////////////////////////////////////
 
 }).call(this);
 

@@ -9,1187 +9,1179 @@ var HTMLTools, Scanner, makeRegexMatcher, getCharacterReference, getComment, get
 
 (function(){
 
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//                                                                                                                     //
-// packages/html-tools/packages/html-tools.js                                                                          //
-//                                                                                                                     //
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-                                                                                                                       //
-(function(){                                                                                                           // 1
-                                                                                                                       // 2
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////      // 3
-//                                                                                                             //      // 4
-// packages/html-tools/utils.js                                                                                //      // 5
-//                                                                                                             //      // 6
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////      // 7
-                                                                                                               //      // 8
-                                                                                                               // 1    // 9
-HTMLTools = {};                                                                                                // 2    // 10
-HTMLTools.Parse = {};                                                                                          // 3    // 11
-                                                                                                               // 4    // 12
-var asciiLowerCase = HTMLTools.asciiLowerCase = function (str) {                                               // 5    // 13
-  return str.replace(/[A-Z]/g, function (c) {                                                                  // 6    // 14
-    return String.fromCharCode(c.charCodeAt(0) + 32);                                                          // 7    // 15
-  });                                                                                                          // 8    // 16
-};                                                                                                             // 9    // 17
-                                                                                                               // 10   // 18
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                                             //
+// packages/html-tools/utils.js                                                                                //
+//                                                                                                             //
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+                                                                                                               //
+                                                                                                               // 1
+HTMLTools = {};                                                                                                // 2
+HTMLTools.Parse = {};                                                                                          // 3
+                                                                                                               // 4
+var asciiLowerCase = HTMLTools.asciiLowerCase = function (str) {                                               // 5
+  return str.replace(/[A-Z]/g, function (c) {                                                                  // 6
+    return String.fromCharCode(c.charCodeAt(0) + 32);                                                          // 7
+  });                                                                                                          // 8
+};                                                                                                             // 9
+                                                                                                               // 10
 var svgCamelCaseAttributes = 'attributeName attributeType baseFrequency baseProfile calcMode clipPathUnits contentScriptType contentStyleType diffuseConstant edgeMode externalResourcesRequired filterRes filterUnits glyphRef glyphRef gradientTransform gradientTransform gradientUnits gradientUnits kernelMatrix kernelUnitLength kernelUnitLength kernelUnitLength keyPoints keySplines keyTimes lengthAdjust limitingConeAngle markerHeight markerUnits markerWidth maskContentUnits maskUnits numOctaves pathLength patternContentUnits patternTransform patternUnits pointsAtX pointsAtY pointsAtZ preserveAlpha preserveAspectRatio primitiveUnits refX refY repeatCount repeatDur requiredExtensions requiredFeatures specularConstant specularExponent specularExponent spreadMethod spreadMethod startOffset stdDeviation stitchTiles surfaceScale surfaceScale systemLanguage tableValues targetX targetY textLength textLength viewBox viewTarget xChannelSelector yChannelSelector zoomAndPan'.split(' ');
-                                                                                                               // 12   // 20
-var properAttributeCaseMap = (function (map) {                                                                 // 13   // 21
-  for (var i = 0; i < svgCamelCaseAttributes.length; i++) {                                                    // 14   // 22
-    var a = svgCamelCaseAttributes[i];                                                                         // 15   // 23
-    map[asciiLowerCase(a)] = a;                                                                                // 16   // 24
-  }                                                                                                            // 17   // 25
-  return map;                                                                                                  // 18   // 26
-})({});                                                                                                        // 19   // 27
-                                                                                                               // 20   // 28
-var properTagCaseMap = (function (map) {                                                                       // 21   // 29
-  var knownElements = HTML.knownElementNames;                                                                  // 22   // 30
-  for (var i = 0; i < knownElements.length; i++) {                                                             // 23   // 31
-    var a = knownElements[i];                                                                                  // 24   // 32
-    map[asciiLowerCase(a)] = a;                                                                                // 25   // 33
-  }                                                                                                            // 26   // 34
-  return map;                                                                                                  // 27   // 35
-})({});                                                                                                        // 28   // 36
-                                                                                                               // 29   // 37
-// Take a tag name in any case and make it the proper case for HTML.                                           // 30   // 38
-//                                                                                                             // 31   // 39
-// Modern browsers let you embed SVG in HTML, but SVG elements are special                                     // 32   // 40
-// in that they have a case-sensitive DOM API (nodeName, getAttribute,                                         // 33   // 41
-// setAttribute).  For example, it has to be `setAttribute("viewBox")`,                                        // 34   // 42
-// not `"viewbox"`.  However, the browser's HTML parser is NOT case sensitive                                  // 35   // 43
-// and will fix the case for you, so if you write `<svg viewbox="...">`                                        // 36   // 44
-// you actually get a `"viewBox"` attribute.  Any HTML-parsing toolchain                                       // 37   // 45
-// must do the same.                                                                                           // 38   // 46
-HTMLTools.properCaseTagName = function (name) {                                                                // 39   // 47
-  var lowered = asciiLowerCase(name);                                                                          // 40   // 48
-  return properTagCaseMap.hasOwnProperty(lowered) ?                                                            // 41   // 49
-    properTagCaseMap[lowered] : lowered;                                                                       // 42   // 50
-};                                                                                                             // 43   // 51
-                                                                                                               // 44   // 52
-// See docs for properCaseTagName.                                                                             // 45   // 53
-HTMLTools.properCaseAttributeName = function (name) {                                                          // 46   // 54
-  var lowered = asciiLowerCase(name);                                                                          // 47   // 55
-  return properAttributeCaseMap.hasOwnProperty(lowered) ?                                                      // 48   // 56
-    properAttributeCaseMap[lowered] : lowered;                                                                 // 49   // 57
-};                                                                                                             // 50   // 58
-                                                                                                               // 51   // 59
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////      // 60
-                                                                                                                       // 61
-}).call(this);                                                                                                         // 62
-                                                                                                                       // 63
-                                                                                                                       // 64
-                                                                                                                       // 65
-                                                                                                                       // 66
-                                                                                                                       // 67
-                                                                                                                       // 68
-(function(){                                                                                                           // 69
-                                                                                                                       // 70
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////      // 71
-//                                                                                                             //      // 72
-// packages/html-tools/scanner.js                                                                              //      // 73
-//                                                                                                             //      // 74
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////      // 75
-                                                                                                               //      // 76
-// This is a Scanner class suitable for any parser/lexer/tokenizer.                                            // 1    // 77
-//                                                                                                             // 2    // 78
-// A Scanner has an immutable source document (string) `input` and a current                                   // 3    // 79
-// position `pos`, an index into the string, which can be set at will.                                         // 4    // 80
-//                                                                                                             // 5    // 81
-// * `new Scanner(input)` - constructs a Scanner with source string `input`                                    // 6    // 82
-// * `scanner.rest()` - returns the rest of the input after `pos`                                              // 7    // 83
-// * `scanner.peek()` - returns the character at `pos`                                                         // 8    // 84
-// * `scanner.isEOF()` - true if `pos` is at or beyond the end of `input`                                      // 9    // 85
-// * `scanner.fatal(msg)` - throw an error indicating a problem at `pos`                                       // 10   // 86
-                                                                                                               // 11   // 87
-Scanner = HTMLTools.Scanner = function (input) {                                                               // 12   // 88
-  this.input = input; // public, read-only                                                                     // 13   // 89
-  this.pos = 0; // public, read-write                                                                          // 14   // 90
-};                                                                                                             // 15   // 91
-                                                                                                               // 16   // 92
-Scanner.prototype.rest = function () {                                                                         // 17   // 93
-  // Slicing a string is O(1) in modern JavaScript VMs (including old IE).                                     // 18   // 94
-  return this.input.slice(this.pos);                                                                           // 19   // 95
-};                                                                                                             // 20   // 96
-                                                                                                               // 21   // 97
-Scanner.prototype.isEOF = function () {                                                                        // 22   // 98
-  return this.pos >= this.input.length;                                                                        // 23   // 99
-};                                                                                                             // 24   // 100
-                                                                                                               // 25   // 101
-Scanner.prototype.fatal = function (msg) {                                                                     // 26   // 102
-  // despite this default, you should always provide a message!                                                // 27   // 103
-  msg = (msg || "Parse error");                                                                                // 28   // 104
-                                                                                                               // 29   // 105
-  var CONTEXT_AMOUNT = 20;                                                                                     // 30   // 106
-                                                                                                               // 31   // 107
-  var input = this.input;                                                                                      // 32   // 108
-  var pos = this.pos;                                                                                          // 33   // 109
-  var pastInput = input.substring(pos - CONTEXT_AMOUNT - 1, pos);                                              // 34   // 110
-  if (pastInput.length > CONTEXT_AMOUNT)                                                                       // 35   // 111
-    pastInput = '...' + pastInput.substring(-CONTEXT_AMOUNT);                                                  // 36   // 112
-                                                                                                               // 37   // 113
-  var upcomingInput = input.substring(pos, pos + CONTEXT_AMOUNT + 1);                                          // 38   // 114
-  if (upcomingInput.length > CONTEXT_AMOUNT)                                                                   // 39   // 115
-    upcomingInput = upcomingInput.substring(0, CONTEXT_AMOUNT) + '...';                                        // 40   // 116
-                                                                                                               // 41   // 117
-  var positionDisplay = ((pastInput + upcomingInput).replace(/\n/g, ' ') + '\n' +                              // 42   // 118
-                         (new Array(pastInput.length + 1).join(' ')) + "^");                                   // 43   // 119
-                                                                                                               // 44   // 120
-  var e = new Error(msg + "\n" + positionDisplay);                                                             // 45   // 121
-                                                                                                               // 46   // 122
-  e.offset = pos;                                                                                              // 47   // 123
-  var allPastInput = input.substring(0, pos);                                                                  // 48   // 124
-  e.line = (1 + (allPastInput.match(/\n/g) || []).length);                                                     // 49   // 125
-  e.col = (1 + pos - allPastInput.lastIndexOf('\n'));                                                          // 50   // 126
-  e.scanner = this;                                                                                            // 51   // 127
-                                                                                                               // 52   // 128
-  throw e;                                                                                                     // 53   // 129
-};                                                                                                             // 54   // 130
-                                                                                                               // 55   // 131
-// Peek at the next character.                                                                                 // 56   // 132
-//                                                                                                             // 57   // 133
-// If `isEOF`, returns an empty string.                                                                        // 58   // 134
-Scanner.prototype.peek = function () {                                                                         // 59   // 135
-  return this.input.charAt(this.pos);                                                                          // 60   // 136
-};                                                                                                             // 61   // 137
-                                                                                                               // 62   // 138
-// Constructs a `getFoo` function where `foo` is specified with a regex.                                       // 63   // 139
-// The regex should start with `^`.  The constructed function will return                                      // 64   // 140
-// match group 1, if it exists and matches a non-empty string, or else                                         // 65   // 141
-// the entire matched string (or null if there is no match).                                                   // 66   // 142
-//                                                                                                             // 67   // 143
-// A `getFoo` function tries to match and consume a foo.  If it succeeds,                                      // 68   // 144
-// the current position of the scanner is advanced.  If it fails, the                                          // 69   // 145
-// current position is not advanced and a falsy value (typically null)                                         // 70   // 146
-// is returned.                                                                                                // 71   // 147
-makeRegexMatcher = function (regex) {                                                                          // 72   // 148
-  return function (scanner) {                                                                                  // 73   // 149
-    var match = regex.exec(scanner.rest());                                                                    // 74   // 150
-                                                                                                               // 75   // 151
-    if (! match)                                                                                               // 76   // 152
-      return null;                                                                                             // 77   // 153
-                                                                                                               // 78   // 154
-    scanner.pos += match[0].length;                                                                            // 79   // 155
-    return match[1] || match[0];                                                                               // 80   // 156
-  };                                                                                                           // 81   // 157
-};                                                                                                             // 82   // 158
-                                                                                                               // 83   // 159
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////      // 160
-                                                                                                                       // 161
-}).call(this);                                                                                                         // 162
-                                                                                                                       // 163
-                                                                                                                       // 164
-                                                                                                                       // 165
-                                                                                                                       // 166
-                                                                                                                       // 167
-                                                                                                                       // 168
-(function(){                                                                                                           // 169
-                                                                                                                       // 170
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////      // 171
-//                                                                                                             //      // 172
-// packages/html-tools/charref.js                                                                              //      // 173
-//                                                                                                             //      // 174
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////      // 175
-                                                                                                               //      // 176
-                                                                                                               // 1    // 177
-// http://www.whatwg.org/specs/web-apps/current-work/multipage/entities.json                                   // 2    // 178
-                                                                                                               // 3    // 179
-                                                                                                               // 4    // 180
-// Note that some entities don't have a final semicolon!  These are used to                                    // 5    // 181
-// make `&lt` (for example) with no semicolon a parse error but `&abcde` not.                                  // 6    // 182
-                                                                                                               // 7    // 183
-var ENTITIES = {                                                                                               // 8    // 184
-  "&Aacute;": { "codepoints": [193], "characters": "\u00C1" },                                                 // 9    // 185
-  "&Aacute": { "codepoints": [193], "characters": "\u00C1" },                                                  // 10   // 186
-  "&aacute;": { "codepoints": [225], "characters": "\u00E1" },                                                 // 11   // 187
-  "&aacute": { "codepoints": [225], "characters": "\u00E1" },                                                  // 12   // 188
-  "&Abreve;": { "codepoints": [258], "characters": "\u0102" },                                                 // 13   // 189
-  "&abreve;": { "codepoints": [259], "characters": "\u0103" },                                                 // 14   // 190
-  "&ac;": { "codepoints": [8766], "characters": "\u223E" },                                                    // 15   // 191
-  "&acd;": { "codepoints": [8767], "characters": "\u223F" },                                                   // 16   // 192
-  "&acE;": { "codepoints": [8766, 819], "characters": "\u223E\u0333" },                                        // 17   // 193
-  "&Acirc;": { "codepoints": [194], "characters": "\u00C2" },                                                  // 18   // 194
-  "&Acirc": { "codepoints": [194], "characters": "\u00C2" },                                                   // 19   // 195
-  "&acirc;": { "codepoints": [226], "characters": "\u00E2" },                                                  // 20   // 196
-  "&acirc": { "codepoints": [226], "characters": "\u00E2" },                                                   // 21   // 197
-  "&acute;": { "codepoints": [180], "characters": "\u00B4" },                                                  // 22   // 198
-  "&acute": { "codepoints": [180], "characters": "\u00B4" },                                                   // 23   // 199
-  "&Acy;": { "codepoints": [1040], "characters": "\u0410" },                                                   // 24   // 200
-  "&acy;": { "codepoints": [1072], "characters": "\u0430" },                                                   // 25   // 201
-  "&AElig;": { "codepoints": [198], "characters": "\u00C6" },                                                  // 26   // 202
-  "&AElig": { "codepoints": [198], "characters": "\u00C6" },                                                   // 27   // 203
-  "&aelig;": { "codepoints": [230], "characters": "\u00E6" },                                                  // 28   // 204
-  "&aelig": { "codepoints": [230], "characters": "\u00E6" },                                                   // 29   // 205
-  "&af;": { "codepoints": [8289], "characters": "\u2061" },                                                    // 30   // 206
-  "&Afr;": { "codepoints": [120068], "characters": "\uD835\uDD04" },                                           // 31   // 207
-  "&afr;": { "codepoints": [120094], "characters": "\uD835\uDD1E" },                                           // 32   // 208
-  "&Agrave;": { "codepoints": [192], "characters": "\u00C0" },                                                 // 33   // 209
-  "&Agrave": { "codepoints": [192], "characters": "\u00C0" },                                                  // 34   // 210
-  "&agrave;": { "codepoints": [224], "characters": "\u00E0" },                                                 // 35   // 211
-  "&agrave": { "codepoints": [224], "characters": "\u00E0" },                                                  // 36   // 212
-  "&alefsym;": { "codepoints": [8501], "characters": "\u2135" },                                               // 37   // 213
-  "&aleph;": { "codepoints": [8501], "characters": "\u2135" },                                                 // 38   // 214
-  "&Alpha;": { "codepoints": [913], "characters": "\u0391" },                                                  // 39   // 215
-  "&alpha;": { "codepoints": [945], "characters": "\u03B1" },                                                  // 40   // 216
-  "&Amacr;": { "codepoints": [256], "characters": "\u0100" },                                                  // 41   // 217
-  "&amacr;": { "codepoints": [257], "characters": "\u0101" },                                                  // 42   // 218
-  "&amalg;": { "codepoints": [10815], "characters": "\u2A3F" },                                                // 43   // 219
-  "&amp;": { "codepoints": [38], "characters": "\u0026" },                                                     // 44   // 220
-  "&amp": { "codepoints": [38], "characters": "\u0026" },                                                      // 45   // 221
-  "&AMP;": { "codepoints": [38], "characters": "\u0026" },                                                     // 46   // 222
-  "&AMP": { "codepoints": [38], "characters": "\u0026" },                                                      // 47   // 223
-  "&andand;": { "codepoints": [10837], "characters": "\u2A55" },                                               // 48   // 224
-  "&And;": { "codepoints": [10835], "characters": "\u2A53" },                                                  // 49   // 225
-  "&and;": { "codepoints": [8743], "characters": "\u2227" },                                                   // 50   // 226
-  "&andd;": { "codepoints": [10844], "characters": "\u2A5C" },                                                 // 51   // 227
-  "&andslope;": { "codepoints": [10840], "characters": "\u2A58" },                                             // 52   // 228
-  "&andv;": { "codepoints": [10842], "characters": "\u2A5A" },                                                 // 53   // 229
-  "&ang;": { "codepoints": [8736], "characters": "\u2220" },                                                   // 54   // 230
-  "&ange;": { "codepoints": [10660], "characters": "\u29A4" },                                                 // 55   // 231
-  "&angle;": { "codepoints": [8736], "characters": "\u2220" },                                                 // 56   // 232
-  "&angmsdaa;": { "codepoints": [10664], "characters": "\u29A8" },                                             // 57   // 233
-  "&angmsdab;": { "codepoints": [10665], "characters": "\u29A9" },                                             // 58   // 234
-  "&angmsdac;": { "codepoints": [10666], "characters": "\u29AA" },                                             // 59   // 235
-  "&angmsdad;": { "codepoints": [10667], "characters": "\u29AB" },                                             // 60   // 236
-  "&angmsdae;": { "codepoints": [10668], "characters": "\u29AC" },                                             // 61   // 237
-  "&angmsdaf;": { "codepoints": [10669], "characters": "\u29AD" },                                             // 62   // 238
-  "&angmsdag;": { "codepoints": [10670], "characters": "\u29AE" },                                             // 63   // 239
-  "&angmsdah;": { "codepoints": [10671], "characters": "\u29AF" },                                             // 64   // 240
-  "&angmsd;": { "codepoints": [8737], "characters": "\u2221" },                                                // 65   // 241
-  "&angrt;": { "codepoints": [8735], "characters": "\u221F" },                                                 // 66   // 242
-  "&angrtvb;": { "codepoints": [8894], "characters": "\u22BE" },                                               // 67   // 243
-  "&angrtvbd;": { "codepoints": [10653], "characters": "\u299D" },                                             // 68   // 244
-  "&angsph;": { "codepoints": [8738], "characters": "\u2222" },                                                // 69   // 245
-  "&angst;": { "codepoints": [197], "characters": "\u00C5" },                                                  // 70   // 246
-  "&angzarr;": { "codepoints": [9084], "characters": "\u237C" },                                               // 71   // 247
-  "&Aogon;": { "codepoints": [260], "characters": "\u0104" },                                                  // 72   // 248
-  "&aogon;": { "codepoints": [261], "characters": "\u0105" },                                                  // 73   // 249
-  "&Aopf;": { "codepoints": [120120], "characters": "\uD835\uDD38" },                                          // 74   // 250
-  "&aopf;": { "codepoints": [120146], "characters": "\uD835\uDD52" },                                          // 75   // 251
-  "&apacir;": { "codepoints": [10863], "characters": "\u2A6F" },                                               // 76   // 252
-  "&ap;": { "codepoints": [8776], "characters": "\u2248" },                                                    // 77   // 253
-  "&apE;": { "codepoints": [10864], "characters": "\u2A70" },                                                  // 78   // 254
-  "&ape;": { "codepoints": [8778], "characters": "\u224A" },                                                   // 79   // 255
-  "&apid;": { "codepoints": [8779], "characters": "\u224B" },                                                  // 80   // 256
-  "&apos;": { "codepoints": [39], "characters": "\u0027" },                                                    // 81   // 257
-  "&ApplyFunction;": { "codepoints": [8289], "characters": "\u2061" },                                         // 82   // 258
-  "&approx;": { "codepoints": [8776], "characters": "\u2248" },                                                // 83   // 259
-  "&approxeq;": { "codepoints": [8778], "characters": "\u224A" },                                              // 84   // 260
-  "&Aring;": { "codepoints": [197], "characters": "\u00C5" },                                                  // 85   // 261
-  "&Aring": { "codepoints": [197], "characters": "\u00C5" },                                                   // 86   // 262
-  "&aring;": { "codepoints": [229], "characters": "\u00E5" },                                                  // 87   // 263
-  "&aring": { "codepoints": [229], "characters": "\u00E5" },                                                   // 88   // 264
-  "&Ascr;": { "codepoints": [119964], "characters": "\uD835\uDC9C" },                                          // 89   // 265
-  "&ascr;": { "codepoints": [119990], "characters": "\uD835\uDCB6" },                                          // 90   // 266
-  "&Assign;": { "codepoints": [8788], "characters": "\u2254" },                                                // 91   // 267
-  "&ast;": { "codepoints": [42], "characters": "\u002A" },                                                     // 92   // 268
-  "&asymp;": { "codepoints": [8776], "characters": "\u2248" },                                                 // 93   // 269
-  "&asympeq;": { "codepoints": [8781], "characters": "\u224D" },                                               // 94   // 270
-  "&Atilde;": { "codepoints": [195], "characters": "\u00C3" },                                                 // 95   // 271
-  "&Atilde": { "codepoints": [195], "characters": "\u00C3" },                                                  // 96   // 272
-  "&atilde;": { "codepoints": [227], "characters": "\u00E3" },                                                 // 97   // 273
-  "&atilde": { "codepoints": [227], "characters": "\u00E3" },                                                  // 98   // 274
-  "&Auml;": { "codepoints": [196], "characters": "\u00C4" },                                                   // 99   // 275
-  "&Auml": { "codepoints": [196], "characters": "\u00C4" },                                                    // 100  // 276
-  "&auml;": { "codepoints": [228], "characters": "\u00E4" },                                                   // 101  // 277
-  "&auml": { "codepoints": [228], "characters": "\u00E4" },                                                    // 102  // 278
-  "&awconint;": { "codepoints": [8755], "characters": "\u2233" },                                              // 103  // 279
-  "&awint;": { "codepoints": [10769], "characters": "\u2A11" },                                                // 104  // 280
-  "&backcong;": { "codepoints": [8780], "characters": "\u224C" },                                              // 105  // 281
-  "&backepsilon;": { "codepoints": [1014], "characters": "\u03F6" },                                           // 106  // 282
-  "&backprime;": { "codepoints": [8245], "characters": "\u2035" },                                             // 107  // 283
-  "&backsim;": { "codepoints": [8765], "characters": "\u223D" },                                               // 108  // 284
-  "&backsimeq;": { "codepoints": [8909], "characters": "\u22CD" },                                             // 109  // 285
-  "&Backslash;": { "codepoints": [8726], "characters": "\u2216" },                                             // 110  // 286
-  "&Barv;": { "codepoints": [10983], "characters": "\u2AE7" },                                                 // 111  // 287
-  "&barvee;": { "codepoints": [8893], "characters": "\u22BD" },                                                // 112  // 288
-  "&barwed;": { "codepoints": [8965], "characters": "\u2305" },                                                // 113  // 289
-  "&Barwed;": { "codepoints": [8966], "characters": "\u2306" },                                                // 114  // 290
-  "&barwedge;": { "codepoints": [8965], "characters": "\u2305" },                                              // 115  // 291
-  "&bbrk;": { "codepoints": [9141], "characters": "\u23B5" },                                                  // 116  // 292
-  "&bbrktbrk;": { "codepoints": [9142], "characters": "\u23B6" },                                              // 117  // 293
-  "&bcong;": { "codepoints": [8780], "characters": "\u224C" },                                                 // 118  // 294
-  "&Bcy;": { "codepoints": [1041], "characters": "\u0411" },                                                   // 119  // 295
-  "&bcy;": { "codepoints": [1073], "characters": "\u0431" },                                                   // 120  // 296
-  "&bdquo;": { "codepoints": [8222], "characters": "\u201E" },                                                 // 121  // 297
-  "&becaus;": { "codepoints": [8757], "characters": "\u2235" },                                                // 122  // 298
-  "&because;": { "codepoints": [8757], "characters": "\u2235" },                                               // 123  // 299
-  "&Because;": { "codepoints": [8757], "characters": "\u2235" },                                               // 124  // 300
-  "&bemptyv;": { "codepoints": [10672], "characters": "\u29B0" },                                              // 125  // 301
-  "&bepsi;": { "codepoints": [1014], "characters": "\u03F6" },                                                 // 126  // 302
-  "&bernou;": { "codepoints": [8492], "characters": "\u212C" },                                                // 127  // 303
-  "&Bernoullis;": { "codepoints": [8492], "characters": "\u212C" },                                            // 128  // 304
-  "&Beta;": { "codepoints": [914], "characters": "\u0392" },                                                   // 129  // 305
-  "&beta;": { "codepoints": [946], "characters": "\u03B2" },                                                   // 130  // 306
-  "&beth;": { "codepoints": [8502], "characters": "\u2136" },                                                  // 131  // 307
-  "&between;": { "codepoints": [8812], "characters": "\u226C" },                                               // 132  // 308
-  "&Bfr;": { "codepoints": [120069], "characters": "\uD835\uDD05" },                                           // 133  // 309
-  "&bfr;": { "codepoints": [120095], "characters": "\uD835\uDD1F" },                                           // 134  // 310
-  "&bigcap;": { "codepoints": [8898], "characters": "\u22C2" },                                                // 135  // 311
-  "&bigcirc;": { "codepoints": [9711], "characters": "\u25EF" },                                               // 136  // 312
-  "&bigcup;": { "codepoints": [8899], "characters": "\u22C3" },                                                // 137  // 313
-  "&bigodot;": { "codepoints": [10752], "characters": "\u2A00" },                                              // 138  // 314
-  "&bigoplus;": { "codepoints": [10753], "characters": "\u2A01" },                                             // 139  // 315
-  "&bigotimes;": { "codepoints": [10754], "characters": "\u2A02" },                                            // 140  // 316
-  "&bigsqcup;": { "codepoints": [10758], "characters": "\u2A06" },                                             // 141  // 317
-  "&bigstar;": { "codepoints": [9733], "characters": "\u2605" },                                               // 142  // 318
-  "&bigtriangledown;": { "codepoints": [9661], "characters": "\u25BD" },                                       // 143  // 319
-  "&bigtriangleup;": { "codepoints": [9651], "characters": "\u25B3" },                                         // 144  // 320
-  "&biguplus;": { "codepoints": [10756], "characters": "\u2A04" },                                             // 145  // 321
-  "&bigvee;": { "codepoints": [8897], "characters": "\u22C1" },                                                // 146  // 322
-  "&bigwedge;": { "codepoints": [8896], "characters": "\u22C0" },                                              // 147  // 323
-  "&bkarow;": { "codepoints": [10509], "characters": "\u290D" },                                               // 148  // 324
-  "&blacklozenge;": { "codepoints": [10731], "characters": "\u29EB" },                                         // 149  // 325
-  "&blacksquare;": { "codepoints": [9642], "characters": "\u25AA" },                                           // 150  // 326
-  "&blacktriangle;": { "codepoints": [9652], "characters": "\u25B4" },                                         // 151  // 327
-  "&blacktriangledown;": { "codepoints": [9662], "characters": "\u25BE" },                                     // 152  // 328
-  "&blacktriangleleft;": { "codepoints": [9666], "characters": "\u25C2" },                                     // 153  // 329
-  "&blacktriangleright;": { "codepoints": [9656], "characters": "\u25B8" },                                    // 154  // 330
-  "&blank;": { "codepoints": [9251], "characters": "\u2423" },                                                 // 155  // 331
-  "&blk12;": { "codepoints": [9618], "characters": "\u2592" },                                                 // 156  // 332
-  "&blk14;": { "codepoints": [9617], "characters": "\u2591" },                                                 // 157  // 333
-  "&blk34;": { "codepoints": [9619], "characters": "\u2593" },                                                 // 158  // 334
-  "&block;": { "codepoints": [9608], "characters": "\u2588" },                                                 // 159  // 335
-  "&bne;": { "codepoints": [61, 8421], "characters": "\u003D\u20E5" },                                         // 160  // 336
-  "&bnequiv;": { "codepoints": [8801, 8421], "characters": "\u2261\u20E5" },                                   // 161  // 337
-  "&bNot;": { "codepoints": [10989], "characters": "\u2AED" },                                                 // 162  // 338
-  "&bnot;": { "codepoints": [8976], "characters": "\u2310" },                                                  // 163  // 339
-  "&Bopf;": { "codepoints": [120121], "characters": "\uD835\uDD39" },                                          // 164  // 340
-  "&bopf;": { "codepoints": [120147], "characters": "\uD835\uDD53" },                                          // 165  // 341
-  "&bot;": { "codepoints": [8869], "characters": "\u22A5" },                                                   // 166  // 342
-  "&bottom;": { "codepoints": [8869], "characters": "\u22A5" },                                                // 167  // 343
-  "&bowtie;": { "codepoints": [8904], "characters": "\u22C8" },                                                // 168  // 344
-  "&boxbox;": { "codepoints": [10697], "characters": "\u29C9" },                                               // 169  // 345
-  "&boxdl;": { "codepoints": [9488], "characters": "\u2510" },                                                 // 170  // 346
-  "&boxdL;": { "codepoints": [9557], "characters": "\u2555" },                                                 // 171  // 347
-  "&boxDl;": { "codepoints": [9558], "characters": "\u2556" },                                                 // 172  // 348
-  "&boxDL;": { "codepoints": [9559], "characters": "\u2557" },                                                 // 173  // 349
-  "&boxdr;": { "codepoints": [9484], "characters": "\u250C" },                                                 // 174  // 350
-  "&boxdR;": { "codepoints": [9554], "characters": "\u2552" },                                                 // 175  // 351
-  "&boxDr;": { "codepoints": [9555], "characters": "\u2553" },                                                 // 176  // 352
-  "&boxDR;": { "codepoints": [9556], "characters": "\u2554" },                                                 // 177  // 353
-  "&boxh;": { "codepoints": [9472], "characters": "\u2500" },                                                  // 178  // 354
-  "&boxH;": { "codepoints": [9552], "characters": "\u2550" },                                                  // 179  // 355
-  "&boxhd;": { "codepoints": [9516], "characters": "\u252C" },                                                 // 180  // 356
-  "&boxHd;": { "codepoints": [9572], "characters": "\u2564" },                                                 // 181  // 357
-  "&boxhD;": { "codepoints": [9573], "characters": "\u2565" },                                                 // 182  // 358
-  "&boxHD;": { "codepoints": [9574], "characters": "\u2566" },                                                 // 183  // 359
-  "&boxhu;": { "codepoints": [9524], "characters": "\u2534" },                                                 // 184  // 360
-  "&boxHu;": { "codepoints": [9575], "characters": "\u2567" },                                                 // 185  // 361
-  "&boxhU;": { "codepoints": [9576], "characters": "\u2568" },                                                 // 186  // 362
-  "&boxHU;": { "codepoints": [9577], "characters": "\u2569" },                                                 // 187  // 363
-  "&boxminus;": { "codepoints": [8863], "characters": "\u229F" },                                              // 188  // 364
-  "&boxplus;": { "codepoints": [8862], "characters": "\u229E" },                                               // 189  // 365
-  "&boxtimes;": { "codepoints": [8864], "characters": "\u22A0" },                                              // 190  // 366
-  "&boxul;": { "codepoints": [9496], "characters": "\u2518" },                                                 // 191  // 367
-  "&boxuL;": { "codepoints": [9563], "characters": "\u255B" },                                                 // 192  // 368
-  "&boxUl;": { "codepoints": [9564], "characters": "\u255C" },                                                 // 193  // 369
-  "&boxUL;": { "codepoints": [9565], "characters": "\u255D" },                                                 // 194  // 370
-  "&boxur;": { "codepoints": [9492], "characters": "\u2514" },                                                 // 195  // 371
-  "&boxuR;": { "codepoints": [9560], "characters": "\u2558" },                                                 // 196  // 372
-  "&boxUr;": { "codepoints": [9561], "characters": "\u2559" },                                                 // 197  // 373
-  "&boxUR;": { "codepoints": [9562], "characters": "\u255A" },                                                 // 198  // 374
-  "&boxv;": { "codepoints": [9474], "characters": "\u2502" },                                                  // 199  // 375
-  "&boxV;": { "codepoints": [9553], "characters": "\u2551" },                                                  // 200  // 376
-  "&boxvh;": { "codepoints": [9532], "characters": "\u253C" },                                                 // 201  // 377
-  "&boxvH;": { "codepoints": [9578], "characters": "\u256A" },                                                 // 202  // 378
-  "&boxVh;": { "codepoints": [9579], "characters": "\u256B" },                                                 // 203  // 379
-  "&boxVH;": { "codepoints": [9580], "characters": "\u256C" },                                                 // 204  // 380
-  "&boxvl;": { "codepoints": [9508], "characters": "\u2524" },                                                 // 205  // 381
-  "&boxvL;": { "codepoints": [9569], "characters": "\u2561" },                                                 // 206  // 382
-  "&boxVl;": { "codepoints": [9570], "characters": "\u2562" },                                                 // 207  // 383
-  "&boxVL;": { "codepoints": [9571], "characters": "\u2563" },                                                 // 208  // 384
-  "&boxvr;": { "codepoints": [9500], "characters": "\u251C" },                                                 // 209  // 385
-  "&boxvR;": { "codepoints": [9566], "characters": "\u255E" },                                                 // 210  // 386
-  "&boxVr;": { "codepoints": [9567], "characters": "\u255F" },                                                 // 211  // 387
-  "&boxVR;": { "codepoints": [9568], "characters": "\u2560" },                                                 // 212  // 388
-  "&bprime;": { "codepoints": [8245], "characters": "\u2035" },                                                // 213  // 389
-  "&breve;": { "codepoints": [728], "characters": "\u02D8" },                                                  // 214  // 390
-  "&Breve;": { "codepoints": [728], "characters": "\u02D8" },                                                  // 215  // 391
-  "&brvbar;": { "codepoints": [166], "characters": "\u00A6" },                                                 // 216  // 392
-  "&brvbar": { "codepoints": [166], "characters": "\u00A6" },                                                  // 217  // 393
-  "&bscr;": { "codepoints": [119991], "characters": "\uD835\uDCB7" },                                          // 218  // 394
-  "&Bscr;": { "codepoints": [8492], "characters": "\u212C" },                                                  // 219  // 395
-  "&bsemi;": { "codepoints": [8271], "characters": "\u204F" },                                                 // 220  // 396
-  "&bsim;": { "codepoints": [8765], "characters": "\u223D" },                                                  // 221  // 397
-  "&bsime;": { "codepoints": [8909], "characters": "\u22CD" },                                                 // 222  // 398
-  "&bsolb;": { "codepoints": [10693], "characters": "\u29C5" },                                                // 223  // 399
-  "&bsol;": { "codepoints": [92], "characters": "\u005C" },                                                    // 224  // 400
-  "&bsolhsub;": { "codepoints": [10184], "characters": "\u27C8" },                                             // 225  // 401
-  "&bull;": { "codepoints": [8226], "characters": "\u2022" },                                                  // 226  // 402
-  "&bullet;": { "codepoints": [8226], "characters": "\u2022" },                                                // 227  // 403
-  "&bump;": { "codepoints": [8782], "characters": "\u224E" },                                                  // 228  // 404
-  "&bumpE;": { "codepoints": [10926], "characters": "\u2AAE" },                                                // 229  // 405
-  "&bumpe;": { "codepoints": [8783], "characters": "\u224F" },                                                 // 230  // 406
-  "&Bumpeq;": { "codepoints": [8782], "characters": "\u224E" },                                                // 231  // 407
-  "&bumpeq;": { "codepoints": [8783], "characters": "\u224F" },                                                // 232  // 408
-  "&Cacute;": { "codepoints": [262], "characters": "\u0106" },                                                 // 233  // 409
-  "&cacute;": { "codepoints": [263], "characters": "\u0107" },                                                 // 234  // 410
-  "&capand;": { "codepoints": [10820], "characters": "\u2A44" },                                               // 235  // 411
-  "&capbrcup;": { "codepoints": [10825], "characters": "\u2A49" },                                             // 236  // 412
-  "&capcap;": { "codepoints": [10827], "characters": "\u2A4B" },                                               // 237  // 413
-  "&cap;": { "codepoints": [8745], "characters": "\u2229" },                                                   // 238  // 414
-  "&Cap;": { "codepoints": [8914], "characters": "\u22D2" },                                                   // 239  // 415
-  "&capcup;": { "codepoints": [10823], "characters": "\u2A47" },                                               // 240  // 416
-  "&capdot;": { "codepoints": [10816], "characters": "\u2A40" },                                               // 241  // 417
-  "&CapitalDifferentialD;": { "codepoints": [8517], "characters": "\u2145" },                                  // 242  // 418
-  "&caps;": { "codepoints": [8745, 65024], "characters": "\u2229\uFE00" },                                     // 243  // 419
-  "&caret;": { "codepoints": [8257], "characters": "\u2041" },                                                 // 244  // 420
-  "&caron;": { "codepoints": [711], "characters": "\u02C7" },                                                  // 245  // 421
-  "&Cayleys;": { "codepoints": [8493], "characters": "\u212D" },                                               // 246  // 422
-  "&ccaps;": { "codepoints": [10829], "characters": "\u2A4D" },                                                // 247  // 423
-  "&Ccaron;": { "codepoints": [268], "characters": "\u010C" },                                                 // 248  // 424
-  "&ccaron;": { "codepoints": [269], "characters": "\u010D" },                                                 // 249  // 425
-  "&Ccedil;": { "codepoints": [199], "characters": "\u00C7" },                                                 // 250  // 426
-  "&Ccedil": { "codepoints": [199], "characters": "\u00C7" },                                                  // 251  // 427
-  "&ccedil;": { "codepoints": [231], "characters": "\u00E7" },                                                 // 252  // 428
-  "&ccedil": { "codepoints": [231], "characters": "\u00E7" },                                                  // 253  // 429
-  "&Ccirc;": { "codepoints": [264], "characters": "\u0108" },                                                  // 254  // 430
-  "&ccirc;": { "codepoints": [265], "characters": "\u0109" },                                                  // 255  // 431
-  "&Cconint;": { "codepoints": [8752], "characters": "\u2230" },                                               // 256  // 432
-  "&ccups;": { "codepoints": [10828], "characters": "\u2A4C" },                                                // 257  // 433
-  "&ccupssm;": { "codepoints": [10832], "characters": "\u2A50" },                                              // 258  // 434
-  "&Cdot;": { "codepoints": [266], "characters": "\u010A" },                                                   // 259  // 435
-  "&cdot;": { "codepoints": [267], "characters": "\u010B" },                                                   // 260  // 436
-  "&cedil;": { "codepoints": [184], "characters": "\u00B8" },                                                  // 261  // 437
-  "&cedil": { "codepoints": [184], "characters": "\u00B8" },                                                   // 262  // 438
-  "&Cedilla;": { "codepoints": [184], "characters": "\u00B8" },                                                // 263  // 439
-  "&cemptyv;": { "codepoints": [10674], "characters": "\u29B2" },                                              // 264  // 440
-  "&cent;": { "codepoints": [162], "characters": "\u00A2" },                                                   // 265  // 441
-  "&cent": { "codepoints": [162], "characters": "\u00A2" },                                                    // 266  // 442
-  "&centerdot;": { "codepoints": [183], "characters": "\u00B7" },                                              // 267  // 443
-  "&CenterDot;": { "codepoints": [183], "characters": "\u00B7" },                                              // 268  // 444
-  "&cfr;": { "codepoints": [120096], "characters": "\uD835\uDD20" },                                           // 269  // 445
-  "&Cfr;": { "codepoints": [8493], "characters": "\u212D" },                                                   // 270  // 446
-  "&CHcy;": { "codepoints": [1063], "characters": "\u0427" },                                                  // 271  // 447
-  "&chcy;": { "codepoints": [1095], "characters": "\u0447" },                                                  // 272  // 448
-  "&check;": { "codepoints": [10003], "characters": "\u2713" },                                                // 273  // 449
-  "&checkmark;": { "codepoints": [10003], "characters": "\u2713" },                                            // 274  // 450
-  "&Chi;": { "codepoints": [935], "characters": "\u03A7" },                                                    // 275  // 451
-  "&chi;": { "codepoints": [967], "characters": "\u03C7" },                                                    // 276  // 452
-  "&circ;": { "codepoints": [710], "characters": "\u02C6" },                                                   // 277  // 453
-  "&circeq;": { "codepoints": [8791], "characters": "\u2257" },                                                // 278  // 454
-  "&circlearrowleft;": { "codepoints": [8634], "characters": "\u21BA" },                                       // 279  // 455
-  "&circlearrowright;": { "codepoints": [8635], "characters": "\u21BB" },                                      // 280  // 456
-  "&circledast;": { "codepoints": [8859], "characters": "\u229B" },                                            // 281  // 457
-  "&circledcirc;": { "codepoints": [8858], "characters": "\u229A" },                                           // 282  // 458
-  "&circleddash;": { "codepoints": [8861], "characters": "\u229D" },                                           // 283  // 459
-  "&CircleDot;": { "codepoints": [8857], "characters": "\u2299" },                                             // 284  // 460
-  "&circledR;": { "codepoints": [174], "characters": "\u00AE" },                                               // 285  // 461
-  "&circledS;": { "codepoints": [9416], "characters": "\u24C8" },                                              // 286  // 462
-  "&CircleMinus;": { "codepoints": [8854], "characters": "\u2296" },                                           // 287  // 463
-  "&CirclePlus;": { "codepoints": [8853], "characters": "\u2295" },                                            // 288  // 464
-  "&CircleTimes;": { "codepoints": [8855], "characters": "\u2297" },                                           // 289  // 465
-  "&cir;": { "codepoints": [9675], "characters": "\u25CB" },                                                   // 290  // 466
-  "&cirE;": { "codepoints": [10691], "characters": "\u29C3" },                                                 // 291  // 467
-  "&cire;": { "codepoints": [8791], "characters": "\u2257" },                                                  // 292  // 468
-  "&cirfnint;": { "codepoints": [10768], "characters": "\u2A10" },                                             // 293  // 469
-  "&cirmid;": { "codepoints": [10991], "characters": "\u2AEF" },                                               // 294  // 470
-  "&cirscir;": { "codepoints": [10690], "characters": "\u29C2" },                                              // 295  // 471
-  "&ClockwiseContourIntegral;": { "codepoints": [8754], "characters": "\u2232" },                              // 296  // 472
-  "&CloseCurlyDoubleQuote;": { "codepoints": [8221], "characters": "\u201D" },                                 // 297  // 473
-  "&CloseCurlyQuote;": { "codepoints": [8217], "characters": "\u2019" },                                       // 298  // 474
-  "&clubs;": { "codepoints": [9827], "characters": "\u2663" },                                                 // 299  // 475
-  "&clubsuit;": { "codepoints": [9827], "characters": "\u2663" },                                              // 300  // 476
-  "&colon;": { "codepoints": [58], "characters": "\u003A" },                                                   // 301  // 477
-  "&Colon;": { "codepoints": [8759], "characters": "\u2237" },                                                 // 302  // 478
-  "&Colone;": { "codepoints": [10868], "characters": "\u2A74" },                                               // 303  // 479
-  "&colone;": { "codepoints": [8788], "characters": "\u2254" },                                                // 304  // 480
-  "&coloneq;": { "codepoints": [8788], "characters": "\u2254" },                                               // 305  // 481
-  "&comma;": { "codepoints": [44], "characters": "\u002C" },                                                   // 306  // 482
-  "&commat;": { "codepoints": [64], "characters": "\u0040" },                                                  // 307  // 483
-  "&comp;": { "codepoints": [8705], "characters": "\u2201" },                                                  // 308  // 484
-  "&compfn;": { "codepoints": [8728], "characters": "\u2218" },                                                // 309  // 485
-  "&complement;": { "codepoints": [8705], "characters": "\u2201" },                                            // 310  // 486
-  "&complexes;": { "codepoints": [8450], "characters": "\u2102" },                                             // 311  // 487
-  "&cong;": { "codepoints": [8773], "characters": "\u2245" },                                                  // 312  // 488
-  "&congdot;": { "codepoints": [10861], "characters": "\u2A6D" },                                              // 313  // 489
-  "&Congruent;": { "codepoints": [8801], "characters": "\u2261" },                                             // 314  // 490
-  "&conint;": { "codepoints": [8750], "characters": "\u222E" },                                                // 315  // 491
-  "&Conint;": { "codepoints": [8751], "characters": "\u222F" },                                                // 316  // 492
-  "&ContourIntegral;": { "codepoints": [8750], "characters": "\u222E" },                                       // 317  // 493
-  "&copf;": { "codepoints": [120148], "characters": "\uD835\uDD54" },                                          // 318  // 494
-  "&Copf;": { "codepoints": [8450], "characters": "\u2102" },                                                  // 319  // 495
-  "&coprod;": { "codepoints": [8720], "characters": "\u2210" },                                                // 320  // 496
-  "&Coproduct;": { "codepoints": [8720], "characters": "\u2210" },                                             // 321  // 497
-  "&copy;": { "codepoints": [169], "characters": "\u00A9" },                                                   // 322  // 498
-  "&copy": { "codepoints": [169], "characters": "\u00A9" },                                                    // 323  // 499
-  "&COPY;": { "codepoints": [169], "characters": "\u00A9" },                                                   // 324  // 500
-  "&COPY": { "codepoints": [169], "characters": "\u00A9" },                                                    // 325  // 501
-  "&copysr;": { "codepoints": [8471], "characters": "\u2117" },                                                // 326  // 502
-  "&CounterClockwiseContourIntegral;": { "codepoints": [8755], "characters": "\u2233" },                       // 327  // 503
-  "&crarr;": { "codepoints": [8629], "characters": "\u21B5" },                                                 // 328  // 504
-  "&cross;": { "codepoints": [10007], "characters": "\u2717" },                                                // 329  // 505
-  "&Cross;": { "codepoints": [10799], "characters": "\u2A2F" },                                                // 330  // 506
-  "&Cscr;": { "codepoints": [119966], "characters": "\uD835\uDC9E" },                                          // 331  // 507
-  "&cscr;": { "codepoints": [119992], "characters": "\uD835\uDCB8" },                                          // 332  // 508
-  "&csub;": { "codepoints": [10959], "characters": "\u2ACF" },                                                 // 333  // 509
-  "&csube;": { "codepoints": [10961], "characters": "\u2AD1" },                                                // 334  // 510
-  "&csup;": { "codepoints": [10960], "characters": "\u2AD0" },                                                 // 335  // 511
-  "&csupe;": { "codepoints": [10962], "characters": "\u2AD2" },                                                // 336  // 512
-  "&ctdot;": { "codepoints": [8943], "characters": "\u22EF" },                                                 // 337  // 513
-  "&cudarrl;": { "codepoints": [10552], "characters": "\u2938" },                                              // 338  // 514
-  "&cudarrr;": { "codepoints": [10549], "characters": "\u2935" },                                              // 339  // 515
-  "&cuepr;": { "codepoints": [8926], "characters": "\u22DE" },                                                 // 340  // 516
-  "&cuesc;": { "codepoints": [8927], "characters": "\u22DF" },                                                 // 341  // 517
-  "&cularr;": { "codepoints": [8630], "characters": "\u21B6" },                                                // 342  // 518
-  "&cularrp;": { "codepoints": [10557], "characters": "\u293D" },                                              // 343  // 519
-  "&cupbrcap;": { "codepoints": [10824], "characters": "\u2A48" },                                             // 344  // 520
-  "&cupcap;": { "codepoints": [10822], "characters": "\u2A46" },                                               // 345  // 521
-  "&CupCap;": { "codepoints": [8781], "characters": "\u224D" },                                                // 346  // 522
-  "&cup;": { "codepoints": [8746], "characters": "\u222A" },                                                   // 347  // 523
-  "&Cup;": { "codepoints": [8915], "characters": "\u22D3" },                                                   // 348  // 524
-  "&cupcup;": { "codepoints": [10826], "characters": "\u2A4A" },                                               // 349  // 525
-  "&cupdot;": { "codepoints": [8845], "characters": "\u228D" },                                                // 350  // 526
-  "&cupor;": { "codepoints": [10821], "characters": "\u2A45" },                                                // 351  // 527
-  "&cups;": { "codepoints": [8746, 65024], "characters": "\u222A\uFE00" },                                     // 352  // 528
-  "&curarr;": { "codepoints": [8631], "characters": "\u21B7" },                                                // 353  // 529
-  "&curarrm;": { "codepoints": [10556], "characters": "\u293C" },                                              // 354  // 530
-  "&curlyeqprec;": { "codepoints": [8926], "characters": "\u22DE" },                                           // 355  // 531
-  "&curlyeqsucc;": { "codepoints": [8927], "characters": "\u22DF" },                                           // 356  // 532
-  "&curlyvee;": { "codepoints": [8910], "characters": "\u22CE" },                                              // 357  // 533
-  "&curlywedge;": { "codepoints": [8911], "characters": "\u22CF" },                                            // 358  // 534
-  "&curren;": { "codepoints": [164], "characters": "\u00A4" },                                                 // 359  // 535
-  "&curren": { "codepoints": [164], "characters": "\u00A4" },                                                  // 360  // 536
-  "&curvearrowleft;": { "codepoints": [8630], "characters": "\u21B6" },                                        // 361  // 537
-  "&curvearrowright;": { "codepoints": [8631], "characters": "\u21B7" },                                       // 362  // 538
-  "&cuvee;": { "codepoints": [8910], "characters": "\u22CE" },                                                 // 363  // 539
-  "&cuwed;": { "codepoints": [8911], "characters": "\u22CF" },                                                 // 364  // 540
-  "&cwconint;": { "codepoints": [8754], "characters": "\u2232" },                                              // 365  // 541
-  "&cwint;": { "codepoints": [8753], "characters": "\u2231" },                                                 // 366  // 542
-  "&cylcty;": { "codepoints": [9005], "characters": "\u232D" },                                                // 367  // 543
-  "&dagger;": { "codepoints": [8224], "characters": "\u2020" },                                                // 368  // 544
-  "&Dagger;": { "codepoints": [8225], "characters": "\u2021" },                                                // 369  // 545
-  "&daleth;": { "codepoints": [8504], "characters": "\u2138" },                                                // 370  // 546
-  "&darr;": { "codepoints": [8595], "characters": "\u2193" },                                                  // 371  // 547
-  "&Darr;": { "codepoints": [8609], "characters": "\u21A1" },                                                  // 372  // 548
-  "&dArr;": { "codepoints": [8659], "characters": "\u21D3" },                                                  // 373  // 549
-  "&dash;": { "codepoints": [8208], "characters": "\u2010" },                                                  // 374  // 550
-  "&Dashv;": { "codepoints": [10980], "characters": "\u2AE4" },                                                // 375  // 551
-  "&dashv;": { "codepoints": [8867], "characters": "\u22A3" },                                                 // 376  // 552
-  "&dbkarow;": { "codepoints": [10511], "characters": "\u290F" },                                              // 377  // 553
-  "&dblac;": { "codepoints": [733], "characters": "\u02DD" },                                                  // 378  // 554
-  "&Dcaron;": { "codepoints": [270], "characters": "\u010E" },                                                 // 379  // 555
-  "&dcaron;": { "codepoints": [271], "characters": "\u010F" },                                                 // 380  // 556
-  "&Dcy;": { "codepoints": [1044], "characters": "\u0414" },                                                   // 381  // 557
-  "&dcy;": { "codepoints": [1076], "characters": "\u0434" },                                                   // 382  // 558
-  "&ddagger;": { "codepoints": [8225], "characters": "\u2021" },                                               // 383  // 559
-  "&ddarr;": { "codepoints": [8650], "characters": "\u21CA" },                                                 // 384  // 560
-  "&DD;": { "codepoints": [8517], "characters": "\u2145" },                                                    // 385  // 561
-  "&dd;": { "codepoints": [8518], "characters": "\u2146" },                                                    // 386  // 562
-  "&DDotrahd;": { "codepoints": [10513], "characters": "\u2911" },                                             // 387  // 563
-  "&ddotseq;": { "codepoints": [10871], "characters": "\u2A77" },                                              // 388  // 564
-  "&deg;": { "codepoints": [176], "characters": "\u00B0" },                                                    // 389  // 565
-  "&deg": { "codepoints": [176], "characters": "\u00B0" },                                                     // 390  // 566
-  "&Del;": { "codepoints": [8711], "characters": "\u2207" },                                                   // 391  // 567
-  "&Delta;": { "codepoints": [916], "characters": "\u0394" },                                                  // 392  // 568
-  "&delta;": { "codepoints": [948], "characters": "\u03B4" },                                                  // 393  // 569
-  "&demptyv;": { "codepoints": [10673], "characters": "\u29B1" },                                              // 394  // 570
-  "&dfisht;": { "codepoints": [10623], "characters": "\u297F" },                                               // 395  // 571
-  "&Dfr;": { "codepoints": [120071], "characters": "\uD835\uDD07" },                                           // 396  // 572
-  "&dfr;": { "codepoints": [120097], "characters": "\uD835\uDD21" },                                           // 397  // 573
-  "&dHar;": { "codepoints": [10597], "characters": "\u2965" },                                                 // 398  // 574
-  "&dharl;": { "codepoints": [8643], "characters": "\u21C3" },                                                 // 399  // 575
-  "&dharr;": { "codepoints": [8642], "characters": "\u21C2" },                                                 // 400  // 576
-  "&DiacriticalAcute;": { "codepoints": [180], "characters": "\u00B4" },                                       // 401  // 577
-  "&DiacriticalDot;": { "codepoints": [729], "characters": "\u02D9" },                                         // 402  // 578
-  "&DiacriticalDoubleAcute;": { "codepoints": [733], "characters": "\u02DD" },                                 // 403  // 579
-  "&DiacriticalGrave;": { "codepoints": [96], "characters": "\u0060" },                                        // 404  // 580
-  "&DiacriticalTilde;": { "codepoints": [732], "characters": "\u02DC" },                                       // 405  // 581
-  "&diam;": { "codepoints": [8900], "characters": "\u22C4" },                                                  // 406  // 582
-  "&diamond;": { "codepoints": [8900], "characters": "\u22C4" },                                               // 407  // 583
-  "&Diamond;": { "codepoints": [8900], "characters": "\u22C4" },                                               // 408  // 584
-  "&diamondsuit;": { "codepoints": [9830], "characters": "\u2666" },                                           // 409  // 585
-  "&diams;": { "codepoints": [9830], "characters": "\u2666" },                                                 // 410  // 586
-  "&die;": { "codepoints": [168], "characters": "\u00A8" },                                                    // 411  // 587
-  "&DifferentialD;": { "codepoints": [8518], "characters": "\u2146" },                                         // 412  // 588
-  "&digamma;": { "codepoints": [989], "characters": "\u03DD" },                                                // 413  // 589
-  "&disin;": { "codepoints": [8946], "characters": "\u22F2" },                                                 // 414  // 590
-  "&div;": { "codepoints": [247], "characters": "\u00F7" },                                                    // 415  // 591
-  "&divide;": { "codepoints": [247], "characters": "\u00F7" },                                                 // 416  // 592
-  "&divide": { "codepoints": [247], "characters": "\u00F7" },                                                  // 417  // 593
-  "&divideontimes;": { "codepoints": [8903], "characters": "\u22C7" },                                         // 418  // 594
-  "&divonx;": { "codepoints": [8903], "characters": "\u22C7" },                                                // 419  // 595
-  "&DJcy;": { "codepoints": [1026], "characters": "\u0402" },                                                  // 420  // 596
-  "&djcy;": { "codepoints": [1106], "characters": "\u0452" },                                                  // 421  // 597
-  "&dlcorn;": { "codepoints": [8990], "characters": "\u231E" },                                                // 422  // 598
-  "&dlcrop;": { "codepoints": [8973], "characters": "\u230D" },                                                // 423  // 599
-  "&dollar;": { "codepoints": [36], "characters": "\u0024" },                                                  // 424  // 600
-  "&Dopf;": { "codepoints": [120123], "characters": "\uD835\uDD3B" },                                          // 425  // 601
-  "&dopf;": { "codepoints": [120149], "characters": "\uD835\uDD55" },                                          // 426  // 602
-  "&Dot;": { "codepoints": [168], "characters": "\u00A8" },                                                    // 427  // 603
-  "&dot;": { "codepoints": [729], "characters": "\u02D9" },                                                    // 428  // 604
-  "&DotDot;": { "codepoints": [8412], "characters": "\u20DC" },                                                // 429  // 605
-  "&doteq;": { "codepoints": [8784], "characters": "\u2250" },                                                 // 430  // 606
-  "&doteqdot;": { "codepoints": [8785], "characters": "\u2251" },                                              // 431  // 607
-  "&DotEqual;": { "codepoints": [8784], "characters": "\u2250" },                                              // 432  // 608
-  "&dotminus;": { "codepoints": [8760], "characters": "\u2238" },                                              // 433  // 609
-  "&dotplus;": { "codepoints": [8724], "characters": "\u2214" },                                               // 434  // 610
-  "&dotsquare;": { "codepoints": [8865], "characters": "\u22A1" },                                             // 435  // 611
-  "&doublebarwedge;": { "codepoints": [8966], "characters": "\u2306" },                                        // 436  // 612
-  "&DoubleContourIntegral;": { "codepoints": [8751], "characters": "\u222F" },                                 // 437  // 613
-  "&DoubleDot;": { "codepoints": [168], "characters": "\u00A8" },                                              // 438  // 614
-  "&DoubleDownArrow;": { "codepoints": [8659], "characters": "\u21D3" },                                       // 439  // 615
-  "&DoubleLeftArrow;": { "codepoints": [8656], "characters": "\u21D0" },                                       // 440  // 616
-  "&DoubleLeftRightArrow;": { "codepoints": [8660], "characters": "\u21D4" },                                  // 441  // 617
-  "&DoubleLeftTee;": { "codepoints": [10980], "characters": "\u2AE4" },                                        // 442  // 618
-  "&DoubleLongLeftArrow;": { "codepoints": [10232], "characters": "\u27F8" },                                  // 443  // 619
-  "&DoubleLongLeftRightArrow;": { "codepoints": [10234], "characters": "\u27FA" },                             // 444  // 620
-  "&DoubleLongRightArrow;": { "codepoints": [10233], "characters": "\u27F9" },                                 // 445  // 621
-  "&DoubleRightArrow;": { "codepoints": [8658], "characters": "\u21D2" },                                      // 446  // 622
-  "&DoubleRightTee;": { "codepoints": [8872], "characters": "\u22A8" },                                        // 447  // 623
-  "&DoubleUpArrow;": { "codepoints": [8657], "characters": "\u21D1" },                                         // 448  // 624
-  "&DoubleUpDownArrow;": { "codepoints": [8661], "characters": "\u21D5" },                                     // 449  // 625
-  "&DoubleVerticalBar;": { "codepoints": [8741], "characters": "\u2225" },                                     // 450  // 626
-  "&DownArrowBar;": { "codepoints": [10515], "characters": "\u2913" },                                         // 451  // 627
-  "&downarrow;": { "codepoints": [8595], "characters": "\u2193" },                                             // 452  // 628
-  "&DownArrow;": { "codepoints": [8595], "characters": "\u2193" },                                             // 453  // 629
-  "&Downarrow;": { "codepoints": [8659], "characters": "\u21D3" },                                             // 454  // 630
-  "&DownArrowUpArrow;": { "codepoints": [8693], "characters": "\u21F5" },                                      // 455  // 631
-  "&DownBreve;": { "codepoints": [785], "characters": "\u0311" },                                              // 456  // 632
-  "&downdownarrows;": { "codepoints": [8650], "characters": "\u21CA" },                                        // 457  // 633
-  "&downharpoonleft;": { "codepoints": [8643], "characters": "\u21C3" },                                       // 458  // 634
-  "&downharpoonright;": { "codepoints": [8642], "characters": "\u21C2" },                                      // 459  // 635
-  "&DownLeftRightVector;": { "codepoints": [10576], "characters": "\u2950" },                                  // 460  // 636
-  "&DownLeftTeeVector;": { "codepoints": [10590], "characters": "\u295E" },                                    // 461  // 637
-  "&DownLeftVectorBar;": { "codepoints": [10582], "characters": "\u2956" },                                    // 462  // 638
-  "&DownLeftVector;": { "codepoints": [8637], "characters": "\u21BD" },                                        // 463  // 639
-  "&DownRightTeeVector;": { "codepoints": [10591], "characters": "\u295F" },                                   // 464  // 640
-  "&DownRightVectorBar;": { "codepoints": [10583], "characters": "\u2957" },                                   // 465  // 641
-  "&DownRightVector;": { "codepoints": [8641], "characters": "\u21C1" },                                       // 466  // 642
-  "&DownTeeArrow;": { "codepoints": [8615], "characters": "\u21A7" },                                          // 467  // 643
-  "&DownTee;": { "codepoints": [8868], "characters": "\u22A4" },                                               // 468  // 644
-  "&drbkarow;": { "codepoints": [10512], "characters": "\u2910" },                                             // 469  // 645
-  "&drcorn;": { "codepoints": [8991], "characters": "\u231F" },                                                // 470  // 646
-  "&drcrop;": { "codepoints": [8972], "characters": "\u230C" },                                                // 471  // 647
-  "&Dscr;": { "codepoints": [119967], "characters": "\uD835\uDC9F" },                                          // 472  // 648
-  "&dscr;": { "codepoints": [119993], "characters": "\uD835\uDCB9" },                                          // 473  // 649
-  "&DScy;": { "codepoints": [1029], "characters": "\u0405" },                                                  // 474  // 650
-  "&dscy;": { "codepoints": [1109], "characters": "\u0455" },                                                  // 475  // 651
-  "&dsol;": { "codepoints": [10742], "characters": "\u29F6" },                                                 // 476  // 652
-  "&Dstrok;": { "codepoints": [272], "characters": "\u0110" },                                                 // 477  // 653
-  "&dstrok;": { "codepoints": [273], "characters": "\u0111" },                                                 // 478  // 654
-  "&dtdot;": { "codepoints": [8945], "characters": "\u22F1" },                                                 // 479  // 655
-  "&dtri;": { "codepoints": [9663], "characters": "\u25BF" },                                                  // 480  // 656
-  "&dtrif;": { "codepoints": [9662], "characters": "\u25BE" },                                                 // 481  // 657
-  "&duarr;": { "codepoints": [8693], "characters": "\u21F5" },                                                 // 482  // 658
-  "&duhar;": { "codepoints": [10607], "characters": "\u296F" },                                                // 483  // 659
-  "&dwangle;": { "codepoints": [10662], "characters": "\u29A6" },                                              // 484  // 660
-  "&DZcy;": { "codepoints": [1039], "characters": "\u040F" },                                                  // 485  // 661
-  "&dzcy;": { "codepoints": [1119], "characters": "\u045F" },                                                  // 486  // 662
-  "&dzigrarr;": { "codepoints": [10239], "characters": "\u27FF" },                                             // 487  // 663
-  "&Eacute;": { "codepoints": [201], "characters": "\u00C9" },                                                 // 488  // 664
-  "&Eacute": { "codepoints": [201], "characters": "\u00C9" },                                                  // 489  // 665
-  "&eacute;": { "codepoints": [233], "characters": "\u00E9" },                                                 // 490  // 666
-  "&eacute": { "codepoints": [233], "characters": "\u00E9" },                                                  // 491  // 667
-  "&easter;": { "codepoints": [10862], "characters": "\u2A6E" },                                               // 492  // 668
-  "&Ecaron;": { "codepoints": [282], "characters": "\u011A" },                                                 // 493  // 669
-  "&ecaron;": { "codepoints": [283], "characters": "\u011B" },                                                 // 494  // 670
-  "&Ecirc;": { "codepoints": [202], "characters": "\u00CA" },                                                  // 495  // 671
-  "&Ecirc": { "codepoints": [202], "characters": "\u00CA" },                                                   // 496  // 672
-  "&ecirc;": { "codepoints": [234], "characters": "\u00EA" },                                                  // 497  // 673
-  "&ecirc": { "codepoints": [234], "characters": "\u00EA" },                                                   // 498  // 674
-  "&ecir;": { "codepoints": [8790], "characters": "\u2256" },                                                  // 499  // 675
-  "&ecolon;": { "codepoints": [8789], "characters": "\u2255" },                                                // 500  // 676
-  "&Ecy;": { "codepoints": [1069], "characters": "\u042D" },                                                   // 501  // 677
-  "&ecy;": { "codepoints": [1101], "characters": "\u044D" },                                                   // 502  // 678
-  "&eDDot;": { "codepoints": [10871], "characters": "\u2A77" },                                                // 503  // 679
-  "&Edot;": { "codepoints": [278], "characters": "\u0116" },                                                   // 504  // 680
-  "&edot;": { "codepoints": [279], "characters": "\u0117" },                                                   // 505  // 681
-  "&eDot;": { "codepoints": [8785], "characters": "\u2251" },                                                  // 506  // 682
-  "&ee;": { "codepoints": [8519], "characters": "\u2147" },                                                    // 507  // 683
-  "&efDot;": { "codepoints": [8786], "characters": "\u2252" },                                                 // 508  // 684
-  "&Efr;": { "codepoints": [120072], "characters": "\uD835\uDD08" },                                           // 509  // 685
-  "&efr;": { "codepoints": [120098], "characters": "\uD835\uDD22" },                                           // 510  // 686
-  "&eg;": { "codepoints": [10906], "characters": "\u2A9A" },                                                   // 511  // 687
-  "&Egrave;": { "codepoints": [200], "characters": "\u00C8" },                                                 // 512  // 688
-  "&Egrave": { "codepoints": [200], "characters": "\u00C8" },                                                  // 513  // 689
-  "&egrave;": { "codepoints": [232], "characters": "\u00E8" },                                                 // 514  // 690
-  "&egrave": { "codepoints": [232], "characters": "\u00E8" },                                                  // 515  // 691
-  "&egs;": { "codepoints": [10902], "characters": "\u2A96" },                                                  // 516  // 692
-  "&egsdot;": { "codepoints": [10904], "characters": "\u2A98" },                                               // 517  // 693
-  "&el;": { "codepoints": [10905], "characters": "\u2A99" },                                                   // 518  // 694
-  "&Element;": { "codepoints": [8712], "characters": "\u2208" },                                               // 519  // 695
-  "&elinters;": { "codepoints": [9191], "characters": "\u23E7" },                                              // 520  // 696
-  "&ell;": { "codepoints": [8467], "characters": "\u2113" },                                                   // 521  // 697
-  "&els;": { "codepoints": [10901], "characters": "\u2A95" },                                                  // 522  // 698
-  "&elsdot;": { "codepoints": [10903], "characters": "\u2A97" },                                               // 523  // 699
-  "&Emacr;": { "codepoints": [274], "characters": "\u0112" },                                                  // 524  // 700
-  "&emacr;": { "codepoints": [275], "characters": "\u0113" },                                                  // 525  // 701
-  "&empty;": { "codepoints": [8709], "characters": "\u2205" },                                                 // 526  // 702
-  "&emptyset;": { "codepoints": [8709], "characters": "\u2205" },                                              // 527  // 703
-  "&EmptySmallSquare;": { "codepoints": [9723], "characters": "\u25FB" },                                      // 528  // 704
-  "&emptyv;": { "codepoints": [8709], "characters": "\u2205" },                                                // 529  // 705
-  "&EmptyVerySmallSquare;": { "codepoints": [9643], "characters": "\u25AB" },                                  // 530  // 706
-  "&emsp13;": { "codepoints": [8196], "characters": "\u2004" },                                                // 531  // 707
-  "&emsp14;": { "codepoints": [8197], "characters": "\u2005" },                                                // 532  // 708
-  "&emsp;": { "codepoints": [8195], "characters": "\u2003" },                                                  // 533  // 709
-  "&ENG;": { "codepoints": [330], "characters": "\u014A" },                                                    // 534  // 710
-  "&eng;": { "codepoints": [331], "characters": "\u014B" },                                                    // 535  // 711
-  "&ensp;": { "codepoints": [8194], "characters": "\u2002" },                                                  // 536  // 712
-  "&Eogon;": { "codepoints": [280], "characters": "\u0118" },                                                  // 537  // 713
-  "&eogon;": { "codepoints": [281], "characters": "\u0119" },                                                  // 538  // 714
-  "&Eopf;": { "codepoints": [120124], "characters": "\uD835\uDD3C" },                                          // 539  // 715
-  "&eopf;": { "codepoints": [120150], "characters": "\uD835\uDD56" },                                          // 540  // 716
-  "&epar;": { "codepoints": [8917], "characters": "\u22D5" },                                                  // 541  // 717
-  "&eparsl;": { "codepoints": [10723], "characters": "\u29E3" },                                               // 542  // 718
-  "&eplus;": { "codepoints": [10865], "characters": "\u2A71" },                                                // 543  // 719
-  "&epsi;": { "codepoints": [949], "characters": "\u03B5" },                                                   // 544  // 720
-  "&Epsilon;": { "codepoints": [917], "characters": "\u0395" },                                                // 545  // 721
-  "&epsilon;": { "codepoints": [949], "characters": "\u03B5" },                                                // 546  // 722
-  "&epsiv;": { "codepoints": [1013], "characters": "\u03F5" },                                                 // 547  // 723
-  "&eqcirc;": { "codepoints": [8790], "characters": "\u2256" },                                                // 548  // 724
-  "&eqcolon;": { "codepoints": [8789], "characters": "\u2255" },                                               // 549  // 725
-  "&eqsim;": { "codepoints": [8770], "characters": "\u2242" },                                                 // 550  // 726
-  "&eqslantgtr;": { "codepoints": [10902], "characters": "\u2A96" },                                           // 551  // 727
-  "&eqslantless;": { "codepoints": [10901], "characters": "\u2A95" },                                          // 552  // 728
-  "&Equal;": { "codepoints": [10869], "characters": "\u2A75" },                                                // 553  // 729
-  "&equals;": { "codepoints": [61], "characters": "\u003D" },                                                  // 554  // 730
-  "&EqualTilde;": { "codepoints": [8770], "characters": "\u2242" },                                            // 555  // 731
-  "&equest;": { "codepoints": [8799], "characters": "\u225F" },                                                // 556  // 732
-  "&Equilibrium;": { "codepoints": [8652], "characters": "\u21CC" },                                           // 557  // 733
-  "&equiv;": { "codepoints": [8801], "characters": "\u2261" },                                                 // 558  // 734
-  "&equivDD;": { "codepoints": [10872], "characters": "\u2A78" },                                              // 559  // 735
-  "&eqvparsl;": { "codepoints": [10725], "characters": "\u29E5" },                                             // 560  // 736
-  "&erarr;": { "codepoints": [10609], "characters": "\u2971" },                                                // 561  // 737
-  "&erDot;": { "codepoints": [8787], "characters": "\u2253" },                                                 // 562  // 738
-  "&escr;": { "codepoints": [8495], "characters": "\u212F" },                                                  // 563  // 739
-  "&Escr;": { "codepoints": [8496], "characters": "\u2130" },                                                  // 564  // 740
-  "&esdot;": { "codepoints": [8784], "characters": "\u2250" },                                                 // 565  // 741
-  "&Esim;": { "codepoints": [10867], "characters": "\u2A73" },                                                 // 566  // 742
-  "&esim;": { "codepoints": [8770], "characters": "\u2242" },                                                  // 567  // 743
-  "&Eta;": { "codepoints": [919], "characters": "\u0397" },                                                    // 568  // 744
-  "&eta;": { "codepoints": [951], "characters": "\u03B7" },                                                    // 569  // 745
-  "&ETH;": { "codepoints": [208], "characters": "\u00D0" },                                                    // 570  // 746
-  "&ETH": { "codepoints": [208], "characters": "\u00D0" },                                                     // 571  // 747
-  "&eth;": { "codepoints": [240], "characters": "\u00F0" },                                                    // 572  // 748
-  "&eth": { "codepoints": [240], "characters": "\u00F0" },                                                     // 573  // 749
-  "&Euml;": { "codepoints": [203], "characters": "\u00CB" },                                                   // 574  // 750
-  "&Euml": { "codepoints": [203], "characters": "\u00CB" },                                                    // 575  // 751
-  "&euml;": { "codepoints": [235], "characters": "\u00EB" },                                                   // 576  // 752
-  "&euml": { "codepoints": [235], "characters": "\u00EB" },                                                    // 577  // 753
-  "&euro;": { "codepoints": [8364], "characters": "\u20AC" },                                                  // 578  // 754
-  "&excl;": { "codepoints": [33], "characters": "\u0021" },                                                    // 579  // 755
-  "&exist;": { "codepoints": [8707], "characters": "\u2203" },                                                 // 580  // 756
-  "&Exists;": { "codepoints": [8707], "characters": "\u2203" },                                                // 581  // 757
-  "&expectation;": { "codepoints": [8496], "characters": "\u2130" },                                           // 582  // 758
-  "&exponentiale;": { "codepoints": [8519], "characters": "\u2147" },                                          // 583  // 759
-  "&ExponentialE;": { "codepoints": [8519], "characters": "\u2147" },                                          // 584  // 760
-  "&fallingdotseq;": { "codepoints": [8786], "characters": "\u2252" },                                         // 585  // 761
-  "&Fcy;": { "codepoints": [1060], "characters": "\u0424" },                                                   // 586  // 762
-  "&fcy;": { "codepoints": [1092], "characters": "\u0444" },                                                   // 587  // 763
-  "&female;": { "codepoints": [9792], "characters": "\u2640" },                                                // 588  // 764
-  "&ffilig;": { "codepoints": [64259], "characters": "\uFB03" },                                               // 589  // 765
-  "&fflig;": { "codepoints": [64256], "characters": "\uFB00" },                                                // 590  // 766
-  "&ffllig;": { "codepoints": [64260], "characters": "\uFB04" },                                               // 591  // 767
-  "&Ffr;": { "codepoints": [120073], "characters": "\uD835\uDD09" },                                           // 592  // 768
-  "&ffr;": { "codepoints": [120099], "characters": "\uD835\uDD23" },                                           // 593  // 769
-  "&filig;": { "codepoints": [64257], "characters": "\uFB01" },                                                // 594  // 770
-  "&FilledSmallSquare;": { "codepoints": [9724], "characters": "\u25FC" },                                     // 595  // 771
-  "&FilledVerySmallSquare;": { "codepoints": [9642], "characters": "\u25AA" },                                 // 596  // 772
-  "&fjlig;": { "codepoints": [102, 106], "characters": "\u0066\u006A" },                                       // 597  // 773
-  "&flat;": { "codepoints": [9837], "characters": "\u266D" },                                                  // 598  // 774
-  "&fllig;": { "codepoints": [64258], "characters": "\uFB02" },                                                // 599  // 775
-  "&fltns;": { "codepoints": [9649], "characters": "\u25B1" },                                                 // 600  // 776
-  "&fnof;": { "codepoints": [402], "characters": "\u0192" },                                                   // 601  // 777
-  "&Fopf;": { "codepoints": [120125], "characters": "\uD835\uDD3D" },                                          // 602  // 778
-  "&fopf;": { "codepoints": [120151], "characters": "\uD835\uDD57" },                                          // 603  // 779
-  "&forall;": { "codepoints": [8704], "characters": "\u2200" },                                                // 604  // 780
-  "&ForAll;": { "codepoints": [8704], "characters": "\u2200" },                                                // 605  // 781
-  "&fork;": { "codepoints": [8916], "characters": "\u22D4" },                                                  // 606  // 782
-  "&forkv;": { "codepoints": [10969], "characters": "\u2AD9" },                                                // 607  // 783
-  "&Fouriertrf;": { "codepoints": [8497], "characters": "\u2131" },                                            // 608  // 784
-  "&fpartint;": { "codepoints": [10765], "characters": "\u2A0D" },                                             // 609  // 785
-  "&frac12;": { "codepoints": [189], "characters": "\u00BD" },                                                 // 610  // 786
-  "&frac12": { "codepoints": [189], "characters": "\u00BD" },                                                  // 611  // 787
-  "&frac13;": { "codepoints": [8531], "characters": "\u2153" },                                                // 612  // 788
-  "&frac14;": { "codepoints": [188], "characters": "\u00BC" },                                                 // 613  // 789
-  "&frac14": { "codepoints": [188], "characters": "\u00BC" },                                                  // 614  // 790
-  "&frac15;": { "codepoints": [8533], "characters": "\u2155" },                                                // 615  // 791
-  "&frac16;": { "codepoints": [8537], "characters": "\u2159" },                                                // 616  // 792
-  "&frac18;": { "codepoints": [8539], "characters": "\u215B" },                                                // 617  // 793
-  "&frac23;": { "codepoints": [8532], "characters": "\u2154" },                                                // 618  // 794
-  "&frac25;": { "codepoints": [8534], "characters": "\u2156" },                                                // 619  // 795
-  "&frac34;": { "codepoints": [190], "characters": "\u00BE" },                                                 // 620  // 796
-  "&frac34": { "codepoints": [190], "characters": "\u00BE" },                                                  // 621  // 797
-  "&frac35;": { "codepoints": [8535], "characters": "\u2157" },                                                // 622  // 798
-  "&frac38;": { "codepoints": [8540], "characters": "\u215C" },                                                // 623  // 799
-  "&frac45;": { "codepoints": [8536], "characters": "\u2158" },                                                // 624  // 800
-  "&frac56;": { "codepoints": [8538], "characters": "\u215A" },                                                // 625  // 801
-  "&frac58;": { "codepoints": [8541], "characters": "\u215D" },                                                // 626  // 802
-  "&frac78;": { "codepoints": [8542], "characters": "\u215E" },                                                // 627  // 803
-  "&frasl;": { "codepoints": [8260], "characters": "\u2044" },                                                 // 628  // 804
-  "&frown;": { "codepoints": [8994], "characters": "\u2322" },                                                 // 629  // 805
-  "&fscr;": { "codepoints": [119995], "characters": "\uD835\uDCBB" },                                          // 630  // 806
-  "&Fscr;": { "codepoints": [8497], "characters": "\u2131" },                                                  // 631  // 807
-  "&gacute;": { "codepoints": [501], "characters": "\u01F5" },                                                 // 632  // 808
-  "&Gamma;": { "codepoints": [915], "characters": "\u0393" },                                                  // 633  // 809
-  "&gamma;": { "codepoints": [947], "characters": "\u03B3" },                                                  // 634  // 810
-  "&Gammad;": { "codepoints": [988], "characters": "\u03DC" },                                                 // 635  // 811
-  "&gammad;": { "codepoints": [989], "characters": "\u03DD" },                                                 // 636  // 812
-  "&gap;": { "codepoints": [10886], "characters": "\u2A86" },                                                  // 637  // 813
-  "&Gbreve;": { "codepoints": [286], "characters": "\u011E" },                                                 // 638  // 814
-  "&gbreve;": { "codepoints": [287], "characters": "\u011F" },                                                 // 639  // 815
-  "&Gcedil;": { "codepoints": [290], "characters": "\u0122" },                                                 // 640  // 816
-  "&Gcirc;": { "codepoints": [284], "characters": "\u011C" },                                                  // 641  // 817
-  "&gcirc;": { "codepoints": [285], "characters": "\u011D" },                                                  // 642  // 818
-  "&Gcy;": { "codepoints": [1043], "characters": "\u0413" },                                                   // 643  // 819
-  "&gcy;": { "codepoints": [1075], "characters": "\u0433" },                                                   // 644  // 820
-  "&Gdot;": { "codepoints": [288], "characters": "\u0120" },                                                   // 645  // 821
-  "&gdot;": { "codepoints": [289], "characters": "\u0121" },                                                   // 646  // 822
-  "&ge;": { "codepoints": [8805], "characters": "\u2265" },                                                    // 647  // 823
-  "&gE;": { "codepoints": [8807], "characters": "\u2267" },                                                    // 648  // 824
-  "&gEl;": { "codepoints": [10892], "characters": "\u2A8C" },                                                  // 649  // 825
-  "&gel;": { "codepoints": [8923], "characters": "\u22DB" },                                                   // 650  // 826
-  "&geq;": { "codepoints": [8805], "characters": "\u2265" },                                                   // 651  // 827
-  "&geqq;": { "codepoints": [8807], "characters": "\u2267" },                                                  // 652  // 828
-  "&geqslant;": { "codepoints": [10878], "characters": "\u2A7E" },                                             // 653  // 829
-  "&gescc;": { "codepoints": [10921], "characters": "\u2AA9" },                                                // 654  // 830
-  "&ges;": { "codepoints": [10878], "characters": "\u2A7E" },                                                  // 655  // 831
-  "&gesdot;": { "codepoints": [10880], "characters": "\u2A80" },                                               // 656  // 832
-  "&gesdoto;": { "codepoints": [10882], "characters": "\u2A82" },                                              // 657  // 833
-  "&gesdotol;": { "codepoints": [10884], "characters": "\u2A84" },                                             // 658  // 834
-  "&gesl;": { "codepoints": [8923, 65024], "characters": "\u22DB\uFE00" },                                     // 659  // 835
-  "&gesles;": { "codepoints": [10900], "characters": "\u2A94" },                                               // 660  // 836
-  "&Gfr;": { "codepoints": [120074], "characters": "\uD835\uDD0A" },                                           // 661  // 837
-  "&gfr;": { "codepoints": [120100], "characters": "\uD835\uDD24" },                                           // 662  // 838
-  "&gg;": { "codepoints": [8811], "characters": "\u226B" },                                                    // 663  // 839
-  "&Gg;": { "codepoints": [8921], "characters": "\u22D9" },                                                    // 664  // 840
-  "&ggg;": { "codepoints": [8921], "characters": "\u22D9" },                                                   // 665  // 841
-  "&gimel;": { "codepoints": [8503], "characters": "\u2137" },                                                 // 666  // 842
-  "&GJcy;": { "codepoints": [1027], "characters": "\u0403" },                                                  // 667  // 843
-  "&gjcy;": { "codepoints": [1107], "characters": "\u0453" },                                                  // 668  // 844
-  "&gla;": { "codepoints": [10917], "characters": "\u2AA5" },                                                  // 669  // 845
-  "&gl;": { "codepoints": [8823], "characters": "\u2277" },                                                    // 670  // 846
-  "&glE;": { "codepoints": [10898], "characters": "\u2A92" },                                                  // 671  // 847
-  "&glj;": { "codepoints": [10916], "characters": "\u2AA4" },                                                  // 672  // 848
-  "&gnap;": { "codepoints": [10890], "characters": "\u2A8A" },                                                 // 673  // 849
-  "&gnapprox;": { "codepoints": [10890], "characters": "\u2A8A" },                                             // 674  // 850
-  "&gne;": { "codepoints": [10888], "characters": "\u2A88" },                                                  // 675  // 851
-  "&gnE;": { "codepoints": [8809], "characters": "\u2269" },                                                   // 676  // 852
-  "&gneq;": { "codepoints": [10888], "characters": "\u2A88" },                                                 // 677  // 853
-  "&gneqq;": { "codepoints": [8809], "characters": "\u2269" },                                                 // 678  // 854
-  "&gnsim;": { "codepoints": [8935], "characters": "\u22E7" },                                                 // 679  // 855
-  "&Gopf;": { "codepoints": [120126], "characters": "\uD835\uDD3E" },                                          // 680  // 856
-  "&gopf;": { "codepoints": [120152], "characters": "\uD835\uDD58" },                                          // 681  // 857
-  "&grave;": { "codepoints": [96], "characters": "\u0060" },                                                   // 682  // 858
-  "&GreaterEqual;": { "codepoints": [8805], "characters": "\u2265" },                                          // 683  // 859
-  "&GreaterEqualLess;": { "codepoints": [8923], "characters": "\u22DB" },                                      // 684  // 860
-  "&GreaterFullEqual;": { "codepoints": [8807], "characters": "\u2267" },                                      // 685  // 861
-  "&GreaterGreater;": { "codepoints": [10914], "characters": "\u2AA2" },                                       // 686  // 862
-  "&GreaterLess;": { "codepoints": [8823], "characters": "\u2277" },                                           // 687  // 863
-  "&GreaterSlantEqual;": { "codepoints": [10878], "characters": "\u2A7E" },                                    // 688  // 864
-  "&GreaterTilde;": { "codepoints": [8819], "characters": "\u2273" },                                          // 689  // 865
-  "&Gscr;": { "codepoints": [119970], "characters": "\uD835\uDCA2" },                                          // 690  // 866
-  "&gscr;": { "codepoints": [8458], "characters": "\u210A" },                                                  // 691  // 867
-  "&gsim;": { "codepoints": [8819], "characters": "\u2273" },                                                  // 692  // 868
-  "&gsime;": { "codepoints": [10894], "characters": "\u2A8E" },                                                // 693  // 869
-  "&gsiml;": { "codepoints": [10896], "characters": "\u2A90" },                                                // 694  // 870
-  "&gtcc;": { "codepoints": [10919], "characters": "\u2AA7" },                                                 // 695  // 871
-  "&gtcir;": { "codepoints": [10874], "characters": "\u2A7A" },                                                // 696  // 872
-  "&gt;": { "codepoints": [62], "characters": "\u003E" },                                                      // 697  // 873
-  "&gt": { "codepoints": [62], "characters": "\u003E" },                                                       // 698  // 874
-  "&GT;": { "codepoints": [62], "characters": "\u003E" },                                                      // 699  // 875
-  "&GT": { "codepoints": [62], "characters": "\u003E" },                                                       // 700  // 876
-  "&Gt;": { "codepoints": [8811], "characters": "\u226B" },                                                    // 701  // 877
-  "&gtdot;": { "codepoints": [8919], "characters": "\u22D7" },                                                 // 702  // 878
-  "&gtlPar;": { "codepoints": [10645], "characters": "\u2995" },                                               // 703  // 879
-  "&gtquest;": { "codepoints": [10876], "characters": "\u2A7C" },                                              // 704  // 880
-  "&gtrapprox;": { "codepoints": [10886], "characters": "\u2A86" },                                            // 705  // 881
-  "&gtrarr;": { "codepoints": [10616], "characters": "\u2978" },                                               // 706  // 882
-  "&gtrdot;": { "codepoints": [8919], "characters": "\u22D7" },                                                // 707  // 883
-  "&gtreqless;": { "codepoints": [8923], "characters": "\u22DB" },                                             // 708  // 884
-  "&gtreqqless;": { "codepoints": [10892], "characters": "\u2A8C" },                                           // 709  // 885
-  "&gtrless;": { "codepoints": [8823], "characters": "\u2277" },                                               // 710  // 886
-  "&gtrsim;": { "codepoints": [8819], "characters": "\u2273" },                                                // 711  // 887
-  "&gvertneqq;": { "codepoints": [8809, 65024], "characters": "\u2269\uFE00" },                                // 712  // 888
-  "&gvnE;": { "codepoints": [8809, 65024], "characters": "\u2269\uFE00" },                                     // 713  // 889
-  "&Hacek;": { "codepoints": [711], "characters": "\u02C7" },                                                  // 714  // 890
-  "&hairsp;": { "codepoints": [8202], "characters": "\u200A" },                                                // 715  // 891
-  "&half;": { "codepoints": [189], "characters": "\u00BD" },                                                   // 716  // 892
-  "&hamilt;": { "codepoints": [8459], "characters": "\u210B" },                                                // 717  // 893
-  "&HARDcy;": { "codepoints": [1066], "characters": "\u042A" },                                                // 718  // 894
-  "&hardcy;": { "codepoints": [1098], "characters": "\u044A" },                                                // 719  // 895
-  "&harrcir;": { "codepoints": [10568], "characters": "\u2948" },                                              // 720  // 896
-  "&harr;": { "codepoints": [8596], "characters": "\u2194" },                                                  // 721  // 897
-  "&hArr;": { "codepoints": [8660], "characters": "\u21D4" },                                                  // 722  // 898
-  "&harrw;": { "codepoints": [8621], "characters": "\u21AD" },                                                 // 723  // 899
-  "&Hat;": { "codepoints": [94], "characters": "\u005E" },                                                     // 724  // 900
-  "&hbar;": { "codepoints": [8463], "characters": "\u210F" },                                                  // 725  // 901
-  "&Hcirc;": { "codepoints": [292], "characters": "\u0124" },                                                  // 726  // 902
-  "&hcirc;": { "codepoints": [293], "characters": "\u0125" },                                                  // 727  // 903
-  "&hearts;": { "codepoints": [9829], "characters": "\u2665" },                                                // 728  // 904
-  "&heartsuit;": { "codepoints": [9829], "characters": "\u2665" },                                             // 729  // 905
-  "&hellip;": { "codepoints": [8230], "characters": "\u2026" },                                                // 730  // 906
-  "&hercon;": { "codepoints": [8889], "characters": "\u22B9" },                                                // 731  // 907
-  "&hfr;": { "codepoints": [120101], "characters": "\uD835\uDD25" },                                           // 732  // 908
-  "&Hfr;": { "codepoints": [8460], "characters": "\u210C" },                                                   // 733  // 909
-  "&HilbertSpace;": { "codepoints": [8459], "characters": "\u210B" },                                          // 734  // 910
-  "&hksearow;": { "codepoints": [10533], "characters": "\u2925" },                                             // 735  // 911
-  "&hkswarow;": { "codepoints": [10534], "characters": "\u2926" },                                             // 736  // 912
-  "&hoarr;": { "codepoints": [8703], "characters": "\u21FF" },                                                 // 737  // 913
-  "&homtht;": { "codepoints": [8763], "characters": "\u223B" },                                                // 738  // 914
-  "&hookleftarrow;": { "codepoints": [8617], "characters": "\u21A9" },                                         // 739  // 915
-  "&hookrightarrow;": { "codepoints": [8618], "characters": "\u21AA" },                                        // 740  // 916
-  "&hopf;": { "codepoints": [120153], "characters": "\uD835\uDD59" },                                          // 741  // 917
-  "&Hopf;": { "codepoints": [8461], "characters": "\u210D" },                                                  // 742  // 918
-  "&horbar;": { "codepoints": [8213], "characters": "\u2015" },                                                // 743  // 919
-  "&HorizontalLine;": { "codepoints": [9472], "characters": "\u2500" },                                        // 744  // 920
-  "&hscr;": { "codepoints": [119997], "characters": "\uD835\uDCBD" },                                          // 745  // 921
-  "&Hscr;": { "codepoints": [8459], "characters": "\u210B" },                                                  // 746  // 922
-  "&hslash;": { "codepoints": [8463], "characters": "\u210F" },                                                // 747  // 923
-  "&Hstrok;": { "codepoints": [294], "characters": "\u0126" },                                                 // 748  // 924
-  "&hstrok;": { "codepoints": [295], "characters": "\u0127" },                                                 // 749  // 925
-  "&HumpDownHump;": { "codepoints": [8782], "characters": "\u224E" },                                          // 750  // 926
-  "&HumpEqual;": { "codepoints": [8783], "characters": "\u224F" },                                             // 751  // 927
-  "&hybull;": { "codepoints": [8259], "characters": "\u2043" },                                                // 752  // 928
-  "&hyphen;": { "codepoints": [8208], "characters": "\u2010" },                                                // 753  // 929
-  "&Iacute;": { "codepoints": [205], "characters": "\u00CD" },                                                 // 754  // 930
-  "&Iacute": { "codepoints": [205], "characters": "\u00CD" },                                                  // 755  // 931
-  "&iacute;": { "codepoints": [237], "characters": "\u00ED" },                                                 // 756  // 932
-  "&iacute": { "codepoints": [237], "characters": "\u00ED" },                                                  // 757  // 933
-  "&ic;": { "codepoints": [8291], "characters": "\u2063" },                                                    // 758  // 934
-  "&Icirc;": { "codepoints": [206], "characters": "\u00CE" },                                                  // 759  // 935
-  "&Icirc": { "codepoints": [206], "characters": "\u00CE" },                                                   // 760  // 936
-  "&icirc;": { "codepoints": [238], "characters": "\u00EE" },                                                  // 761  // 937
-  "&icirc": { "codepoints": [238], "characters": "\u00EE" },                                                   // 762  // 938
-  "&Icy;": { "codepoints": [1048], "characters": "\u0418" },                                                   // 763  // 939
-  "&icy;": { "codepoints": [1080], "characters": "\u0438" },                                                   // 764  // 940
-  "&Idot;": { "codepoints": [304], "characters": "\u0130" },                                                   // 765  // 941
-  "&IEcy;": { "codepoints": [1045], "characters": "\u0415" },                                                  // 766  // 942
-  "&iecy;": { "codepoints": [1077], "characters": "\u0435" },                                                  // 767  // 943
-  "&iexcl;": { "codepoints": [161], "characters": "\u00A1" },                                                  // 768  // 944
-  "&iexcl": { "codepoints": [161], "characters": "\u00A1" },                                                   // 769  // 945
-  "&iff;": { "codepoints": [8660], "characters": "\u21D4" },                                                   // 770  // 946
-  "&ifr;": { "codepoints": [120102], "characters": "\uD835\uDD26" },                                           // 771  // 947
-  "&Ifr;": { "codepoints": [8465], "characters": "\u2111" },                                                   // 772  // 948
-  "&Igrave;": { "codepoints": [204], "characters": "\u00CC" },                                                 // 773  // 949
-  "&Igrave": { "codepoints": [204], "characters": "\u00CC" },                                                  // 774  // 950
-  "&igrave;": { "codepoints": [236], "characters": "\u00EC" },                                                 // 775  // 951
-  "&igrave": { "codepoints": [236], "characters": "\u00EC" },                                                  // 776  // 952
-  "&ii;": { "codepoints": [8520], "characters": "\u2148" },                                                    // 777  // 953
-  "&iiiint;": { "codepoints": [10764], "characters": "\u2A0C" },                                               // 778  // 954
-  "&iiint;": { "codepoints": [8749], "characters": "\u222D" },                                                 // 779  // 955
-  "&iinfin;": { "codepoints": [10716], "characters": "\u29DC" },                                               // 780  // 956
-  "&iiota;": { "codepoints": [8489], "characters": "\u2129" },                                                 // 781  // 957
-  "&IJlig;": { "codepoints": [306], "characters": "\u0132" },                                                  // 782  // 958
-  "&ijlig;": { "codepoints": [307], "characters": "\u0133" },                                                  // 783  // 959
-  "&Imacr;": { "codepoints": [298], "characters": "\u012A" },                                                  // 784  // 960
-  "&imacr;": { "codepoints": [299], "characters": "\u012B" },                                                  // 785  // 961
-  "&image;": { "codepoints": [8465], "characters": "\u2111" },                                                 // 786  // 962
-  "&ImaginaryI;": { "codepoints": [8520], "characters": "\u2148" },                                            // 787  // 963
-  "&imagline;": { "codepoints": [8464], "characters": "\u2110" },                                              // 788  // 964
-  "&imagpart;": { "codepoints": [8465], "characters": "\u2111" },                                              // 789  // 965
-  "&imath;": { "codepoints": [305], "characters": "\u0131" },                                                  // 790  // 966
-  "&Im;": { "codepoints": [8465], "characters": "\u2111" },                                                    // 791  // 967
-  "&imof;": { "codepoints": [8887], "characters": "\u22B7" },                                                  // 792  // 968
-  "&imped;": { "codepoints": [437], "characters": "\u01B5" },                                                  // 793  // 969
-  "&Implies;": { "codepoints": [8658], "characters": "\u21D2" },                                               // 794  // 970
-  "&incare;": { "codepoints": [8453], "characters": "\u2105" },                                                // 795  // 971
-  "&in;": { "codepoints": [8712], "characters": "\u2208" },                                                    // 796  // 972
-  "&infin;": { "codepoints": [8734], "characters": "\u221E" },                                                 // 797  // 973
-  "&infintie;": { "codepoints": [10717], "characters": "\u29DD" },                                             // 798  // 974
-  "&inodot;": { "codepoints": [305], "characters": "\u0131" },                                                 // 799  // 975
-  "&intcal;": { "codepoints": [8890], "characters": "\u22BA" },                                                // 800  // 976
-  "&int;": { "codepoints": [8747], "characters": "\u222B" },                                                   // 801  // 977
-  "&Int;": { "codepoints": [8748], "characters": "\u222C" },                                                   // 802  // 978
-  "&integers;": { "codepoints": [8484], "characters": "\u2124" },                                              // 803  // 979
-  "&Integral;": { "codepoints": [8747], "characters": "\u222B" },                                              // 804  // 980
-  "&intercal;": { "codepoints": [8890], "characters": "\u22BA" },                                              // 805  // 981
-  "&Intersection;": { "codepoints": [8898], "characters": "\u22C2" },                                          // 806  // 982
-  "&intlarhk;": { "codepoints": [10775], "characters": "\u2A17" },                                             // 807  // 983
-  "&intprod;": { "codepoints": [10812], "characters": "\u2A3C" },                                              // 808  // 984
-  "&InvisibleComma;": { "codepoints": [8291], "characters": "\u2063" },                                        // 809  // 985
-  "&InvisibleTimes;": { "codepoints": [8290], "characters": "\u2062" },                                        // 810  // 986
-  "&IOcy;": { "codepoints": [1025], "characters": "\u0401" },                                                  // 811  // 987
-  "&iocy;": { "codepoints": [1105], "characters": "\u0451" },                                                  // 812  // 988
-  "&Iogon;": { "codepoints": [302], "characters": "\u012E" },                                                  // 813  // 989
-  "&iogon;": { "codepoints": [303], "characters": "\u012F" },                                                  // 814  // 990
-  "&Iopf;": { "codepoints": [120128], "characters": "\uD835\uDD40" },                                          // 815  // 991
-  "&iopf;": { "codepoints": [120154], "characters": "\uD835\uDD5A" },                                          // 816  // 992
-  "&Iota;": { "codepoints": [921], "characters": "\u0399" },                                                   // 817  // 993
-  "&iota;": { "codepoints": [953], "characters": "\u03B9" },                                                   // 818  // 994
-  "&iprod;": { "codepoints": [10812], "characters": "\u2A3C" },                                                // 819  // 995
-  "&iquest;": { "codepoints": [191], "characters": "\u00BF" },                                                 // 820  // 996
-  "&iquest": { "codepoints": [191], "characters": "\u00BF" },                                                  // 821  // 997
-  "&iscr;": { "codepoints": [119998], "characters": "\uD835\uDCBE" },                                          // 822  // 998
-  "&Iscr;": { "codepoints": [8464], "characters": "\u2110" },                                                  // 823  // 999
-  "&isin;": { "codepoints": [8712], "characters": "\u2208" },                                                  // 824  // 1000
-  "&isindot;": { "codepoints": [8949], "characters": "\u22F5" },                                               // 825  // 1001
-  "&isinE;": { "codepoints": [8953], "characters": "\u22F9" },                                                 // 826  // 1002
-  "&isins;": { "codepoints": [8948], "characters": "\u22F4" },                                                 // 827  // 1003
-  "&isinsv;": { "codepoints": [8947], "characters": "\u22F3" },                                                // 828  // 1004
-  "&isinv;": { "codepoints": [8712], "characters": "\u2208" },                                                 // 829  // 1005
-  "&it;": { "codepoints": [8290], "characters": "\u2062" },                                                    // 830  // 1006
-  "&Itilde;": { "codepoints": [296], "characters": "\u0128" },                                                 // 831  // 1007
-  "&itilde;": { "codepoints": [297], "characters": "\u0129" },                                                 // 832  // 1008
-  "&Iukcy;": { "codepoints": [1030], "characters": "\u0406" },                                                 // 833  // 1009
-  "&iukcy;": { "codepoints": [1110], "characters": "\u0456" },                                                 // 834  // 1010
-  "&Iuml;": { "codepoints": [207], "characters": "\u00CF" },                                                   // 835  // 1011
-  "&Iuml": { "codepoints": [207], "characters": "\u00CF" },                                                    // 836  // 1012
-  "&iuml;": { "codepoints": [239], "characters": "\u00EF" },                                                   // 837  // 1013
-  "&iuml": { "codepoints": [239], "characters": "\u00EF" },                                                    // 838  // 1014
-  "&Jcirc;": { "codepoints": [308], "characters": "\u0134" },                                                  // 839  // 1015
-  "&jcirc;": { "codepoints": [309], "characters": "\u0135" },                                                  // 840  // 1016
-  "&Jcy;": { "codepoints": [1049], "characters": "\u0419" },                                                   // 841  // 1017
-  "&jcy;": { "codepoints": [1081], "characters": "\u0439" },                                                   // 842  // 1018
-  "&Jfr;": { "codepoints": [120077], "characters": "\uD835\uDD0D" },                                           // 843  // 1019
-  "&jfr;": { "codepoints": [120103], "characters": "\uD835\uDD27" },                                           // 844  // 1020
-  "&jmath;": { "codepoints": [567], "characters": "\u0237" },                                                  // 845  // 1021
-  "&Jopf;": { "codepoints": [120129], "characters": "\uD835\uDD41" },                                          // 846  // 1022
-  "&jopf;": { "codepoints": [120155], "characters": "\uD835\uDD5B" },                                          // 847  // 1023
-  "&Jscr;": { "codepoints": [119973], "characters": "\uD835\uDCA5" },                                          // 848  // 1024
-  "&jscr;": { "codepoints": [119999], "characters": "\uD835\uDCBF" },                                          // 849  // 1025
-  "&Jsercy;": { "codepoints": [1032], "characters": "\u0408" },                                                // 850  // 1026
-  "&jsercy;": { "codepoints": [1112], "characters": "\u0458" },                                                // 851  // 1027
-  "&Jukcy;": { "codepoints": [1028], "characters": "\u0404" },                                                 // 852  // 1028
-  "&jukcy;": { "codepoints": [1108], "characters": "\u0454" },                                                 // 853  // 1029
-  "&Kappa;": { "codepoints": [922], "characters": "\u039A" },                                                  // 854  // 1030
-  "&kappa;": { "codepoints": [954], "characters": "\u03BA" },                                                  // 855  // 1031
-  "&kappav;": { "codepoints": [1008], "characters": "\u03F0" },                                                // 856  // 1032
-  "&Kcedil;": { "codepoints": [310], "characters": "\u0136" },                                                 // 857  // 1033
-  "&kcedil;": { "codepoints": [311], "characters": "\u0137" },                                                 // 858  // 1034
-  "&Kcy;": { "codepoints": [1050], "characters": "\u041A" },                                                   // 859  // 1035
-  "&kcy;": { "codepoints": [1082], "characters": "\u043A" },                                                   // 860  // 1036
-  "&Kfr;": { "codepoints": [120078], "characters": "\uD835\uDD0E" },                                           // 861  // 1037
-  "&kfr;": { "codepoints": [120104], "characters": "\uD835\uDD28" },                                           // 862  // 1038
-  "&kgreen;": { "codepoints": [312], "characters": "\u0138" },                                                 // 863  // 1039
-  "&KHcy;": { "codepoints": [1061], "characters": "\u0425" },                                                  // 864  // 1040
-  "&khcy;": { "codepoints": [1093], "characters": "\u0445" },                                                  // 865  // 1041
-  "&KJcy;": { "codepoints": [1036], "characters": "\u040C" },                                                  // 866  // 1042
-  "&kjcy;": { "codepoints": [1116], "characters": "\u045C" },                                                  // 867  // 1043
-  "&Kopf;": { "codepoints": [120130], "characters": "\uD835\uDD42" },                                          // 868  // 1044
-  "&kopf;": { "codepoints": [120156], "characters": "\uD835\uDD5C" },                                          // 869  // 1045
-  "&Kscr;": { "codepoints": [119974], "characters": "\uD835\uDCA6" },                                          // 870  // 1046
-  "&kscr;": { "codepoints": [120000], "characters": "\uD835\uDCC0" },                                          // 871  // 1047
-  "&lAarr;": { "codepoints": [8666], "characters": "\u21DA" },                                                 // 872  // 1048
-  "&Lacute;": { "codepoints": [313], "characters": "\u0139" },                                                 // 873  // 1049
-  "&lacute;": { "codepoints": [314], "characters": "\u013A" },                                                 // 874  // 1050
-  "&laemptyv;": { "codepoints": [10676], "characters": "\u29B4" },                                             // 875  // 1051
-  "&lagran;": { "codepoints": [8466], "characters": "\u2112" },                                                // 876  // 1052
-  "&Lambda;": { "codepoints": [923], "characters": "\u039B" },                                                 // 877  // 1053
-  "&lambda;": { "codepoints": [955], "characters": "\u03BB" },                                                 // 878  // 1054
-  "&lang;": { "codepoints": [10216], "characters": "\u27E8" },                                                 // 879  // 1055
-  "&Lang;": { "codepoints": [10218], "characters": "\u27EA" },                                                 // 880  // 1056
-  "&langd;": { "codepoints": [10641], "characters": "\u2991" },                                                // 881  // 1057
-  "&langle;": { "codepoints": [10216], "characters": "\u27E8" },                                               // 882  // 1058
-  "&lap;": { "codepoints": [10885], "characters": "\u2A85" },                                                  // 883  // 1059
-  "&Laplacetrf;": { "codepoints": [8466], "characters": "\u2112" },                                            // 884  // 1060
-  "&laquo;": { "codepoints": [171], "characters": "\u00AB" },                                                  // 885  // 1061
-  "&laquo": { "codepoints": [171], "characters": "\u00AB" },                                                   // 886  // 1062
-  "&larrb;": { "codepoints": [8676], "characters": "\u21E4" },                                                 // 887  // 1063
-  "&larrbfs;": { "codepoints": [10527], "characters": "\u291F" },                                              // 888  // 1064
-  "&larr;": { "codepoints": [8592], "characters": "\u2190" },                                                  // 889  // 1065
-  "&Larr;": { "codepoints": [8606], "characters": "\u219E" },                                                  // 890  // 1066
-  "&lArr;": { "codepoints": [8656], "characters": "\u21D0" },                                                  // 891  // 1067
-  "&larrfs;": { "codepoints": [10525], "characters": "\u291D" },                                               // 892  // 1068
-  "&larrhk;": { "codepoints": [8617], "characters": "\u21A9" },                                                // 893  // 1069
-  "&larrlp;": { "codepoints": [8619], "characters": "\u21AB" },                                                // 894  // 1070
-  "&larrpl;": { "codepoints": [10553], "characters": "\u2939" },                                               // 895  // 1071
-  "&larrsim;": { "codepoints": [10611], "characters": "\u2973" },                                              // 896  // 1072
-  "&larrtl;": { "codepoints": [8610], "characters": "\u21A2" },                                                // 897  // 1073
-  "&latail;": { "codepoints": [10521], "characters": "\u2919" },                                               // 898  // 1074
-  "&lAtail;": { "codepoints": [10523], "characters": "\u291B" },                                               // 899  // 1075
-  "&lat;": { "codepoints": [10923], "characters": "\u2AAB" },                                                  // 900  // 1076
-  "&late;": { "codepoints": [10925], "characters": "\u2AAD" },                                                 // 901  // 1077
-  "&lates;": { "codepoints": [10925, 65024], "characters": "\u2AAD\uFE00" },                                   // 902  // 1078
-  "&lbarr;": { "codepoints": [10508], "characters": "\u290C" },                                                // 903  // 1079
-  "&lBarr;": { "codepoints": [10510], "characters": "\u290E" },                                                // 904  // 1080
-  "&lbbrk;": { "codepoints": [10098], "characters": "\u2772" },                                                // 905  // 1081
-  "&lbrace;": { "codepoints": [123], "characters": "\u007B" },                                                 // 906  // 1082
-  "&lbrack;": { "codepoints": [91], "characters": "\u005B" },                                                  // 907  // 1083
-  "&lbrke;": { "codepoints": [10635], "characters": "\u298B" },                                                // 908  // 1084
-  "&lbrksld;": { "codepoints": [10639], "characters": "\u298F" },                                              // 909  // 1085
-  "&lbrkslu;": { "codepoints": [10637], "characters": "\u298D" },                                              // 910  // 1086
-  "&Lcaron;": { "codepoints": [317], "characters": "\u013D" },                                                 // 911  // 1087
-  "&lcaron;": { "codepoints": [318], "characters": "\u013E" },                                                 // 912  // 1088
-  "&Lcedil;": { "codepoints": [315], "characters": "\u013B" },                                                 // 913  // 1089
-  "&lcedil;": { "codepoints": [316], "characters": "\u013C" },                                                 // 914  // 1090
-  "&lceil;": { "codepoints": [8968], "characters": "\u2308" },                                                 // 915  // 1091
-  "&lcub;": { "codepoints": [123], "characters": "\u007B" },                                                   // 916  // 1092
-  "&Lcy;": { "codepoints": [1051], "characters": "\u041B" },                                                   // 917  // 1093
-  "&lcy;": { "codepoints": [1083], "characters": "\u043B" },                                                   // 918  // 1094
-  "&ldca;": { "codepoints": [10550], "characters": "\u2936" },                                                 // 919  // 1095
-  "&ldquo;": { "codepoints": [8220], "characters": "\u201C" },                                                 // 920  // 1096
-  "&ldquor;": { "codepoints": [8222], "characters": "\u201E" },                                                // 921  // 1097
-  "&ldrdhar;": { "codepoints": [10599], "characters": "\u2967" },                                              // 922  // 1098
-  "&ldrushar;": { "codepoints": [10571], "characters": "\u294B" },                                             // 923  // 1099
-  "&ldsh;": { "codepoints": [8626], "characters": "\u21B2" },                                                  // 924  // 1100
-  "&le;": { "codepoints": [8804], "characters": "\u2264" },                                                    // 925  // 1101
-  "&lE;": { "codepoints": [8806], "characters": "\u2266" },                                                    // 926  // 1102
-  "&LeftAngleBracket;": { "codepoints": [10216], "characters": "\u27E8" },                                     // 927  // 1103
-  "&LeftArrowBar;": { "codepoints": [8676], "characters": "\u21E4" },                                          // 928  // 1104
-  "&leftarrow;": { "codepoints": [8592], "characters": "\u2190" },                                             // 929  // 1105
-  "&LeftArrow;": { "codepoints": [8592], "characters": "\u2190" },                                             // 930  // 1106
-  "&Leftarrow;": { "codepoints": [8656], "characters": "\u21D0" },                                             // 931  // 1107
-  "&LeftArrowRightArrow;": { "codepoints": [8646], "characters": "\u21C6" },                                   // 932  // 1108
-  "&leftarrowtail;": { "codepoints": [8610], "characters": "\u21A2" },                                         // 933  // 1109
-  "&LeftCeiling;": { "codepoints": [8968], "characters": "\u2308" },                                           // 934  // 1110
-  "&LeftDoubleBracket;": { "codepoints": [10214], "characters": "\u27E6" },                                    // 935  // 1111
-  "&LeftDownTeeVector;": { "codepoints": [10593], "characters": "\u2961" },                                    // 936  // 1112
-  "&LeftDownVectorBar;": { "codepoints": [10585], "characters": "\u2959" },                                    // 937  // 1113
-  "&LeftDownVector;": { "codepoints": [8643], "characters": "\u21C3" },                                        // 938  // 1114
-  "&LeftFloor;": { "codepoints": [8970], "characters": "\u230A" },                                             // 939  // 1115
-  "&leftharpoondown;": { "codepoints": [8637], "characters": "\u21BD" },                                       // 940  // 1116
-  "&leftharpoonup;": { "codepoints": [8636], "characters": "\u21BC" },                                         // 941  // 1117
-  "&leftleftarrows;": { "codepoints": [8647], "characters": "\u21C7" },                                        // 942  // 1118
-  "&leftrightarrow;": { "codepoints": [8596], "characters": "\u2194" },                                        // 943  // 1119
-  "&LeftRightArrow;": { "codepoints": [8596], "characters": "\u2194" },                                        // 944  // 1120
-  "&Leftrightarrow;": { "codepoints": [8660], "characters": "\u21D4" },                                        // 945  // 1121
-  "&leftrightarrows;": { "codepoints": [8646], "characters": "\u21C6" },                                       // 946  // 1122
-  "&leftrightharpoons;": { "codepoints": [8651], "characters": "\u21CB" },                                     // 947  // 1123
-  "&leftrightsquigarrow;": { "codepoints": [8621], "characters": "\u21AD" },                                   // 948  // 1124
-  "&LeftRightVector;": { "codepoints": [10574], "characters": "\u294E" },                                      // 949  // 1125
-  "&LeftTeeArrow;": { "codepoints": [8612], "characters": "\u21A4" },                                          // 950  // 1126
-  "&LeftTee;": { "codepoints": [8867], "characters": "\u22A3" },                                               // 951  // 1127
-  "&LeftTeeVector;": { "codepoints": [10586], "characters": "\u295A" },                                        // 952  // 1128
-  "&leftthreetimes;": { "codepoints": [8907], "characters": "\u22CB" },                                        // 953  // 1129
-  "&LeftTriangleBar;": { "codepoints": [10703], "characters": "\u29CF" },                                      // 954  // 1130
-  "&LeftTriangle;": { "codepoints": [8882], "characters": "\u22B2" },                                          // 955  // 1131
-  "&LeftTriangleEqual;": { "codepoints": [8884], "characters": "\u22B4" },                                     // 956  // 1132
-  "&LeftUpDownVector;": { "codepoints": [10577], "characters": "\u2951" },                                     // 957  // 1133
-  "&LeftUpTeeVector;": { "codepoints": [10592], "characters": "\u2960" },                                      // 958  // 1134
-  "&LeftUpVectorBar;": { "codepoints": [10584], "characters": "\u2958" },                                      // 959  // 1135
-  "&LeftUpVector;": { "codepoints": [8639], "characters": "\u21BF" },                                          // 960  // 1136
-  "&LeftVectorBar;": { "codepoints": [10578], "characters": "\u2952" },                                        // 961  // 1137
-  "&LeftVector;": { "codepoints": [8636], "characters": "\u21BC" },                                            // 962  // 1138
-  "&lEg;": { "codepoints": [10891], "characters": "\u2A8B" },                                                  // 963  // 1139
-  "&leg;": { "codepoints": [8922], "characters": "\u22DA" },                                                   // 964  // 1140
-  "&leq;": { "codepoints": [8804], "characters": "\u2264" },                                                   // 965  // 1141
-  "&leqq;": { "codepoints": [8806], "characters": "\u2266" },                                                  // 966  // 1142
-  "&leqslant;": { "codepoints": [10877], "characters": "\u2A7D" },                                             // 967  // 1143
-  "&lescc;": { "codepoints": [10920], "characters": "\u2AA8" },                                                // 968  // 1144
-  "&les;": { "codepoints": [10877], "characters": "\u2A7D" },                                                  // 969  // 1145
-  "&lesdot;": { "codepoints": [10879], "characters": "\u2A7F" },                                               // 970  // 1146
-  "&lesdoto;": { "codepoints": [10881], "characters": "\u2A81" },                                              // 971  // 1147
-  "&lesdotor;": { "codepoints": [10883], "characters": "\u2A83" },                                             // 972  // 1148
-  "&lesg;": { "codepoints": [8922, 65024], "characters": "\u22DA\uFE00" },                                     // 973  // 1149
-  "&lesges;": { "codepoints": [10899], "characters": "\u2A93" },                                               // 974  // 1150
-  "&lessapprox;": { "codepoints": [10885], "characters": "\u2A85" },                                           // 975  // 1151
-  "&lessdot;": { "codepoints": [8918], "characters": "\u22D6" },                                               // 976  // 1152
-  "&lesseqgtr;": { "codepoints": [8922], "characters": "\u22DA" },                                             // 977  // 1153
-  "&lesseqqgtr;": { "codepoints": [10891], "characters": "\u2A8B" },                                           // 978  // 1154
-  "&LessEqualGreater;": { "codepoints": [8922], "characters": "\u22DA" },                                      // 979  // 1155
-  "&LessFullEqual;": { "codepoints": [8806], "characters": "\u2266" },                                         // 980  // 1156
-  "&LessGreater;": { "codepoints": [8822], "characters": "\u2276" },                                           // 981  // 1157
-  "&lessgtr;": { "codepoints": [8822], "characters": "\u2276" },                                               // 982  // 1158
-  "&LessLess;": { "codepoints": [10913], "characters": "\u2AA1" },                                             // 983  // 1159
-  "&lesssim;": { "codepoints": [8818], "characters": "\u2272" },                                               // 984  // 1160
-  "&LessSlantEqual;": { "codepoints": [10877], "characters": "\u2A7D" },                                       // 985  // 1161
-  "&LessTilde;": { "codepoints": [8818], "characters": "\u2272" },                                             // 986  // 1162
-  "&lfisht;": { "codepoints": [10620], "characters": "\u297C" },                                               // 987  // 1163
-  "&lfloor;": { "codepoints": [8970], "characters": "\u230A" },                                                // 988  // 1164
-  "&Lfr;": { "codepoints": [120079], "characters": "\uD835\uDD0F" },                                           // 989  // 1165
-  "&lfr;": { "codepoints": [120105], "characters": "\uD835\uDD29" },                                           // 990  // 1166
-  "&lg;": { "codepoints": [8822], "characters": "\u2276" },                                                    // 991  // 1167
-  "&lgE;": { "codepoints": [10897], "characters": "\u2A91" },                                                  // 992  // 1168
-  "&lHar;": { "codepoints": [10594], "characters": "\u2962" },                                                 // 993  // 1169
-  "&lhard;": { "codepoints": [8637], "characters": "\u21BD" },                                                 // 994  // 1170
-  "&lharu;": { "codepoints": [8636], "characters": "\u21BC" },                                                 // 995  // 1171
-  "&lharul;": { "codepoints": [10602], "characters": "\u296A" },                                               // 996  // 1172
-  "&lhblk;": { "codepoints": [9604], "characters": "\u2584" },                                                 // 997  // 1173
-  "&LJcy;": { "codepoints": [1033], "characters": "\u0409" },                                                  // 998  // 1174
-  "&ljcy;": { "codepoints": [1113], "characters": "\u0459" },                                                  // 999  // 1175
+                                                                                                               // 12
+var properAttributeCaseMap = (function (map) {                                                                 // 13
+  for (var i = 0; i < svgCamelCaseAttributes.length; i++) {                                                    // 14
+    var a = svgCamelCaseAttributes[i];                                                                         // 15
+    map[asciiLowerCase(a)] = a;                                                                                // 16
+  }                                                                                                            // 17
+  return map;                                                                                                  // 18
+})({});                                                                                                        // 19
+                                                                                                               // 20
+var properTagCaseMap = (function (map) {                                                                       // 21
+  var knownElements = HTML.knownElementNames;                                                                  // 22
+  for (var i = 0; i < knownElements.length; i++) {                                                             // 23
+    var a = knownElements[i];                                                                                  // 24
+    map[asciiLowerCase(a)] = a;                                                                                // 25
+  }                                                                                                            // 26
+  return map;                                                                                                  // 27
+})({});                                                                                                        // 28
+                                                                                                               // 29
+// Take a tag name in any case and make it the proper case for HTML.                                           // 30
+//                                                                                                             // 31
+// Modern browsers let you embed SVG in HTML, but SVG elements are special                                     // 32
+// in that they have a case-sensitive DOM API (nodeName, getAttribute,                                         // 33
+// setAttribute).  For example, it has to be `setAttribute("viewBox")`,                                        // 34
+// not `"viewbox"`.  However, the browser's HTML parser is NOT case sensitive                                  // 35
+// and will fix the case for you, so if you write `<svg viewbox="...">`                                        // 36
+// you actually get a `"viewBox"` attribute.  Any HTML-parsing toolchain                                       // 37
+// must do the same.                                                                                           // 38
+HTMLTools.properCaseTagName = function (name) {                                                                // 39
+  var lowered = asciiLowerCase(name);                                                                          // 40
+  return properTagCaseMap.hasOwnProperty(lowered) ?                                                            // 41
+    properTagCaseMap[lowered] : lowered;                                                                       // 42
+};                                                                                                             // 43
+                                                                                                               // 44
+// See docs for properCaseTagName.                                                                             // 45
+HTMLTools.properCaseAttributeName = function (name) {                                                          // 46
+  var lowered = asciiLowerCase(name);                                                                          // 47
+  return properAttributeCaseMap.hasOwnProperty(lowered) ?                                                      // 48
+    properAttributeCaseMap[lowered] : lowered;                                                                 // 49
+};                                                                                                             // 50
+                                                                                                               // 51
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+}).call(this);
+
+
+
+
+
+
+(function(){
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                                             //
+// packages/html-tools/scanner.js                                                                              //
+//                                                                                                             //
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+                                                                                                               //
+// This is a Scanner class suitable for any parser/lexer/tokenizer.                                            // 1
+//                                                                                                             // 2
+// A Scanner has an immutable source document (string) `input` and a current                                   // 3
+// position `pos`, an index into the string, which can be set at will.                                         // 4
+//                                                                                                             // 5
+// * `new Scanner(input)` - constructs a Scanner with source string `input`                                    // 6
+// * `scanner.rest()` - returns the rest of the input after `pos`                                              // 7
+// * `scanner.peek()` - returns the character at `pos`                                                         // 8
+// * `scanner.isEOF()` - true if `pos` is at or beyond the end of `input`                                      // 9
+// * `scanner.fatal(msg)` - throw an error indicating a problem at `pos`                                       // 10
+                                                                                                               // 11
+Scanner = HTMLTools.Scanner = function (input) {                                                               // 12
+  this.input = input; // public, read-only                                                                     // 13
+  this.pos = 0; // public, read-write                                                                          // 14
+};                                                                                                             // 15
+                                                                                                               // 16
+Scanner.prototype.rest = function () {                                                                         // 17
+  // Slicing a string is O(1) in modern JavaScript VMs (including old IE).                                     // 18
+  return this.input.slice(this.pos);                                                                           // 19
+};                                                                                                             // 20
+                                                                                                               // 21
+Scanner.prototype.isEOF = function () {                                                                        // 22
+  return this.pos >= this.input.length;                                                                        // 23
+};                                                                                                             // 24
+                                                                                                               // 25
+Scanner.prototype.fatal = function (msg) {                                                                     // 26
+  // despite this default, you should always provide a message!                                                // 27
+  msg = (msg || "Parse error");                                                                                // 28
+                                                                                                               // 29
+  var CONTEXT_AMOUNT = 20;                                                                                     // 30
+                                                                                                               // 31
+  var input = this.input;                                                                                      // 32
+  var pos = this.pos;                                                                                          // 33
+  var pastInput = input.substring(pos - CONTEXT_AMOUNT - 1, pos);                                              // 34
+  if (pastInput.length > CONTEXT_AMOUNT)                                                                       // 35
+    pastInput = '...' + pastInput.substring(-CONTEXT_AMOUNT);                                                  // 36
+                                                                                                               // 37
+  var upcomingInput = input.substring(pos, pos + CONTEXT_AMOUNT + 1);                                          // 38
+  if (upcomingInput.length > CONTEXT_AMOUNT)                                                                   // 39
+    upcomingInput = upcomingInput.substring(0, CONTEXT_AMOUNT) + '...';                                        // 40
+                                                                                                               // 41
+  var positionDisplay = ((pastInput + upcomingInput).replace(/\n/g, ' ') + '\n' +                              // 42
+                         (new Array(pastInput.length + 1).join(' ')) + "^");                                   // 43
+                                                                                                               // 44
+  var e = new Error(msg + "\n" + positionDisplay);                                                             // 45
+                                                                                                               // 46
+  e.offset = pos;                                                                                              // 47
+  var allPastInput = input.substring(0, pos);                                                                  // 48
+  e.line = (1 + (allPastInput.match(/\n/g) || []).length);                                                     // 49
+  e.col = (1 + pos - allPastInput.lastIndexOf('\n'));                                                          // 50
+  e.scanner = this;                                                                                            // 51
+                                                                                                               // 52
+  throw e;                                                                                                     // 53
+};                                                                                                             // 54
+                                                                                                               // 55
+// Peek at the next character.                                                                                 // 56
+//                                                                                                             // 57
+// If `isEOF`, returns an empty string.                                                                        // 58
+Scanner.prototype.peek = function () {                                                                         // 59
+  return this.input.charAt(this.pos);                                                                          // 60
+};                                                                                                             // 61
+                                                                                                               // 62
+// Constructs a `getFoo` function where `foo` is specified with a regex.                                       // 63
+// The regex should start with `^`.  The constructed function will return                                      // 64
+// match group 1, if it exists and matches a non-empty string, or else                                         // 65
+// the entire matched string (or null if there is no match).                                                   // 66
+//                                                                                                             // 67
+// A `getFoo` function tries to match and consume a foo.  If it succeeds,                                      // 68
+// the current position of the scanner is advanced.  If it fails, the                                          // 69
+// current position is not advanced and a falsy value (typically null)                                         // 70
+// is returned.                                                                                                // 71
+makeRegexMatcher = function (regex) {                                                                          // 72
+  return function (scanner) {                                                                                  // 73
+    var match = regex.exec(scanner.rest());                                                                    // 74
+                                                                                                               // 75
+    if (! match)                                                                                               // 76
+      return null;                                                                                             // 77
+                                                                                                               // 78
+    scanner.pos += match[0].length;                                                                            // 79
+    return match[1] || match[0];                                                                               // 80
+  };                                                                                                           // 81
+};                                                                                                             // 82
+                                                                                                               // 83
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+}).call(this);
+
+
+
+
+
+
+(function(){
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                                             //
+// packages/html-tools/charref.js                                                                              //
+//                                                                                                             //
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+                                                                                                               //
+                                                                                                               // 1
+// http://www.whatwg.org/specs/web-apps/current-work/multipage/entities.json                                   // 2
+                                                                                                               // 3
+                                                                                                               // 4
+// Note that some entities don't have a final semicolon!  These are used to                                    // 5
+// make `&lt` (for example) with no semicolon a parse error but `&abcde` not.                                  // 6
+                                                                                                               // 7
+var ENTITIES = {                                                                                               // 8
+  "&Aacute;": { "codepoints": [193], "characters": "\u00C1" },                                                 // 9
+  "&Aacute": { "codepoints": [193], "characters": "\u00C1" },                                                  // 10
+  "&aacute;": { "codepoints": [225], "characters": "\u00E1" },                                                 // 11
+  "&aacute": { "codepoints": [225], "characters": "\u00E1" },                                                  // 12
+  "&Abreve;": { "codepoints": [258], "characters": "\u0102" },                                                 // 13
+  "&abreve;": { "codepoints": [259], "characters": "\u0103" },                                                 // 14
+  "&ac;": { "codepoints": [8766], "characters": "\u223E" },                                                    // 15
+  "&acd;": { "codepoints": [8767], "characters": "\u223F" },                                                   // 16
+  "&acE;": { "codepoints": [8766, 819], "characters": "\u223E\u0333" },                                        // 17
+  "&Acirc;": { "codepoints": [194], "characters": "\u00C2" },                                                  // 18
+  "&Acirc": { "codepoints": [194], "characters": "\u00C2" },                                                   // 19
+  "&acirc;": { "codepoints": [226], "characters": "\u00E2" },                                                  // 20
+  "&acirc": { "codepoints": [226], "characters": "\u00E2" },                                                   // 21
+  "&acute;": { "codepoints": [180], "characters": "\u00B4" },                                                  // 22
+  "&acute": { "codepoints": [180], "characters": "\u00B4" },                                                   // 23
+  "&Acy;": { "codepoints": [1040], "characters": "\u0410" },                                                   // 24
+  "&acy;": { "codepoints": [1072], "characters": "\u0430" },                                                   // 25
+  "&AElig;": { "codepoints": [198], "characters": "\u00C6" },                                                  // 26
+  "&AElig": { "codepoints": [198], "characters": "\u00C6" },                                                   // 27
+  "&aelig;": { "codepoints": [230], "characters": "\u00E6" },                                                  // 28
+  "&aelig": { "codepoints": [230], "characters": "\u00E6" },                                                   // 29
+  "&af;": { "codepoints": [8289], "characters": "\u2061" },                                                    // 30
+  "&Afr;": { "codepoints": [120068], "characters": "\uD835\uDD04" },                                           // 31
+  "&afr;": { "codepoints": [120094], "characters": "\uD835\uDD1E" },                                           // 32
+  "&Agrave;": { "codepoints": [192], "characters": "\u00C0" },                                                 // 33
+  "&Agrave": { "codepoints": [192], "characters": "\u00C0" },                                                  // 34
+  "&agrave;": { "codepoints": [224], "characters": "\u00E0" },                                                 // 35
+  "&agrave": { "codepoints": [224], "characters": "\u00E0" },                                                  // 36
+  "&alefsym;": { "codepoints": [8501], "characters": "\u2135" },                                               // 37
+  "&aleph;": { "codepoints": [8501], "characters": "\u2135" },                                                 // 38
+  "&Alpha;": { "codepoints": [913], "characters": "\u0391" },                                                  // 39
+  "&alpha;": { "codepoints": [945], "characters": "\u03B1" },                                                  // 40
+  "&Amacr;": { "codepoints": [256], "characters": "\u0100" },                                                  // 41
+  "&amacr;": { "codepoints": [257], "characters": "\u0101" },                                                  // 42
+  "&amalg;": { "codepoints": [10815], "characters": "\u2A3F" },                                                // 43
+  "&amp;": { "codepoints": [38], "characters": "\u0026" },                                                     // 44
+  "&amp": { "codepoints": [38], "characters": "\u0026" },                                                      // 45
+  "&AMP;": { "codepoints": [38], "characters": "\u0026" },                                                     // 46
+  "&AMP": { "codepoints": [38], "characters": "\u0026" },                                                      // 47
+  "&andand;": { "codepoints": [10837], "characters": "\u2A55" },                                               // 48
+  "&And;": { "codepoints": [10835], "characters": "\u2A53" },                                                  // 49
+  "&and;": { "codepoints": [8743], "characters": "\u2227" },                                                   // 50
+  "&andd;": { "codepoints": [10844], "characters": "\u2A5C" },                                                 // 51
+  "&andslope;": { "codepoints": [10840], "characters": "\u2A58" },                                             // 52
+  "&andv;": { "codepoints": [10842], "characters": "\u2A5A" },                                                 // 53
+  "&ang;": { "codepoints": [8736], "characters": "\u2220" },                                                   // 54
+  "&ange;": { "codepoints": [10660], "characters": "\u29A4" },                                                 // 55
+  "&angle;": { "codepoints": [8736], "characters": "\u2220" },                                                 // 56
+  "&angmsdaa;": { "codepoints": [10664], "characters": "\u29A8" },                                             // 57
+  "&angmsdab;": { "codepoints": [10665], "characters": "\u29A9" },                                             // 58
+  "&angmsdac;": { "codepoints": [10666], "characters": "\u29AA" },                                             // 59
+  "&angmsdad;": { "codepoints": [10667], "characters": "\u29AB" },                                             // 60
+  "&angmsdae;": { "codepoints": [10668], "characters": "\u29AC" },                                             // 61
+  "&angmsdaf;": { "codepoints": [10669], "characters": "\u29AD" },                                             // 62
+  "&angmsdag;": { "codepoints": [10670], "characters": "\u29AE" },                                             // 63
+  "&angmsdah;": { "codepoints": [10671], "characters": "\u29AF" },                                             // 64
+  "&angmsd;": { "codepoints": [8737], "characters": "\u2221" },                                                // 65
+  "&angrt;": { "codepoints": [8735], "characters": "\u221F" },                                                 // 66
+  "&angrtvb;": { "codepoints": [8894], "characters": "\u22BE" },                                               // 67
+  "&angrtvbd;": { "codepoints": [10653], "characters": "\u299D" },                                             // 68
+  "&angsph;": { "codepoints": [8738], "characters": "\u2222" },                                                // 69
+  "&angst;": { "codepoints": [197], "characters": "\u00C5" },                                                  // 70
+  "&angzarr;": { "codepoints": [9084], "characters": "\u237C" },                                               // 71
+  "&Aogon;": { "codepoints": [260], "characters": "\u0104" },                                                  // 72
+  "&aogon;": { "codepoints": [261], "characters": "\u0105" },                                                  // 73
+  "&Aopf;": { "codepoints": [120120], "characters": "\uD835\uDD38" },                                          // 74
+  "&aopf;": { "codepoints": [120146], "characters": "\uD835\uDD52" },                                          // 75
+  "&apacir;": { "codepoints": [10863], "characters": "\u2A6F" },                                               // 76
+  "&ap;": { "codepoints": [8776], "characters": "\u2248" },                                                    // 77
+  "&apE;": { "codepoints": [10864], "characters": "\u2A70" },                                                  // 78
+  "&ape;": { "codepoints": [8778], "characters": "\u224A" },                                                   // 79
+  "&apid;": { "codepoints": [8779], "characters": "\u224B" },                                                  // 80
+  "&apos;": { "codepoints": [39], "characters": "\u0027" },                                                    // 81
+  "&ApplyFunction;": { "codepoints": [8289], "characters": "\u2061" },                                         // 82
+  "&approx;": { "codepoints": [8776], "characters": "\u2248" },                                                // 83
+  "&approxeq;": { "codepoints": [8778], "characters": "\u224A" },                                              // 84
+  "&Aring;": { "codepoints": [197], "characters": "\u00C5" },                                                  // 85
+  "&Aring": { "codepoints": [197], "characters": "\u00C5" },                                                   // 86
+  "&aring;": { "codepoints": [229], "characters": "\u00E5" },                                                  // 87
+  "&aring": { "codepoints": [229], "characters": "\u00E5" },                                                   // 88
+  "&Ascr;": { "codepoints": [119964], "characters": "\uD835\uDC9C" },                                          // 89
+  "&ascr;": { "codepoints": [119990], "characters": "\uD835\uDCB6" },                                          // 90
+  "&Assign;": { "codepoints": [8788], "characters": "\u2254" },                                                // 91
+  "&ast;": { "codepoints": [42], "characters": "\u002A" },                                                     // 92
+  "&asymp;": { "codepoints": [8776], "characters": "\u2248" },                                                 // 93
+  "&asympeq;": { "codepoints": [8781], "characters": "\u224D" },                                               // 94
+  "&Atilde;": { "codepoints": [195], "characters": "\u00C3" },                                                 // 95
+  "&Atilde": { "codepoints": [195], "characters": "\u00C3" },                                                  // 96
+  "&atilde;": { "codepoints": [227], "characters": "\u00E3" },                                                 // 97
+  "&atilde": { "codepoints": [227], "characters": "\u00E3" },                                                  // 98
+  "&Auml;": { "codepoints": [196], "characters": "\u00C4" },                                                   // 99
+  "&Auml": { "codepoints": [196], "characters": "\u00C4" },                                                    // 100
+  "&auml;": { "codepoints": [228], "characters": "\u00E4" },                                                   // 101
+  "&auml": { "codepoints": [228], "characters": "\u00E4" },                                                    // 102
+  "&awconint;": { "codepoints": [8755], "characters": "\u2233" },                                              // 103
+  "&awint;": { "codepoints": [10769], "characters": "\u2A11" },                                                // 104
+  "&backcong;": { "codepoints": [8780], "characters": "\u224C" },                                              // 105
+  "&backepsilon;": { "codepoints": [1014], "characters": "\u03F6" },                                           // 106
+  "&backprime;": { "codepoints": [8245], "characters": "\u2035" },                                             // 107
+  "&backsim;": { "codepoints": [8765], "characters": "\u223D" },                                               // 108
+  "&backsimeq;": { "codepoints": [8909], "characters": "\u22CD" },                                             // 109
+  "&Backslash;": { "codepoints": [8726], "characters": "\u2216" },                                             // 110
+  "&Barv;": { "codepoints": [10983], "characters": "\u2AE7" },                                                 // 111
+  "&barvee;": { "codepoints": [8893], "characters": "\u22BD" },                                                // 112
+  "&barwed;": { "codepoints": [8965], "characters": "\u2305" },                                                // 113
+  "&Barwed;": { "codepoints": [8966], "characters": "\u2306" },                                                // 114
+  "&barwedge;": { "codepoints": [8965], "characters": "\u2305" },                                              // 115
+  "&bbrk;": { "codepoints": [9141], "characters": "\u23B5" },                                                  // 116
+  "&bbrktbrk;": { "codepoints": [9142], "characters": "\u23B6" },                                              // 117
+  "&bcong;": { "codepoints": [8780], "characters": "\u224C" },                                                 // 118
+  "&Bcy;": { "codepoints": [1041], "characters": "\u0411" },                                                   // 119
+  "&bcy;": { "codepoints": [1073], "characters": "\u0431" },                                                   // 120
+  "&bdquo;": { "codepoints": [8222], "characters": "\u201E" },                                                 // 121
+  "&becaus;": { "codepoints": [8757], "characters": "\u2235" },                                                // 122
+  "&because;": { "codepoints": [8757], "characters": "\u2235" },                                               // 123
+  "&Because;": { "codepoints": [8757], "characters": "\u2235" },                                               // 124
+  "&bemptyv;": { "codepoints": [10672], "characters": "\u29B0" },                                              // 125
+  "&bepsi;": { "codepoints": [1014], "characters": "\u03F6" },                                                 // 126
+  "&bernou;": { "codepoints": [8492], "characters": "\u212C" },                                                // 127
+  "&Bernoullis;": { "codepoints": [8492], "characters": "\u212C" },                                            // 128
+  "&Beta;": { "codepoints": [914], "characters": "\u0392" },                                                   // 129
+  "&beta;": { "codepoints": [946], "characters": "\u03B2" },                                                   // 130
+  "&beth;": { "codepoints": [8502], "characters": "\u2136" },                                                  // 131
+  "&between;": { "codepoints": [8812], "characters": "\u226C" },                                               // 132
+  "&Bfr;": { "codepoints": [120069], "characters": "\uD835\uDD05" },                                           // 133
+  "&bfr;": { "codepoints": [120095], "characters": "\uD835\uDD1F" },                                           // 134
+  "&bigcap;": { "codepoints": [8898], "characters": "\u22C2" },                                                // 135
+  "&bigcirc;": { "codepoints": [9711], "characters": "\u25EF" },                                               // 136
+  "&bigcup;": { "codepoints": [8899], "characters": "\u22C3" },                                                // 137
+  "&bigodot;": { "codepoints": [10752], "characters": "\u2A00" },                                              // 138
+  "&bigoplus;": { "codepoints": [10753], "characters": "\u2A01" },                                             // 139
+  "&bigotimes;": { "codepoints": [10754], "characters": "\u2A02" },                                            // 140
+  "&bigsqcup;": { "codepoints": [10758], "characters": "\u2A06" },                                             // 141
+  "&bigstar;": { "codepoints": [9733], "characters": "\u2605" },                                               // 142
+  "&bigtriangledown;": { "codepoints": [9661], "characters": "\u25BD" },                                       // 143
+  "&bigtriangleup;": { "codepoints": [9651], "characters": "\u25B3" },                                         // 144
+  "&biguplus;": { "codepoints": [10756], "characters": "\u2A04" },                                             // 145
+  "&bigvee;": { "codepoints": [8897], "characters": "\u22C1" },                                                // 146
+  "&bigwedge;": { "codepoints": [8896], "characters": "\u22C0" },                                              // 147
+  "&bkarow;": { "codepoints": [10509], "characters": "\u290D" },                                               // 148
+  "&blacklozenge;": { "codepoints": [10731], "characters": "\u29EB" },                                         // 149
+  "&blacksquare;": { "codepoints": [9642], "characters": "\u25AA" },                                           // 150
+  "&blacktriangle;": { "codepoints": [9652], "characters": "\u25B4" },                                         // 151
+  "&blacktriangledown;": { "codepoints": [9662], "characters": "\u25BE" },                                     // 152
+  "&blacktriangleleft;": { "codepoints": [9666], "characters": "\u25C2" },                                     // 153
+  "&blacktriangleright;": { "codepoints": [9656], "characters": "\u25B8" },                                    // 154
+  "&blank;": { "codepoints": [9251], "characters": "\u2423" },                                                 // 155
+  "&blk12;": { "codepoints": [9618], "characters": "\u2592" },                                                 // 156
+  "&blk14;": { "codepoints": [9617], "characters": "\u2591" },                                                 // 157
+  "&blk34;": { "codepoints": [9619], "characters": "\u2593" },                                                 // 158
+  "&block;": { "codepoints": [9608], "characters": "\u2588" },                                                 // 159
+  "&bne;": { "codepoints": [61, 8421], "characters": "\u003D\u20E5" },                                         // 160
+  "&bnequiv;": { "codepoints": [8801, 8421], "characters": "\u2261\u20E5" },                                   // 161
+  "&bNot;": { "codepoints": [10989], "characters": "\u2AED" },                                                 // 162
+  "&bnot;": { "codepoints": [8976], "characters": "\u2310" },                                                  // 163
+  "&Bopf;": { "codepoints": [120121], "characters": "\uD835\uDD39" },                                          // 164
+  "&bopf;": { "codepoints": [120147], "characters": "\uD835\uDD53" },                                          // 165
+  "&bot;": { "codepoints": [8869], "characters": "\u22A5" },                                                   // 166
+  "&bottom;": { "codepoints": [8869], "characters": "\u22A5" },                                                // 167
+  "&bowtie;": { "codepoints": [8904], "characters": "\u22C8" },                                                // 168
+  "&boxbox;": { "codepoints": [10697], "characters": "\u29C9" },                                               // 169
+  "&boxdl;": { "codepoints": [9488], "characters": "\u2510" },                                                 // 170
+  "&boxdL;": { "codepoints": [9557], "characters": "\u2555" },                                                 // 171
+  "&boxDl;": { "codepoints": [9558], "characters": "\u2556" },                                                 // 172
+  "&boxDL;": { "codepoints": [9559], "characters": "\u2557" },                                                 // 173
+  "&boxdr;": { "codepoints": [9484], "characters": "\u250C" },                                                 // 174
+  "&boxdR;": { "codepoints": [9554], "characters": "\u2552" },                                                 // 175
+  "&boxDr;": { "codepoints": [9555], "characters": "\u2553" },                                                 // 176
+  "&boxDR;": { "codepoints": [9556], "characters": "\u2554" },                                                 // 177
+  "&boxh;": { "codepoints": [9472], "characters": "\u2500" },                                                  // 178
+  "&boxH;": { "codepoints": [9552], "characters": "\u2550" },                                                  // 179
+  "&boxhd;": { "codepoints": [9516], "characters": "\u252C" },                                                 // 180
+  "&boxHd;": { "codepoints": [9572], "characters": "\u2564" },                                                 // 181
+  "&boxhD;": { "codepoints": [9573], "characters": "\u2565" },                                                 // 182
+  "&boxHD;": { "codepoints": [9574], "characters": "\u2566" },                                                 // 183
+  "&boxhu;": { "codepoints": [9524], "characters": "\u2534" },                                                 // 184
+  "&boxHu;": { "codepoints": [9575], "characters": "\u2567" },                                                 // 185
+  "&boxhU;": { "codepoints": [9576], "characters": "\u2568" },                                                 // 186
+  "&boxHU;": { "codepoints": [9577], "characters": "\u2569" },                                                 // 187
+  "&boxminus;": { "codepoints": [8863], "characters": "\u229F" },                                              // 188
+  "&boxplus;": { "codepoints": [8862], "characters": "\u229E" },                                               // 189
+  "&boxtimes;": { "codepoints": [8864], "characters": "\u22A0" },                                              // 190
+  "&boxul;": { "codepoints": [9496], "characters": "\u2518" },                                                 // 191
+  "&boxuL;": { "codepoints": [9563], "characters": "\u255B" },                                                 // 192
+  "&boxUl;": { "codepoints": [9564], "characters": "\u255C" },                                                 // 193
+  "&boxUL;": { "codepoints": [9565], "characters": "\u255D" },                                                 // 194
+  "&boxur;": { "codepoints": [9492], "characters": "\u2514" },                                                 // 195
+  "&boxuR;": { "codepoints": [9560], "characters": "\u2558" },                                                 // 196
+  "&boxUr;": { "codepoints": [9561], "characters": "\u2559" },                                                 // 197
+  "&boxUR;": { "codepoints": [9562], "characters": "\u255A" },                                                 // 198
+  "&boxv;": { "codepoints": [9474], "characters": "\u2502" },                                                  // 199
+  "&boxV;": { "codepoints": [9553], "characters": "\u2551" },                                                  // 200
+  "&boxvh;": { "codepoints": [9532], "characters": "\u253C" },                                                 // 201
+  "&boxvH;": { "codepoints": [9578], "characters": "\u256A" },                                                 // 202
+  "&boxVh;": { "codepoints": [9579], "characters": "\u256B" },                                                 // 203
+  "&boxVH;": { "codepoints": [9580], "characters": "\u256C" },                                                 // 204
+  "&boxvl;": { "codepoints": [9508], "characters": "\u2524" },                                                 // 205
+  "&boxvL;": { "codepoints": [9569], "characters": "\u2561" },                                                 // 206
+  "&boxVl;": { "codepoints": [9570], "characters": "\u2562" },                                                 // 207
+  "&boxVL;": { "codepoints": [9571], "characters": "\u2563" },                                                 // 208
+  "&boxvr;": { "codepoints": [9500], "characters": "\u251C" },                                                 // 209
+  "&boxvR;": { "codepoints": [9566], "characters": "\u255E" },                                                 // 210
+  "&boxVr;": { "codepoints": [9567], "characters": "\u255F" },                                                 // 211
+  "&boxVR;": { "codepoints": [9568], "characters": "\u2560" },                                                 // 212
+  "&bprime;": { "codepoints": [8245], "characters": "\u2035" },                                                // 213
+  "&breve;": { "codepoints": [728], "characters": "\u02D8" },                                                  // 214
+  "&Breve;": { "codepoints": [728], "characters": "\u02D8" },                                                  // 215
+  "&brvbar;": { "codepoints": [166], "characters": "\u00A6" },                                                 // 216
+  "&brvbar": { "codepoints": [166], "characters": "\u00A6" },                                                  // 217
+  "&bscr;": { "codepoints": [119991], "characters": "\uD835\uDCB7" },                                          // 218
+  "&Bscr;": { "codepoints": [8492], "characters": "\u212C" },                                                  // 219
+  "&bsemi;": { "codepoints": [8271], "characters": "\u204F" },                                                 // 220
+  "&bsim;": { "codepoints": [8765], "characters": "\u223D" },                                                  // 221
+  "&bsime;": { "codepoints": [8909], "characters": "\u22CD" },                                                 // 222
+  "&bsolb;": { "codepoints": [10693], "characters": "\u29C5" },                                                // 223
+  "&bsol;": { "codepoints": [92], "characters": "\u005C" },                                                    // 224
+  "&bsolhsub;": { "codepoints": [10184], "characters": "\u27C8" },                                             // 225
+  "&bull;": { "codepoints": [8226], "characters": "\u2022" },                                                  // 226
+  "&bullet;": { "codepoints": [8226], "characters": "\u2022" },                                                // 227
+  "&bump;": { "codepoints": [8782], "characters": "\u224E" },                                                  // 228
+  "&bumpE;": { "codepoints": [10926], "characters": "\u2AAE" },                                                // 229
+  "&bumpe;": { "codepoints": [8783], "characters": "\u224F" },                                                 // 230
+  "&Bumpeq;": { "codepoints": [8782], "characters": "\u224E" },                                                // 231
+  "&bumpeq;": { "codepoints": [8783], "characters": "\u224F" },                                                // 232
+  "&Cacute;": { "codepoints": [262], "characters": "\u0106" },                                                 // 233
+  "&cacute;": { "codepoints": [263], "characters": "\u0107" },                                                 // 234
+  "&capand;": { "codepoints": [10820], "characters": "\u2A44" },                                               // 235
+  "&capbrcup;": { "codepoints": [10825], "characters": "\u2A49" },                                             // 236
+  "&capcap;": { "codepoints": [10827], "characters": "\u2A4B" },                                               // 237
+  "&cap;": { "codepoints": [8745], "characters": "\u2229" },                                                   // 238
+  "&Cap;": { "codepoints": [8914], "characters": "\u22D2" },                                                   // 239
+  "&capcup;": { "codepoints": [10823], "characters": "\u2A47" },                                               // 240
+  "&capdot;": { "codepoints": [10816], "characters": "\u2A40" },                                               // 241
+  "&CapitalDifferentialD;": { "codepoints": [8517], "characters": "\u2145" },                                  // 242
+  "&caps;": { "codepoints": [8745, 65024], "characters": "\u2229\uFE00" },                                     // 243
+  "&caret;": { "codepoints": [8257], "characters": "\u2041" },                                                 // 244
+  "&caron;": { "codepoints": [711], "characters": "\u02C7" },                                                  // 245
+  "&Cayleys;": { "codepoints": [8493], "characters": "\u212D" },                                               // 246
+  "&ccaps;": { "codepoints": [10829], "characters": "\u2A4D" },                                                // 247
+  "&Ccaron;": { "codepoints": [268], "characters": "\u010C" },                                                 // 248
+  "&ccaron;": { "codepoints": [269], "characters": "\u010D" },                                                 // 249
+  "&Ccedil;": { "codepoints": [199], "characters": "\u00C7" },                                                 // 250
+  "&Ccedil": { "codepoints": [199], "characters": "\u00C7" },                                                  // 251
+  "&ccedil;": { "codepoints": [231], "characters": "\u00E7" },                                                 // 252
+  "&ccedil": { "codepoints": [231], "characters": "\u00E7" },                                                  // 253
+  "&Ccirc;": { "codepoints": [264], "characters": "\u0108" },                                                  // 254
+  "&ccirc;": { "codepoints": [265], "characters": "\u0109" },                                                  // 255
+  "&Cconint;": { "codepoints": [8752], "characters": "\u2230" },                                               // 256
+  "&ccups;": { "codepoints": [10828], "characters": "\u2A4C" },                                                // 257
+  "&ccupssm;": { "codepoints": [10832], "characters": "\u2A50" },                                              // 258
+  "&Cdot;": { "codepoints": [266], "characters": "\u010A" },                                                   // 259
+  "&cdot;": { "codepoints": [267], "characters": "\u010B" },                                                   // 260
+  "&cedil;": { "codepoints": [184], "characters": "\u00B8" },                                                  // 261
+  "&cedil": { "codepoints": [184], "characters": "\u00B8" },                                                   // 262
+  "&Cedilla;": { "codepoints": [184], "characters": "\u00B8" },                                                // 263
+  "&cemptyv;": { "codepoints": [10674], "characters": "\u29B2" },                                              // 264
+  "&cent;": { "codepoints": [162], "characters": "\u00A2" },                                                   // 265
+  "&cent": { "codepoints": [162], "characters": "\u00A2" },                                                    // 266
+  "&centerdot;": { "codepoints": [183], "characters": "\u00B7" },                                              // 267
+  "&CenterDot;": { "codepoints": [183], "characters": "\u00B7" },                                              // 268
+  "&cfr;": { "codepoints": [120096], "characters": "\uD835\uDD20" },                                           // 269
+  "&Cfr;": { "codepoints": [8493], "characters": "\u212D" },                                                   // 270
+  "&CHcy;": { "codepoints": [1063], "characters": "\u0427" },                                                  // 271
+  "&chcy;": { "codepoints": [1095], "characters": "\u0447" },                                                  // 272
+  "&check;": { "codepoints": [10003], "characters": "\u2713" },                                                // 273
+  "&checkmark;": { "codepoints": [10003], "characters": "\u2713" },                                            // 274
+  "&Chi;": { "codepoints": [935], "characters": "\u03A7" },                                                    // 275
+  "&chi;": { "codepoints": [967], "characters": "\u03C7" },                                                    // 276
+  "&circ;": { "codepoints": [710], "characters": "\u02C6" },                                                   // 277
+  "&circeq;": { "codepoints": [8791], "characters": "\u2257" },                                                // 278
+  "&circlearrowleft;": { "codepoints": [8634], "characters": "\u21BA" },                                       // 279
+  "&circlearrowright;": { "codepoints": [8635], "characters": "\u21BB" },                                      // 280
+  "&circledast;": { "codepoints": [8859], "characters": "\u229B" },                                            // 281
+  "&circledcirc;": { "codepoints": [8858], "characters": "\u229A" },                                           // 282
+  "&circleddash;": { "codepoints": [8861], "characters": "\u229D" },                                           // 283
+  "&CircleDot;": { "codepoints": [8857], "characters": "\u2299" },                                             // 284
+  "&circledR;": { "codepoints": [174], "characters": "\u00AE" },                                               // 285
+  "&circledS;": { "codepoints": [9416], "characters": "\u24C8" },                                              // 286
+  "&CircleMinus;": { "codepoints": [8854], "characters": "\u2296" },                                           // 287
+  "&CirclePlus;": { "codepoints": [8853], "characters": "\u2295" },                                            // 288
+  "&CircleTimes;": { "codepoints": [8855], "characters": "\u2297" },                                           // 289
+  "&cir;": { "codepoints": [9675], "characters": "\u25CB" },                                                   // 290
+  "&cirE;": { "codepoints": [10691], "characters": "\u29C3" },                                                 // 291
+  "&cire;": { "codepoints": [8791], "characters": "\u2257" },                                                  // 292
+  "&cirfnint;": { "codepoints": [10768], "characters": "\u2A10" },                                             // 293
+  "&cirmid;": { "codepoints": [10991], "characters": "\u2AEF" },                                               // 294
+  "&cirscir;": { "codepoints": [10690], "characters": "\u29C2" },                                              // 295
+  "&ClockwiseContourIntegral;": { "codepoints": [8754], "characters": "\u2232" },                              // 296
+  "&CloseCurlyDoubleQuote;": { "codepoints": [8221], "characters": "\u201D" },                                 // 297
+  "&CloseCurlyQuote;": { "codepoints": [8217], "characters": "\u2019" },                                       // 298
+  "&clubs;": { "codepoints": [9827], "characters": "\u2663" },                                                 // 299
+  "&clubsuit;": { "codepoints": [9827], "characters": "\u2663" },                                              // 300
+  "&colon;": { "codepoints": [58], "characters": "\u003A" },                                                   // 301
+  "&Colon;": { "codepoints": [8759], "characters": "\u2237" },                                                 // 302
+  "&Colone;": { "codepoints": [10868], "characters": "\u2A74" },                                               // 303
+  "&colone;": { "codepoints": [8788], "characters": "\u2254" },                                                // 304
+  "&coloneq;": { "codepoints": [8788], "characters": "\u2254" },                                               // 305
+  "&comma;": { "codepoints": [44], "characters": "\u002C" },                                                   // 306
+  "&commat;": { "codepoints": [64], "characters": "\u0040" },                                                  // 307
+  "&comp;": { "codepoints": [8705], "characters": "\u2201" },                                                  // 308
+  "&compfn;": { "codepoints": [8728], "characters": "\u2218" },                                                // 309
+  "&complement;": { "codepoints": [8705], "characters": "\u2201" },                                            // 310
+  "&complexes;": { "codepoints": [8450], "characters": "\u2102" },                                             // 311
+  "&cong;": { "codepoints": [8773], "characters": "\u2245" },                                                  // 312
+  "&congdot;": { "codepoints": [10861], "characters": "\u2A6D" },                                              // 313
+  "&Congruent;": { "codepoints": [8801], "characters": "\u2261" },                                             // 314
+  "&conint;": { "codepoints": [8750], "characters": "\u222E" },                                                // 315
+  "&Conint;": { "codepoints": [8751], "characters": "\u222F" },                                                // 316
+  "&ContourIntegral;": { "codepoints": [8750], "characters": "\u222E" },                                       // 317
+  "&copf;": { "codepoints": [120148], "characters": "\uD835\uDD54" },                                          // 318
+  "&Copf;": { "codepoints": [8450], "characters": "\u2102" },                                                  // 319
+  "&coprod;": { "codepoints": [8720], "characters": "\u2210" },                                                // 320
+  "&Coproduct;": { "codepoints": [8720], "characters": "\u2210" },                                             // 321
+  "&copy;": { "codepoints": [169], "characters": "\u00A9" },                                                   // 322
+  "&copy": { "codepoints": [169], "characters": "\u00A9" },                                                    // 323
+  "&COPY;": { "codepoints": [169], "characters": "\u00A9" },                                                   // 324
+  "&COPY": { "codepoints": [169], "characters": "\u00A9" },                                                    // 325
+  "&copysr;": { "codepoints": [8471], "characters": "\u2117" },                                                // 326
+  "&CounterClockwiseContourIntegral;": { "codepoints": [8755], "characters": "\u2233" },                       // 327
+  "&crarr;": { "codepoints": [8629], "characters": "\u21B5" },                                                 // 328
+  "&cross;": { "codepoints": [10007], "characters": "\u2717" },                                                // 329
+  "&Cross;": { "codepoints": [10799], "characters": "\u2A2F" },                                                // 330
+  "&Cscr;": { "codepoints": [119966], "characters": "\uD835\uDC9E" },                                          // 331
+  "&cscr;": { "codepoints": [119992], "characters": "\uD835\uDCB8" },                                          // 332
+  "&csub;": { "codepoints": [10959], "characters": "\u2ACF" },                                                 // 333
+  "&csube;": { "codepoints": [10961], "characters": "\u2AD1" },                                                // 334
+  "&csup;": { "codepoints": [10960], "characters": "\u2AD0" },                                                 // 335
+  "&csupe;": { "codepoints": [10962], "characters": "\u2AD2" },                                                // 336
+  "&ctdot;": { "codepoints": [8943], "characters": "\u22EF" },                                                 // 337
+  "&cudarrl;": { "codepoints": [10552], "characters": "\u2938" },                                              // 338
+  "&cudarrr;": { "codepoints": [10549], "characters": "\u2935" },                                              // 339
+  "&cuepr;": { "codepoints": [8926], "characters": "\u22DE" },                                                 // 340
+  "&cuesc;": { "codepoints": [8927], "characters": "\u22DF" },                                                 // 341
+  "&cularr;": { "codepoints": [8630], "characters": "\u21B6" },                                                // 342
+  "&cularrp;": { "codepoints": [10557], "characters": "\u293D" },                                              // 343
+  "&cupbrcap;": { "codepoints": [10824], "characters": "\u2A48" },                                             // 344
+  "&cupcap;": { "codepoints": [10822], "characters": "\u2A46" },                                               // 345
+  "&CupCap;": { "codepoints": [8781], "characters": "\u224D" },                                                // 346
+  "&cup;": { "codepoints": [8746], "characters": "\u222A" },                                                   // 347
+  "&Cup;": { "codepoints": [8915], "characters": "\u22D3" },                                                   // 348
+  "&cupcup;": { "codepoints": [10826], "characters": "\u2A4A" },                                               // 349
+  "&cupdot;": { "codepoints": [8845], "characters": "\u228D" },                                                // 350
+  "&cupor;": { "codepoints": [10821], "characters": "\u2A45" },                                                // 351
+  "&cups;": { "codepoints": [8746, 65024], "characters": "\u222A\uFE00" },                                     // 352
+  "&curarr;": { "codepoints": [8631], "characters": "\u21B7" },                                                // 353
+  "&curarrm;": { "codepoints": [10556], "characters": "\u293C" },                                              // 354
+  "&curlyeqprec;": { "codepoints": [8926], "characters": "\u22DE" },                                           // 355
+  "&curlyeqsucc;": { "codepoints": [8927], "characters": "\u22DF" },                                           // 356
+  "&curlyvee;": { "codepoints": [8910], "characters": "\u22CE" },                                              // 357
+  "&curlywedge;": { "codepoints": [8911], "characters": "\u22CF" },                                            // 358
+  "&curren;": { "codepoints": [164], "characters": "\u00A4" },                                                 // 359
+  "&curren": { "codepoints": [164], "characters": "\u00A4" },                                                  // 360
+  "&curvearrowleft;": { "codepoints": [8630], "characters": "\u21B6" },                                        // 361
+  "&curvearrowright;": { "codepoints": [8631], "characters": "\u21B7" },                                       // 362
+  "&cuvee;": { "codepoints": [8910], "characters": "\u22CE" },                                                 // 363
+  "&cuwed;": { "codepoints": [8911], "characters": "\u22CF" },                                                 // 364
+  "&cwconint;": { "codepoints": [8754], "characters": "\u2232" },                                              // 365
+  "&cwint;": { "codepoints": [8753], "characters": "\u2231" },                                                 // 366
+  "&cylcty;": { "codepoints": [9005], "characters": "\u232D" },                                                // 367
+  "&dagger;": { "codepoints": [8224], "characters": "\u2020" },                                                // 368
+  "&Dagger;": { "codepoints": [8225], "characters": "\u2021" },                                                // 369
+  "&daleth;": { "codepoints": [8504], "characters": "\u2138" },                                                // 370
+  "&darr;": { "codepoints": [8595], "characters": "\u2193" },                                                  // 371
+  "&Darr;": { "codepoints": [8609], "characters": "\u21A1" },                                                  // 372
+  "&dArr;": { "codepoints": [8659], "characters": "\u21D3" },                                                  // 373
+  "&dash;": { "codepoints": [8208], "characters": "\u2010" },                                                  // 374
+  "&Dashv;": { "codepoints": [10980], "characters": "\u2AE4" },                                                // 375
+  "&dashv;": { "codepoints": [8867], "characters": "\u22A3" },                                                 // 376
+  "&dbkarow;": { "codepoints": [10511], "characters": "\u290F" },                                              // 377
+  "&dblac;": { "codepoints": [733], "characters": "\u02DD" },                                                  // 378
+  "&Dcaron;": { "codepoints": [270], "characters": "\u010E" },                                                 // 379
+  "&dcaron;": { "codepoints": [271], "characters": "\u010F" },                                                 // 380
+  "&Dcy;": { "codepoints": [1044], "characters": "\u0414" },                                                   // 381
+  "&dcy;": { "codepoints": [1076], "characters": "\u0434" },                                                   // 382
+  "&ddagger;": { "codepoints": [8225], "characters": "\u2021" },                                               // 383
+  "&ddarr;": { "codepoints": [8650], "characters": "\u21CA" },                                                 // 384
+  "&DD;": { "codepoints": [8517], "characters": "\u2145" },                                                    // 385
+  "&dd;": { "codepoints": [8518], "characters": "\u2146" },                                                    // 386
+  "&DDotrahd;": { "codepoints": [10513], "characters": "\u2911" },                                             // 387
+  "&ddotseq;": { "codepoints": [10871], "characters": "\u2A77" },                                              // 388
+  "&deg;": { "codepoints": [176], "characters": "\u00B0" },                                                    // 389
+  "&deg": { "codepoints": [176], "characters": "\u00B0" },                                                     // 390
+  "&Del;": { "codepoints": [8711], "characters": "\u2207" },                                                   // 391
+  "&Delta;": { "codepoints": [916], "characters": "\u0394" },                                                  // 392
+  "&delta;": { "codepoints": [948], "characters": "\u03B4" },                                                  // 393
+  "&demptyv;": { "codepoints": [10673], "characters": "\u29B1" },                                              // 394
+  "&dfisht;": { "codepoints": [10623], "characters": "\u297F" },                                               // 395
+  "&Dfr;": { "codepoints": [120071], "characters": "\uD835\uDD07" },                                           // 396
+  "&dfr;": { "codepoints": [120097], "characters": "\uD835\uDD21" },                                           // 397
+  "&dHar;": { "codepoints": [10597], "characters": "\u2965" },                                                 // 398
+  "&dharl;": { "codepoints": [8643], "characters": "\u21C3" },                                                 // 399
+  "&dharr;": { "codepoints": [8642], "characters": "\u21C2" },                                                 // 400
+  "&DiacriticalAcute;": { "codepoints": [180], "characters": "\u00B4" },                                       // 401
+  "&DiacriticalDot;": { "codepoints": [729], "characters": "\u02D9" },                                         // 402
+  "&DiacriticalDoubleAcute;": { "codepoints": [733], "characters": "\u02DD" },                                 // 403
+  "&DiacriticalGrave;": { "codepoints": [96], "characters": "\u0060" },                                        // 404
+  "&DiacriticalTilde;": { "codepoints": [732], "characters": "\u02DC" },                                       // 405
+  "&diam;": { "codepoints": [8900], "characters": "\u22C4" },                                                  // 406
+  "&diamond;": { "codepoints": [8900], "characters": "\u22C4" },                                               // 407
+  "&Diamond;": { "codepoints": [8900], "characters": "\u22C4" },                                               // 408
+  "&diamondsuit;": { "codepoints": [9830], "characters": "\u2666" },                                           // 409
+  "&diams;": { "codepoints": [9830], "characters": "\u2666" },                                                 // 410
+  "&die;": { "codepoints": [168], "characters": "\u00A8" },                                                    // 411
+  "&DifferentialD;": { "codepoints": [8518], "characters": "\u2146" },                                         // 412
+  "&digamma;": { "codepoints": [989], "characters": "\u03DD" },                                                // 413
+  "&disin;": { "codepoints": [8946], "characters": "\u22F2" },                                                 // 414
+  "&div;": { "codepoints": [247], "characters": "\u00F7" },                                                    // 415
+  "&divide;": { "codepoints": [247], "characters": "\u00F7" },                                                 // 416
+  "&divide": { "codepoints": [247], "characters": "\u00F7" },                                                  // 417
+  "&divideontimes;": { "codepoints": [8903], "characters": "\u22C7" },                                         // 418
+  "&divonx;": { "codepoints": [8903], "characters": "\u22C7" },                                                // 419
+  "&DJcy;": { "codepoints": [1026], "characters": "\u0402" },                                                  // 420
+  "&djcy;": { "codepoints": [1106], "characters": "\u0452" },                                                  // 421
+  "&dlcorn;": { "codepoints": [8990], "characters": "\u231E" },                                                // 422
+  "&dlcrop;": { "codepoints": [8973], "characters": "\u230D" },                                                // 423
+  "&dollar;": { "codepoints": [36], "characters": "\u0024" },                                                  // 424
+  "&Dopf;": { "codepoints": [120123], "characters": "\uD835\uDD3B" },                                          // 425
+  "&dopf;": { "codepoints": [120149], "characters": "\uD835\uDD55" },                                          // 426
+  "&Dot;": { "codepoints": [168], "characters": "\u00A8" },                                                    // 427
+  "&dot;": { "codepoints": [729], "characters": "\u02D9" },                                                    // 428
+  "&DotDot;": { "codepoints": [8412], "characters": "\u20DC" },                                                // 429
+  "&doteq;": { "codepoints": [8784], "characters": "\u2250" },                                                 // 430
+  "&doteqdot;": { "codepoints": [8785], "characters": "\u2251" },                                              // 431
+  "&DotEqual;": { "codepoints": [8784], "characters": "\u2250" },                                              // 432
+  "&dotminus;": { "codepoints": [8760], "characters": "\u2238" },                                              // 433
+  "&dotplus;": { "codepoints": [8724], "characters": "\u2214" },                                               // 434
+  "&dotsquare;": { "codepoints": [8865], "characters": "\u22A1" },                                             // 435
+  "&doublebarwedge;": { "codepoints": [8966], "characters": "\u2306" },                                        // 436
+  "&DoubleContourIntegral;": { "codepoints": [8751], "characters": "\u222F" },                                 // 437
+  "&DoubleDot;": { "codepoints": [168], "characters": "\u00A8" },                                              // 438
+  "&DoubleDownArrow;": { "codepoints": [8659], "characters": "\u21D3" },                                       // 439
+  "&DoubleLeftArrow;": { "codepoints": [8656], "characters": "\u21D0" },                                       // 440
+  "&DoubleLeftRightArrow;": { "codepoints": [8660], "characters": "\u21D4" },                                  // 441
+  "&DoubleLeftTee;": { "codepoints": [10980], "characters": "\u2AE4" },                                        // 442
+  "&DoubleLongLeftArrow;": { "codepoints": [10232], "characters": "\u27F8" },                                  // 443
+  "&DoubleLongLeftRightArrow;": { "codepoints": [10234], "characters": "\u27FA" },                             // 444
+  "&DoubleLongRightArrow;": { "codepoints": [10233], "characters": "\u27F9" },                                 // 445
+  "&DoubleRightArrow;": { "codepoints": [8658], "characters": "\u21D2" },                                      // 446
+  "&DoubleRightTee;": { "codepoints": [8872], "characters": "\u22A8" },                                        // 447
+  "&DoubleUpArrow;": { "codepoints": [8657], "characters": "\u21D1" },                                         // 448
+  "&DoubleUpDownArrow;": { "codepoints": [8661], "characters": "\u21D5" },                                     // 449
+  "&DoubleVerticalBar;": { "codepoints": [8741], "characters": "\u2225" },                                     // 450
+  "&DownArrowBar;": { "codepoints": [10515], "characters": "\u2913" },                                         // 451
+  "&downarrow;": { "codepoints": [8595], "characters": "\u2193" },                                             // 452
+  "&DownArrow;": { "codepoints": [8595], "characters": "\u2193" },                                             // 453
+  "&Downarrow;": { "codepoints": [8659], "characters": "\u21D3" },                                             // 454
+  "&DownArrowUpArrow;": { "codepoints": [8693], "characters": "\u21F5" },                                      // 455
+  "&DownBreve;": { "codepoints": [785], "characters": "\u0311" },                                              // 456
+  "&downdownarrows;": { "codepoints": [8650], "characters": "\u21CA" },                                        // 457
+  "&downharpoonleft;": { "codepoints": [8643], "characters": "\u21C3" },                                       // 458
+  "&downharpoonright;": { "codepoints": [8642], "characters": "\u21C2" },                                      // 459
+  "&DownLeftRightVector;": { "codepoints": [10576], "characters": "\u2950" },                                  // 460
+  "&DownLeftTeeVector;": { "codepoints": [10590], "characters": "\u295E" },                                    // 461
+  "&DownLeftVectorBar;": { "codepoints": [10582], "characters": "\u2956" },                                    // 462
+  "&DownLeftVector;": { "codepoints": [8637], "characters": "\u21BD" },                                        // 463
+  "&DownRightTeeVector;": { "codepoints": [10591], "characters": "\u295F" },                                   // 464
+  "&DownRightVectorBar;": { "codepoints": [10583], "characters": "\u2957" },                                   // 465
+  "&DownRightVector;": { "codepoints": [8641], "characters": "\u21C1" },                                       // 466
+  "&DownTeeArrow;": { "codepoints": [8615], "characters": "\u21A7" },                                          // 467
+  "&DownTee;": { "codepoints": [8868], "characters": "\u22A4" },                                               // 468
+  "&drbkarow;": { "codepoints": [10512], "characters": "\u2910" },                                             // 469
+  "&drcorn;": { "codepoints": [8991], "characters": "\u231F" },                                                // 470
+  "&drcrop;": { "codepoints": [8972], "characters": "\u230C" },                                                // 471
+  "&Dscr;": { "codepoints": [119967], "characters": "\uD835\uDC9F" },                                          // 472
+  "&dscr;": { "codepoints": [119993], "characters": "\uD835\uDCB9" },                                          // 473
+  "&DScy;": { "codepoints": [1029], "characters": "\u0405" },                                                  // 474
+  "&dscy;": { "codepoints": [1109], "characters": "\u0455" },                                                  // 475
+  "&dsol;": { "codepoints": [10742], "characters": "\u29F6" },                                                 // 476
+  "&Dstrok;": { "codepoints": [272], "characters": "\u0110" },                                                 // 477
+  "&dstrok;": { "codepoints": [273], "characters": "\u0111" },                                                 // 478
+  "&dtdot;": { "codepoints": [8945], "characters": "\u22F1" },                                                 // 479
+  "&dtri;": { "codepoints": [9663], "characters": "\u25BF" },                                                  // 480
+  "&dtrif;": { "codepoints": [9662], "characters": "\u25BE" },                                                 // 481
+  "&duarr;": { "codepoints": [8693], "characters": "\u21F5" },                                                 // 482
+  "&duhar;": { "codepoints": [10607], "characters": "\u296F" },                                                // 483
+  "&dwangle;": { "codepoints": [10662], "characters": "\u29A6" },                                              // 484
+  "&DZcy;": { "codepoints": [1039], "characters": "\u040F" },                                                  // 485
+  "&dzcy;": { "codepoints": [1119], "characters": "\u045F" },                                                  // 486
+  "&dzigrarr;": { "codepoints": [10239], "characters": "\u27FF" },                                             // 487
+  "&Eacute;": { "codepoints": [201], "characters": "\u00C9" },                                                 // 488
+  "&Eacute": { "codepoints": [201], "characters": "\u00C9" },                                                  // 489
+  "&eacute;": { "codepoints": [233], "characters": "\u00E9" },                                                 // 490
+  "&eacute": { "codepoints": [233], "characters": "\u00E9" },                                                  // 491
+  "&easter;": { "codepoints": [10862], "characters": "\u2A6E" },                                               // 492
+  "&Ecaron;": { "codepoints": [282], "characters": "\u011A" },                                                 // 493
+  "&ecaron;": { "codepoints": [283], "characters": "\u011B" },                                                 // 494
+  "&Ecirc;": { "codepoints": [202], "characters": "\u00CA" },                                                  // 495
+  "&Ecirc": { "codepoints": [202], "characters": "\u00CA" },                                                   // 496
+  "&ecirc;": { "codepoints": [234], "characters": "\u00EA" },                                                  // 497
+  "&ecirc": { "codepoints": [234], "characters": "\u00EA" },                                                   // 498
+  "&ecir;": { "codepoints": [8790], "characters": "\u2256" },                                                  // 499
+  "&ecolon;": { "codepoints": [8789], "characters": "\u2255" },                                                // 500
+  "&Ecy;": { "codepoints": [1069], "characters": "\u042D" },                                                   // 501
+  "&ecy;": { "codepoints": [1101], "characters": "\u044D" },                                                   // 502
+  "&eDDot;": { "codepoints": [10871], "characters": "\u2A77" },                                                // 503
+  "&Edot;": { "codepoints": [278], "characters": "\u0116" },                                                   // 504
+  "&edot;": { "codepoints": [279], "characters": "\u0117" },                                                   // 505
+  "&eDot;": { "codepoints": [8785], "characters": "\u2251" },                                                  // 506
+  "&ee;": { "codepoints": [8519], "characters": "\u2147" },                                                    // 507
+  "&efDot;": { "codepoints": [8786], "characters": "\u2252" },                                                 // 508
+  "&Efr;": { "codepoints": [120072], "characters": "\uD835\uDD08" },                                           // 509
+  "&efr;": { "codepoints": [120098], "characters": "\uD835\uDD22" },                                           // 510
+  "&eg;": { "codepoints": [10906], "characters": "\u2A9A" },                                                   // 511
+  "&Egrave;": { "codepoints": [200], "characters": "\u00C8" },                                                 // 512
+  "&Egrave": { "codepoints": [200], "characters": "\u00C8" },                                                  // 513
+  "&egrave;": { "codepoints": [232], "characters": "\u00E8" },                                                 // 514
+  "&egrave": { "codepoints": [232], "characters": "\u00E8" },                                                  // 515
+  "&egs;": { "codepoints": [10902], "characters": "\u2A96" },                                                  // 516
+  "&egsdot;": { "codepoints": [10904], "characters": "\u2A98" },                                               // 517
+  "&el;": { "codepoints": [10905], "characters": "\u2A99" },                                                   // 518
+  "&Element;": { "codepoints": [8712], "characters": "\u2208" },                                               // 519
+  "&elinters;": { "codepoints": [9191], "characters": "\u23E7" },                                              // 520
+  "&ell;": { "codepoints": [8467], "characters": "\u2113" },                                                   // 521
+  "&els;": { "codepoints": [10901], "characters": "\u2A95" },                                                  // 522
+  "&elsdot;": { "codepoints": [10903], "characters": "\u2A97" },                                               // 523
+  "&Emacr;": { "codepoints": [274], "characters": "\u0112" },                                                  // 524
+  "&emacr;": { "codepoints": [275], "characters": "\u0113" },                                                  // 525
+  "&empty;": { "codepoints": [8709], "characters": "\u2205" },                                                 // 526
+  "&emptyset;": { "codepoints": [8709], "characters": "\u2205" },                                              // 527
+  "&EmptySmallSquare;": { "codepoints": [9723], "characters": "\u25FB" },                                      // 528
+  "&emptyv;": { "codepoints": [8709], "characters": "\u2205" },                                                // 529
+  "&EmptyVerySmallSquare;": { "codepoints": [9643], "characters": "\u25AB" },                                  // 530
+  "&emsp13;": { "codepoints": [8196], "characters": "\u2004" },                                                // 531
+  "&emsp14;": { "codepoints": [8197], "characters": "\u2005" },                                                // 532
+  "&emsp;": { "codepoints": [8195], "characters": "\u2003" },                                                  // 533
+  "&ENG;": { "codepoints": [330], "characters": "\u014A" },                                                    // 534
+  "&eng;": { "codepoints": [331], "characters": "\u014B" },                                                    // 535
+  "&ensp;": { "codepoints": [8194], "characters": "\u2002" },                                                  // 536
+  "&Eogon;": { "codepoints": [280], "characters": "\u0118" },                                                  // 537
+  "&eogon;": { "codepoints": [281], "characters": "\u0119" },                                                  // 538
+  "&Eopf;": { "codepoints": [120124], "characters": "\uD835\uDD3C" },                                          // 539
+  "&eopf;": { "codepoints": [120150], "characters": "\uD835\uDD56" },                                          // 540
+  "&epar;": { "codepoints": [8917], "characters": "\u22D5" },                                                  // 541
+  "&eparsl;": { "codepoints": [10723], "characters": "\u29E3" },                                               // 542
+  "&eplus;": { "codepoints": [10865], "characters": "\u2A71" },                                                // 543
+  "&epsi;": { "codepoints": [949], "characters": "\u03B5" },                                                   // 544
+  "&Epsilon;": { "codepoints": [917], "characters": "\u0395" },                                                // 545
+  "&epsilon;": { "codepoints": [949], "characters": "\u03B5" },                                                // 546
+  "&epsiv;": { "codepoints": [1013], "characters": "\u03F5" },                                                 // 547
+  "&eqcirc;": { "codepoints": [8790], "characters": "\u2256" },                                                // 548
+  "&eqcolon;": { "codepoints": [8789], "characters": "\u2255" },                                               // 549
+  "&eqsim;": { "codepoints": [8770], "characters": "\u2242" },                                                 // 550
+  "&eqslantgtr;": { "codepoints": [10902], "characters": "\u2A96" },                                           // 551
+  "&eqslantless;": { "codepoints": [10901], "characters": "\u2A95" },                                          // 552
+  "&Equal;": { "codepoints": [10869], "characters": "\u2A75" },                                                // 553
+  "&equals;": { "codepoints": [61], "characters": "\u003D" },                                                  // 554
+  "&EqualTilde;": { "codepoints": [8770], "characters": "\u2242" },                                            // 555
+  "&equest;": { "codepoints": [8799], "characters": "\u225F" },                                                // 556
+  "&Equilibrium;": { "codepoints": [8652], "characters": "\u21CC" },                                           // 557
+  "&equiv;": { "codepoints": [8801], "characters": "\u2261" },                                                 // 558
+  "&equivDD;": { "codepoints": [10872], "characters": "\u2A78" },                                              // 559
+  "&eqvparsl;": { "codepoints": [10725], "characters": "\u29E5" },                                             // 560
+  "&erarr;": { "codepoints": [10609], "characters": "\u2971" },                                                // 561
+  "&erDot;": { "codepoints": [8787], "characters": "\u2253" },                                                 // 562
+  "&escr;": { "codepoints": [8495], "characters": "\u212F" },                                                  // 563
+  "&Escr;": { "codepoints": [8496], "characters": "\u2130" },                                                  // 564
+  "&esdot;": { "codepoints": [8784], "characters": "\u2250" },                                                 // 565
+  "&Esim;": { "codepoints": [10867], "characters": "\u2A73" },                                                 // 566
+  "&esim;": { "codepoints": [8770], "characters": "\u2242" },                                                  // 567
+  "&Eta;": { "codepoints": [919], "characters": "\u0397" },                                                    // 568
+  "&eta;": { "codepoints": [951], "characters": "\u03B7" },                                                    // 569
+  "&ETH;": { "codepoints": [208], "characters": "\u00D0" },                                                    // 570
+  "&ETH": { "codepoints": [208], "characters": "\u00D0" },                                                     // 571
+  "&eth;": { "codepoints": [240], "characters": "\u00F0" },                                                    // 572
+  "&eth": { "codepoints": [240], "characters": "\u00F0" },                                                     // 573
+  "&Euml;": { "codepoints": [203], "characters": "\u00CB" },                                                   // 574
+  "&Euml": { "codepoints": [203], "characters": "\u00CB" },                                                    // 575
+  "&euml;": { "codepoints": [235], "characters": "\u00EB" },                                                   // 576
+  "&euml": { "codepoints": [235], "characters": "\u00EB" },                                                    // 577
+  "&euro;": { "codepoints": [8364], "characters": "\u20AC" },                                                  // 578
+  "&excl;": { "codepoints": [33], "characters": "\u0021" },                                                    // 579
+  "&exist;": { "codepoints": [8707], "characters": "\u2203" },                                                 // 580
+  "&Exists;": { "codepoints": [8707], "characters": "\u2203" },                                                // 581
+  "&expectation;": { "codepoints": [8496], "characters": "\u2130" },                                           // 582
+  "&exponentiale;": { "codepoints": [8519], "characters": "\u2147" },                                          // 583
+  "&ExponentialE;": { "codepoints": [8519], "characters": "\u2147" },                                          // 584
+  "&fallingdotseq;": { "codepoints": [8786], "characters": "\u2252" },                                         // 585
+  "&Fcy;": { "codepoints": [1060], "characters": "\u0424" },                                                   // 586
+  "&fcy;": { "codepoints": [1092], "characters": "\u0444" },                                                   // 587
+  "&female;": { "codepoints": [9792], "characters": "\u2640" },                                                // 588
+  "&ffilig;": { "codepoints": [64259], "characters": "\uFB03" },                                               // 589
+  "&fflig;": { "codepoints": [64256], "characters": "\uFB00" },                                                // 590
+  "&ffllig;": { "codepoints": [64260], "characters": "\uFB04" },                                               // 591
+  "&Ffr;": { "codepoints": [120073], "characters": "\uD835\uDD09" },                                           // 592
+  "&ffr;": { "codepoints": [120099], "characters": "\uD835\uDD23" },                                           // 593
+  "&filig;": { "codepoints": [64257], "characters": "\uFB01" },                                                // 594
+  "&FilledSmallSquare;": { "codepoints": [9724], "characters": "\u25FC" },                                     // 595
+  "&FilledVerySmallSquare;": { "codepoints": [9642], "characters": "\u25AA" },                                 // 596
+  "&fjlig;": { "codepoints": [102, 106], "characters": "\u0066\u006A" },                                       // 597
+  "&flat;": { "codepoints": [9837], "characters": "\u266D" },                                                  // 598
+  "&fllig;": { "codepoints": [64258], "characters": "\uFB02" },                                                // 599
+  "&fltns;": { "codepoints": [9649], "characters": "\u25B1" },                                                 // 600
+  "&fnof;": { "codepoints": [402], "characters": "\u0192" },                                                   // 601
+  "&Fopf;": { "codepoints": [120125], "characters": "\uD835\uDD3D" },                                          // 602
+  "&fopf;": { "codepoints": [120151], "characters": "\uD835\uDD57" },                                          // 603
+  "&forall;": { "codepoints": [8704], "characters": "\u2200" },                                                // 604
+  "&ForAll;": { "codepoints": [8704], "characters": "\u2200" },                                                // 605
+  "&fork;": { "codepoints": [8916], "characters": "\u22D4" },                                                  // 606
+  "&forkv;": { "codepoints": [10969], "characters": "\u2AD9" },                                                // 607
+  "&Fouriertrf;": { "codepoints": [8497], "characters": "\u2131" },                                            // 608
+  "&fpartint;": { "codepoints": [10765], "characters": "\u2A0D" },                                             // 609
+  "&frac12;": { "codepoints": [189], "characters": "\u00BD" },                                                 // 610
+  "&frac12": { "codepoints": [189], "characters": "\u00BD" },                                                  // 611
+  "&frac13;": { "codepoints": [8531], "characters": "\u2153" },                                                // 612
+  "&frac14;": { "codepoints": [188], "characters": "\u00BC" },                                                 // 613
+  "&frac14": { "codepoints": [188], "characters": "\u00BC" },                                                  // 614
+  "&frac15;": { "codepoints": [8533], "characters": "\u2155" },                                                // 615
+  "&frac16;": { "codepoints": [8537], "characters": "\u2159" },                                                // 616
+  "&frac18;": { "codepoints": [8539], "characters": "\u215B" },                                                // 617
+  "&frac23;": { "codepoints": [8532], "characters": "\u2154" },                                                // 618
+  "&frac25;": { "codepoints": [8534], "characters": "\u2156" },                                                // 619
+  "&frac34;": { "codepoints": [190], "characters": "\u00BE" },                                                 // 620
+  "&frac34": { "codepoints": [190], "characters": "\u00BE" },                                                  // 621
+  "&frac35;": { "codepoints": [8535], "characters": "\u2157" },                                                // 622
+  "&frac38;": { "codepoints": [8540], "characters": "\u215C" },                                                // 623
+  "&frac45;": { "codepoints": [8536], "characters": "\u2158" },                                                // 624
+  "&frac56;": { "codepoints": [8538], "characters": "\u215A" },                                                // 625
+  "&frac58;": { "codepoints": [8541], "characters": "\u215D" },                                                // 626
+  "&frac78;": { "codepoints": [8542], "characters": "\u215E" },                                                // 627
+  "&frasl;": { "codepoints": [8260], "characters": "\u2044" },                                                 // 628
+  "&frown;": { "codepoints": [8994], "characters": "\u2322" },                                                 // 629
+  "&fscr;": { "codepoints": [119995], "characters": "\uD835\uDCBB" },                                          // 630
+  "&Fscr;": { "codepoints": [8497], "characters": "\u2131" },                                                  // 631
+  "&gacute;": { "codepoints": [501], "characters": "\u01F5" },                                                 // 632
+  "&Gamma;": { "codepoints": [915], "characters": "\u0393" },                                                  // 633
+  "&gamma;": { "codepoints": [947], "characters": "\u03B3" },                                                  // 634
+  "&Gammad;": { "codepoints": [988], "characters": "\u03DC" },                                                 // 635
+  "&gammad;": { "codepoints": [989], "characters": "\u03DD" },                                                 // 636
+  "&gap;": { "codepoints": [10886], "characters": "\u2A86" },                                                  // 637
+  "&Gbreve;": { "codepoints": [286], "characters": "\u011E" },                                                 // 638
+  "&gbreve;": { "codepoints": [287], "characters": "\u011F" },                                                 // 639
+  "&Gcedil;": { "codepoints": [290], "characters": "\u0122" },                                                 // 640
+  "&Gcirc;": { "codepoints": [284], "characters": "\u011C" },                                                  // 641
+  "&gcirc;": { "codepoints": [285], "characters": "\u011D" },                                                  // 642
+  "&Gcy;": { "codepoints": [1043], "characters": "\u0413" },                                                   // 643
+  "&gcy;": { "codepoints": [1075], "characters": "\u0433" },                                                   // 644
+  "&Gdot;": { "codepoints": [288], "characters": "\u0120" },                                                   // 645
+  "&gdot;": { "codepoints": [289], "characters": "\u0121" },                                                   // 646
+  "&ge;": { "codepoints": [8805], "characters": "\u2265" },                                                    // 647
+  "&gE;": { "codepoints": [8807], "characters": "\u2267" },                                                    // 648
+  "&gEl;": { "codepoints": [10892], "characters": "\u2A8C" },                                                  // 649
+  "&gel;": { "codepoints": [8923], "characters": "\u22DB" },                                                   // 650
+  "&geq;": { "codepoints": [8805], "characters": "\u2265" },                                                   // 651
+  "&geqq;": { "codepoints": [8807], "characters": "\u2267" },                                                  // 652
+  "&geqslant;": { "codepoints": [10878], "characters": "\u2A7E" },                                             // 653
+  "&gescc;": { "codepoints": [10921], "characters": "\u2AA9" },                                                // 654
+  "&ges;": { "codepoints": [10878], "characters": "\u2A7E" },                                                  // 655
+  "&gesdot;": { "codepoints": [10880], "characters": "\u2A80" },                                               // 656
+  "&gesdoto;": { "codepoints": [10882], "characters": "\u2A82" },                                              // 657
+  "&gesdotol;": { "codepoints": [10884], "characters": "\u2A84" },                                             // 658
+  "&gesl;": { "codepoints": [8923, 65024], "characters": "\u22DB\uFE00" },                                     // 659
+  "&gesles;": { "codepoints": [10900], "characters": "\u2A94" },                                               // 660
+  "&Gfr;": { "codepoints": [120074], "characters": "\uD835\uDD0A" },                                           // 661
+  "&gfr;": { "codepoints": [120100], "characters": "\uD835\uDD24" },                                           // 662
+  "&gg;": { "codepoints": [8811], "characters": "\u226B" },                                                    // 663
+  "&Gg;": { "codepoints": [8921], "characters": "\u22D9" },                                                    // 664
+  "&ggg;": { "codepoints": [8921], "characters": "\u22D9" },                                                   // 665
+  "&gimel;": { "codepoints": [8503], "characters": "\u2137" },                                                 // 666
+  "&GJcy;": { "codepoints": [1027], "characters": "\u0403" },                                                  // 667
+  "&gjcy;": { "codepoints": [1107], "characters": "\u0453" },                                                  // 668
+  "&gla;": { "codepoints": [10917], "characters": "\u2AA5" },                                                  // 669
+  "&gl;": { "codepoints": [8823], "characters": "\u2277" },                                                    // 670
+  "&glE;": { "codepoints": [10898], "characters": "\u2A92" },                                                  // 671
+  "&glj;": { "codepoints": [10916], "characters": "\u2AA4" },                                                  // 672
+  "&gnap;": { "codepoints": [10890], "characters": "\u2A8A" },                                                 // 673
+  "&gnapprox;": { "codepoints": [10890], "characters": "\u2A8A" },                                             // 674
+  "&gne;": { "codepoints": [10888], "characters": "\u2A88" },                                                  // 675
+  "&gnE;": { "codepoints": [8809], "characters": "\u2269" },                                                   // 676
+  "&gneq;": { "codepoints": [10888], "characters": "\u2A88" },                                                 // 677
+  "&gneqq;": { "codepoints": [8809], "characters": "\u2269" },                                                 // 678
+  "&gnsim;": { "codepoints": [8935], "characters": "\u22E7" },                                                 // 679
+  "&Gopf;": { "codepoints": [120126], "characters": "\uD835\uDD3E" },                                          // 680
+  "&gopf;": { "codepoints": [120152], "characters": "\uD835\uDD58" },                                          // 681
+  "&grave;": { "codepoints": [96], "characters": "\u0060" },                                                   // 682
+  "&GreaterEqual;": { "codepoints": [8805], "characters": "\u2265" },                                          // 683
+  "&GreaterEqualLess;": { "codepoints": [8923], "characters": "\u22DB" },                                      // 684
+  "&GreaterFullEqual;": { "codepoints": [8807], "characters": "\u2267" },                                      // 685
+  "&GreaterGreater;": { "codepoints": [10914], "characters": "\u2AA2" },                                       // 686
+  "&GreaterLess;": { "codepoints": [8823], "characters": "\u2277" },                                           // 687
+  "&GreaterSlantEqual;": { "codepoints": [10878], "characters": "\u2A7E" },                                    // 688
+  "&GreaterTilde;": { "codepoints": [8819], "characters": "\u2273" },                                          // 689
+  "&Gscr;": { "codepoints": [119970], "characters": "\uD835\uDCA2" },                                          // 690
+  "&gscr;": { "codepoints": [8458], "characters": "\u210A" },                                                  // 691
+  "&gsim;": { "codepoints": [8819], "characters": "\u2273" },                                                  // 692
+  "&gsime;": { "codepoints": [10894], "characters": "\u2A8E" },                                                // 693
+  "&gsiml;": { "codepoints": [10896], "characters": "\u2A90" },                                                // 694
+  "&gtcc;": { "codepoints": [10919], "characters": "\u2AA7" },                                                 // 695
+  "&gtcir;": { "codepoints": [10874], "characters": "\u2A7A" },                                                // 696
+  "&gt;": { "codepoints": [62], "characters": "\u003E" },                                                      // 697
+  "&gt": { "codepoints": [62], "characters": "\u003E" },                                                       // 698
+  "&GT;": { "codepoints": [62], "characters": "\u003E" },                                                      // 699
+  "&GT": { "codepoints": [62], "characters": "\u003E" },                                                       // 700
+  "&Gt;": { "codepoints": [8811], "characters": "\u226B" },                                                    // 701
+  "&gtdot;": { "codepoints": [8919], "characters": "\u22D7" },                                                 // 702
+  "&gtlPar;": { "codepoints": [10645], "characters": "\u2995" },                                               // 703
+  "&gtquest;": { "codepoints": [10876], "characters": "\u2A7C" },                                              // 704
+  "&gtrapprox;": { "codepoints": [10886], "characters": "\u2A86" },                                            // 705
+  "&gtrarr;": { "codepoints": [10616], "characters": "\u2978" },                                               // 706
+  "&gtrdot;": { "codepoints": [8919], "characters": "\u22D7" },                                                // 707
+  "&gtreqless;": { "codepoints": [8923], "characters": "\u22DB" },                                             // 708
+  "&gtreqqless;": { "codepoints": [10892], "characters": "\u2A8C" },                                           // 709
+  "&gtrless;": { "codepoints": [8823], "characters": "\u2277" },                                               // 710
+  "&gtrsim;": { "codepoints": [8819], "characters": "\u2273" },                                                // 711
+  "&gvertneqq;": { "codepoints": [8809, 65024], "characters": "\u2269\uFE00" },                                // 712
+  "&gvnE;": { "codepoints": [8809, 65024], "characters": "\u2269\uFE00" },                                     // 713
+  "&Hacek;": { "codepoints": [711], "characters": "\u02C7" },                                                  // 714
+  "&hairsp;": { "codepoints": [8202], "characters": "\u200A" },                                                // 715
+  "&half;": { "codepoints": [189], "characters": "\u00BD" },                                                   // 716
+  "&hamilt;": { "codepoints": [8459], "characters": "\u210B" },                                                // 717
+  "&HARDcy;": { "codepoints": [1066], "characters": "\u042A" },                                                // 718
+  "&hardcy;": { "codepoints": [1098], "characters": "\u044A" },                                                // 719
+  "&harrcir;": { "codepoints": [10568], "characters": "\u2948" },                                              // 720
+  "&harr;": { "codepoints": [8596], "characters": "\u2194" },                                                  // 721
+  "&hArr;": { "codepoints": [8660], "characters": "\u21D4" },                                                  // 722
+  "&harrw;": { "codepoints": [8621], "characters": "\u21AD" },                                                 // 723
+  "&Hat;": { "codepoints": [94], "characters": "\u005E" },                                                     // 724
+  "&hbar;": { "codepoints": [8463], "characters": "\u210F" },                                                  // 725
+  "&Hcirc;": { "codepoints": [292], "characters": "\u0124" },                                                  // 726
+  "&hcirc;": { "codepoints": [293], "characters": "\u0125" },                                                  // 727
+  "&hearts;": { "codepoints": [9829], "characters": "\u2665" },                                                // 728
+  "&heartsuit;": { "codepoints": [9829], "characters": "\u2665" },                                             // 729
+  "&hellip;": { "codepoints": [8230], "characters": "\u2026" },                                                // 730
+  "&hercon;": { "codepoints": [8889], "characters": "\u22B9" },                                                // 731
+  "&hfr;": { "codepoints": [120101], "characters": "\uD835\uDD25" },                                           // 732
+  "&Hfr;": { "codepoints": [8460], "characters": "\u210C" },                                                   // 733
+  "&HilbertSpace;": { "codepoints": [8459], "characters": "\u210B" },                                          // 734
+  "&hksearow;": { "codepoints": [10533], "characters": "\u2925" },                                             // 735
+  "&hkswarow;": { "codepoints": [10534], "characters": "\u2926" },                                             // 736
+  "&hoarr;": { "codepoints": [8703], "characters": "\u21FF" },                                                 // 737
+  "&homtht;": { "codepoints": [8763], "characters": "\u223B" },                                                // 738
+  "&hookleftarrow;": { "codepoints": [8617], "characters": "\u21A9" },                                         // 739
+  "&hookrightarrow;": { "codepoints": [8618], "characters": "\u21AA" },                                        // 740
+  "&hopf;": { "codepoints": [120153], "characters": "\uD835\uDD59" },                                          // 741
+  "&Hopf;": { "codepoints": [8461], "characters": "\u210D" },                                                  // 742
+  "&horbar;": { "codepoints": [8213], "characters": "\u2015" },                                                // 743
+  "&HorizontalLine;": { "codepoints": [9472], "characters": "\u2500" },                                        // 744
+  "&hscr;": { "codepoints": [119997], "characters": "\uD835\uDCBD" },                                          // 745
+  "&Hscr;": { "codepoints": [8459], "characters": "\u210B" },                                                  // 746
+  "&hslash;": { "codepoints": [8463], "characters": "\u210F" },                                                // 747
+  "&Hstrok;": { "codepoints": [294], "characters": "\u0126" },                                                 // 748
+  "&hstrok;": { "codepoints": [295], "characters": "\u0127" },                                                 // 749
+  "&HumpDownHump;": { "codepoints": [8782], "characters": "\u224E" },                                          // 750
+  "&HumpEqual;": { "codepoints": [8783], "characters": "\u224F" },                                             // 751
+  "&hybull;": { "codepoints": [8259], "characters": "\u2043" },                                                // 752
+  "&hyphen;": { "codepoints": [8208], "characters": "\u2010" },                                                // 753
+  "&Iacute;": { "codepoints": [205], "characters": "\u00CD" },                                                 // 754
+  "&Iacute": { "codepoints": [205], "characters": "\u00CD" },                                                  // 755
+  "&iacute;": { "codepoints": [237], "characters": "\u00ED" },                                                 // 756
+  "&iacute": { "codepoints": [237], "characters": "\u00ED" },                                                  // 757
+  "&ic;": { "codepoints": [8291], "characters": "\u2063" },                                                    // 758
+  "&Icirc;": { "codepoints": [206], "characters": "\u00CE" },                                                  // 759
+  "&Icirc": { "codepoints": [206], "characters": "\u00CE" },                                                   // 760
+  "&icirc;": { "codepoints": [238], "characters": "\u00EE" },                                                  // 761
+  "&icirc": { "codepoints": [238], "characters": "\u00EE" },                                                   // 762
+  "&Icy;": { "codepoints": [1048], "characters": "\u0418" },                                                   // 763
+  "&icy;": { "codepoints": [1080], "characters": "\u0438" },                                                   // 764
+  "&Idot;": { "codepoints": [304], "characters": "\u0130" },                                                   // 765
+  "&IEcy;": { "codepoints": [1045], "characters": "\u0415" },                                                  // 766
+  "&iecy;": { "codepoints": [1077], "characters": "\u0435" },                                                  // 767
+  "&iexcl;": { "codepoints": [161], "characters": "\u00A1" },                                                  // 768
+  "&iexcl": { "codepoints": [161], "characters": "\u00A1" },                                                   // 769
+  "&iff;": { "codepoints": [8660], "characters": "\u21D4" },                                                   // 770
+  "&ifr;": { "codepoints": [120102], "characters": "\uD835\uDD26" },                                           // 771
+  "&Ifr;": { "codepoints": [8465], "characters": "\u2111" },                                                   // 772
+  "&Igrave;": { "codepoints": [204], "characters": "\u00CC" },                                                 // 773
+  "&Igrave": { "codepoints": [204], "characters": "\u00CC" },                                                  // 774
+  "&igrave;": { "codepoints": [236], "characters": "\u00EC" },                                                 // 775
+  "&igrave": { "codepoints": [236], "characters": "\u00EC" },                                                  // 776
+  "&ii;": { "codepoints": [8520], "characters": "\u2148" },                                                    // 777
+  "&iiiint;": { "codepoints": [10764], "characters": "\u2A0C" },                                               // 778
+  "&iiint;": { "codepoints": [8749], "characters": "\u222D" },                                                 // 779
+  "&iinfin;": { "codepoints": [10716], "characters": "\u29DC" },                                               // 780
+  "&iiota;": { "codepoints": [8489], "characters": "\u2129" },                                                 // 781
+  "&IJlig;": { "codepoints": [306], "characters": "\u0132" },                                                  // 782
+  "&ijlig;": { "codepoints": [307], "characters": "\u0133" },                                                  // 783
+  "&Imacr;": { "codepoints": [298], "characters": "\u012A" },                                                  // 784
+  "&imacr;": { "codepoints": [299], "characters": "\u012B" },                                                  // 785
+  "&image;": { "codepoints": [8465], "characters": "\u2111" },                                                 // 786
+  "&ImaginaryI;": { "codepoints": [8520], "characters": "\u2148" },                                            // 787
+  "&imagline;": { "codepoints": [8464], "characters": "\u2110" },                                              // 788
+  "&imagpart;": { "codepoints": [8465], "characters": "\u2111" },                                              // 789
+  "&imath;": { "codepoints": [305], "characters": "\u0131" },                                                  // 790
+  "&Im;": { "codepoints": [8465], "characters": "\u2111" },                                                    // 791
+  "&imof;": { "codepoints": [8887], "characters": "\u22B7" },                                                  // 792
+  "&imped;": { "codepoints": [437], "characters": "\u01B5" },                                                  // 793
+  "&Implies;": { "codepoints": [8658], "characters": "\u21D2" },                                               // 794
+  "&incare;": { "codepoints": [8453], "characters": "\u2105" },                                                // 795
+  "&in;": { "codepoints": [8712], "characters": "\u2208" },                                                    // 796
+  "&infin;": { "codepoints": [8734], "characters": "\u221E" },                                                 // 797
+  "&infintie;": { "codepoints": [10717], "characters": "\u29DD" },                                             // 798
+  "&inodot;": { "codepoints": [305], "characters": "\u0131" },                                                 // 799
+  "&intcal;": { "codepoints": [8890], "characters": "\u22BA" },                                                // 800
+  "&int;": { "codepoints": [8747], "characters": "\u222B" },                                                   // 801
+  "&Int;": { "codepoints": [8748], "characters": "\u222C" },                                                   // 802
+  "&integers;": { "codepoints": [8484], "characters": "\u2124" },                                              // 803
+  "&Integral;": { "codepoints": [8747], "characters": "\u222B" },                                              // 804
+  "&intercal;": { "codepoints": [8890], "characters": "\u22BA" },                                              // 805
+  "&Intersection;": { "codepoints": [8898], "characters": "\u22C2" },                                          // 806
+  "&intlarhk;": { "codepoints": [10775], "characters": "\u2A17" },                                             // 807
+  "&intprod;": { "codepoints": [10812], "characters": "\u2A3C" },                                              // 808
+  "&InvisibleComma;": { "codepoints": [8291], "characters": "\u2063" },                                        // 809
+  "&InvisibleTimes;": { "codepoints": [8290], "characters": "\u2062" },                                        // 810
+  "&IOcy;": { "codepoints": [1025], "characters": "\u0401" },                                                  // 811
+  "&iocy;": { "codepoints": [1105], "characters": "\u0451" },                                                  // 812
+  "&Iogon;": { "codepoints": [302], "characters": "\u012E" },                                                  // 813
+  "&iogon;": { "codepoints": [303], "characters": "\u012F" },                                                  // 814
+  "&Iopf;": { "codepoints": [120128], "characters": "\uD835\uDD40" },                                          // 815
+  "&iopf;": { "codepoints": [120154], "characters": "\uD835\uDD5A" },                                          // 816
+  "&Iota;": { "codepoints": [921], "characters": "\u0399" },                                                   // 817
+  "&iota;": { "codepoints": [953], "characters": "\u03B9" },                                                   // 818
+  "&iprod;": { "codepoints": [10812], "characters": "\u2A3C" },                                                // 819
+  "&iquest;": { "codepoints": [191], "characters": "\u00BF" },                                                 // 820
+  "&iquest": { "codepoints": [191], "characters": "\u00BF" },                                                  // 821
+  "&iscr;": { "codepoints": [119998], "characters": "\uD835\uDCBE" },                                          // 822
+  "&Iscr;": { "codepoints": [8464], "characters": "\u2110" },                                                  // 823
+  "&isin;": { "codepoints": [8712], "characters": "\u2208" },                                                  // 824
+  "&isindot;": { "codepoints": [8949], "characters": "\u22F5" },                                               // 825
+  "&isinE;": { "codepoints": [8953], "characters": "\u22F9" },                                                 // 826
+  "&isins;": { "codepoints": [8948], "characters": "\u22F4" },                                                 // 827
+  "&isinsv;": { "codepoints": [8947], "characters": "\u22F3" },                                                // 828
+  "&isinv;": { "codepoints": [8712], "characters": "\u2208" },                                                 // 829
+  "&it;": { "codepoints": [8290], "characters": "\u2062" },                                                    // 830
+  "&Itilde;": { "codepoints": [296], "characters": "\u0128" },                                                 // 831
+  "&itilde;": { "codepoints": [297], "characters": "\u0129" },                                                 // 832
+  "&Iukcy;": { "codepoints": [1030], "characters": "\u0406" },                                                 // 833
+  "&iukcy;": { "codepoints": [1110], "characters": "\u0456" },                                                 // 834
+  "&Iuml;": { "codepoints": [207], "characters": "\u00CF" },                                                   // 835
+  "&Iuml": { "codepoints": [207], "characters": "\u00CF" },                                                    // 836
+  "&iuml;": { "codepoints": [239], "characters": "\u00EF" },                                                   // 837
+  "&iuml": { "codepoints": [239], "characters": "\u00EF" },                                                    // 838
+  "&Jcirc;": { "codepoints": [308], "characters": "\u0134" },                                                  // 839
+  "&jcirc;": { "codepoints": [309], "characters": "\u0135" },                                                  // 840
+  "&Jcy;": { "codepoints": [1049], "characters": "\u0419" },                                                   // 841
+  "&jcy;": { "codepoints": [1081], "characters": "\u0439" },                                                   // 842
+  "&Jfr;": { "codepoints": [120077], "characters": "\uD835\uDD0D" },                                           // 843
+  "&jfr;": { "codepoints": [120103], "characters": "\uD835\uDD27" },                                           // 844
+  "&jmath;": { "codepoints": [567], "characters": "\u0237" },                                                  // 845
+  "&Jopf;": { "codepoints": [120129], "characters": "\uD835\uDD41" },                                          // 846
+  "&jopf;": { "codepoints": [120155], "characters": "\uD835\uDD5B" },                                          // 847
+  "&Jscr;": { "codepoints": [119973], "characters": "\uD835\uDCA5" },                                          // 848
+  "&jscr;": { "codepoints": [119999], "characters": "\uD835\uDCBF" },                                          // 849
+  "&Jsercy;": { "codepoints": [1032], "characters": "\u0408" },                                                // 850
+  "&jsercy;": { "codepoints": [1112], "characters": "\u0458" },                                                // 851
+  "&Jukcy;": { "codepoints": [1028], "characters": "\u0404" },                                                 // 852
+  "&jukcy;": { "codepoints": [1108], "characters": "\u0454" },                                                 // 853
+  "&Kappa;": { "codepoints": [922], "characters": "\u039A" },                                                  // 854
+  "&kappa;": { "codepoints": [954], "characters": "\u03BA" },                                                  // 855
+  "&kappav;": { "codepoints": [1008], "characters": "\u03F0" },                                                // 856
+  "&Kcedil;": { "codepoints": [310], "characters": "\u0136" },                                                 // 857
+  "&kcedil;": { "codepoints": [311], "characters": "\u0137" },                                                 // 858
+  "&Kcy;": { "codepoints": [1050], "characters": "\u041A" },                                                   // 859
+  "&kcy;": { "codepoints": [1082], "characters": "\u043A" },                                                   // 860
+  "&Kfr;": { "codepoints": [120078], "characters": "\uD835\uDD0E" },                                           // 861
+  "&kfr;": { "codepoints": [120104], "characters": "\uD835\uDD28" },                                           // 862
+  "&kgreen;": { "codepoints": [312], "characters": "\u0138" },                                                 // 863
+  "&KHcy;": { "codepoints": [1061], "characters": "\u0425" },                                                  // 864
+  "&khcy;": { "codepoints": [1093], "characters": "\u0445" },                                                  // 865
+  "&KJcy;": { "codepoints": [1036], "characters": "\u040C" },                                                  // 866
+  "&kjcy;": { "codepoints": [1116], "characters": "\u045C" },                                                  // 867
+  "&Kopf;": { "codepoints": [120130], "characters": "\uD835\uDD42" },                                          // 868
+  "&kopf;": { "codepoints": [120156], "characters": "\uD835\uDD5C" },                                          // 869
+  "&Kscr;": { "codepoints": [119974], "characters": "\uD835\uDCA6" },                                          // 870
+  "&kscr;": { "codepoints": [120000], "characters": "\uD835\uDCC0" },                                          // 871
+  "&lAarr;": { "codepoints": [8666], "characters": "\u21DA" },                                                 // 872
+  "&Lacute;": { "codepoints": [313], "characters": "\u0139" },                                                 // 873
+  "&lacute;": { "codepoints": [314], "characters": "\u013A" },                                                 // 874
+  "&laemptyv;": { "codepoints": [10676], "characters": "\u29B4" },                                             // 875
+  "&lagran;": { "codepoints": [8466], "characters": "\u2112" },                                                // 876
+  "&Lambda;": { "codepoints": [923], "characters": "\u039B" },                                                 // 877
+  "&lambda;": { "codepoints": [955], "characters": "\u03BB" },                                                 // 878
+  "&lang;": { "codepoints": [10216], "characters": "\u27E8" },                                                 // 879
+  "&Lang;": { "codepoints": [10218], "characters": "\u27EA" },                                                 // 880
+  "&langd;": { "codepoints": [10641], "characters": "\u2991" },                                                // 881
+  "&langle;": { "codepoints": [10216], "characters": "\u27E8" },                                               // 882
+  "&lap;": { "codepoints": [10885], "characters": "\u2A85" },                                                  // 883
+  "&Laplacetrf;": { "codepoints": [8466], "characters": "\u2112" },                                            // 884
+  "&laquo;": { "codepoints": [171], "characters": "\u00AB" },                                                  // 885
+  "&laquo": { "codepoints": [171], "characters": "\u00AB" },                                                   // 886
+  "&larrb;": { "codepoints": [8676], "characters": "\u21E4" },                                                 // 887
+  "&larrbfs;": { "codepoints": [10527], "characters": "\u291F" },                                              // 888
+  "&larr;": { "codepoints": [8592], "characters": "\u2190" },                                                  // 889
+  "&Larr;": { "codepoints": [8606], "characters": "\u219E" },                                                  // 890
+  "&lArr;": { "codepoints": [8656], "characters": "\u21D0" },                                                  // 891
+  "&larrfs;": { "codepoints": [10525], "characters": "\u291D" },                                               // 892
+  "&larrhk;": { "codepoints": [8617], "characters": "\u21A9" },                                                // 893
+  "&larrlp;": { "codepoints": [8619], "characters": "\u21AB" },                                                // 894
+  "&larrpl;": { "codepoints": [10553], "characters": "\u2939" },                                               // 895
+  "&larrsim;": { "codepoints": [10611], "characters": "\u2973" },                                              // 896
+  "&larrtl;": { "codepoints": [8610], "characters": "\u21A2" },                                                // 897
+  "&latail;": { "codepoints": [10521], "characters": "\u2919" },                                               // 898
+  "&lAtail;": { "codepoints": [10523], "characters": "\u291B" },                                               // 899
+  "&lat;": { "codepoints": [10923], "characters": "\u2AAB" },                                                  // 900
+  "&late;": { "codepoints": [10925], "characters": "\u2AAD" },                                                 // 901
+  "&lates;": { "codepoints": [10925, 65024], "characters": "\u2AAD\uFE00" },                                   // 902
+  "&lbarr;": { "codepoints": [10508], "characters": "\u290C" },                                                // 903
+  "&lBarr;": { "codepoints": [10510], "characters": "\u290E" },                                                // 904
+  "&lbbrk;": { "codepoints": [10098], "characters": "\u2772" },                                                // 905
+  "&lbrace;": { "codepoints": [123], "characters": "\u007B" },                                                 // 906
+  "&lbrack;": { "codepoints": [91], "characters": "\u005B" },                                                  // 907
+  "&lbrke;": { "codepoints": [10635], "characters": "\u298B" },                                                // 908
+  "&lbrksld;": { "codepoints": [10639], "characters": "\u298F" },                                              // 909
+  "&lbrkslu;": { "codepoints": [10637], "characters": "\u298D" },                                              // 910
+  "&Lcaron;": { "codepoints": [317], "characters": "\u013D" },                                                 // 911
+  "&lcaron;": { "codepoints": [318], "characters": "\u013E" },                                                 // 912
+  "&Lcedil;": { "codepoints": [315], "characters": "\u013B" },                                                 // 913
+  "&lcedil;": { "codepoints": [316], "characters": "\u013C" },                                                 // 914
+  "&lceil;": { "codepoints": [8968], "characters": "\u2308" },                                                 // 915
+  "&lcub;": { "codepoints": [123], "characters": "\u007B" },                                                   // 916
+  "&Lcy;": { "codepoints": [1051], "characters": "\u041B" },                                                   // 917
+  "&lcy;": { "codepoints": [1083], "characters": "\u043B" },                                                   // 918
+  "&ldca;": { "codepoints": [10550], "characters": "\u2936" },                                                 // 919
+  "&ldquo;": { "codepoints": [8220], "characters": "\u201C" },                                                 // 920
+  "&ldquor;": { "codepoints": [8222], "characters": "\u201E" },                                                // 921
+  "&ldrdhar;": { "codepoints": [10599], "characters": "\u2967" },                                              // 922
+  "&ldrushar;": { "codepoints": [10571], "characters": "\u294B" },                                             // 923
+  "&ldsh;": { "codepoints": [8626], "characters": "\u21B2" },                                                  // 924
+  "&le;": { "codepoints": [8804], "characters": "\u2264" },                                                    // 925
+  "&lE;": { "codepoints": [8806], "characters": "\u2266" },                                                    // 926
+  "&LeftAngleBracket;": { "codepoints": [10216], "characters": "\u27E8" },                                     // 927
+  "&LeftArrowBar;": { "codepoints": [8676], "characters": "\u21E4" },                                          // 928
+  "&leftarrow;": { "codepoints": [8592], "characters": "\u2190" },                                             // 929
+  "&LeftArrow;": { "codepoints": [8592], "characters": "\u2190" },                                             // 930
+  "&Leftarrow;": { "codepoints": [8656], "characters": "\u21D0" },                                             // 931
+  "&LeftArrowRightArrow;": { "codepoints": [8646], "characters": "\u21C6" },                                   // 932
+  "&leftarrowtail;": { "codepoints": [8610], "characters": "\u21A2" },                                         // 933
+  "&LeftCeiling;": { "codepoints": [8968], "characters": "\u2308" },                                           // 934
+  "&LeftDoubleBracket;": { "codepoints": [10214], "characters": "\u27E6" },                                    // 935
+  "&LeftDownTeeVector;": { "codepoints": [10593], "characters": "\u2961" },                                    // 936
+  "&LeftDownVectorBar;": { "codepoints": [10585], "characters": "\u2959" },                                    // 937
+  "&LeftDownVector;": { "codepoints": [8643], "characters": "\u21C3" },                                        // 938
+  "&LeftFloor;": { "codepoints": [8970], "characters": "\u230A" },                                             // 939
+  "&leftharpoondown;": { "codepoints": [8637], "characters": "\u21BD" },                                       // 940
+  "&leftharpoonup;": { "codepoints": [8636], "characters": "\u21BC" },                                         // 941
+  "&leftleftarrows;": { "codepoints": [8647], "characters": "\u21C7" },                                        // 942
+  "&leftrightarrow;": { "codepoints": [8596], "characters": "\u2194" },                                        // 943
+  "&LeftRightArrow;": { "codepoints": [8596], "characters": "\u2194" },                                        // 944
+  "&Leftrightarrow;": { "codepoints": [8660], "characters": "\u21D4" },                                        // 945
+  "&leftrightarrows;": { "codepoints": [8646], "characters": "\u21C6" },                                       // 946
+  "&leftrightharpoons;": { "codepoints": [8651], "characters": "\u21CB" },                                     // 947
+  "&leftrightsquigarrow;": { "codepoints": [8621], "characters": "\u21AD" },                                   // 948
+  "&LeftRightVector;": { "codepoints": [10574], "characters": "\u294E" },                                      // 949
+  "&LeftTeeArrow;": { "codepoints": [8612], "characters": "\u21A4" },                                          // 950
+  "&LeftTee;": { "codepoints": [8867], "characters": "\u22A3" },                                               // 951
+  "&LeftTeeVector;": { "codepoints": [10586], "characters": "\u295A" },                                        // 952
+  "&leftthreetimes;": { "codepoints": [8907], "characters": "\u22CB" },                                        // 953
+  "&LeftTriangleBar;": { "codepoints": [10703], "characters": "\u29CF" },                                      // 954
+  "&LeftTriangle;": { "codepoints": [8882], "characters": "\u22B2" },                                          // 955
+  "&LeftTriangleEqual;": { "codepoints": [8884], "characters": "\u22B4" },                                     // 956
+  "&LeftUpDownVector;": { "codepoints": [10577], "characters": "\u2951" },                                     // 957
+  "&LeftUpTeeVector;": { "codepoints": [10592], "characters": "\u2960" },                                      // 958
+  "&LeftUpVectorBar;": { "codepoints": [10584], "characters": "\u2958" },                                      // 959
+  "&LeftUpVector;": { "codepoints": [8639], "characters": "\u21BF" },                                          // 960
+  "&LeftVectorBar;": { "codepoints": [10578], "characters": "\u2952" },                                        // 961
+  "&LeftVector;": { "codepoints": [8636], "characters": "\u21BC" },                                            // 962
+  "&lEg;": { "codepoints": [10891], "characters": "\u2A8B" },                                                  // 963
+  "&leg;": { "codepoints": [8922], "characters": "\u22DA" },                                                   // 964
+  "&leq;": { "codepoints": [8804], "characters": "\u2264" },                                                   // 965
+  "&leqq;": { "codepoints": [8806], "characters": "\u2266" },                                                  // 966
+  "&leqslant;": { "codepoints": [10877], "characters": "\u2A7D" },                                             // 967
+  "&lescc;": { "codepoints": [10920], "characters": "\u2AA8" },                                                // 968
+  "&les;": { "codepoints": [10877], "characters": "\u2A7D" },                                                  // 969
+  "&lesdot;": { "codepoints": [10879], "characters": "\u2A7F" },                                               // 970
+  "&lesdoto;": { "codepoints": [10881], "characters": "\u2A81" },                                              // 971
+  "&lesdotor;": { "codepoints": [10883], "characters": "\u2A83" },                                             // 972
+  "&lesg;": { "codepoints": [8922, 65024], "characters": "\u22DA\uFE00" },                                     // 973
+  "&lesges;": { "codepoints": [10899], "characters": "\u2A93" },                                               // 974
+  "&lessapprox;": { "codepoints": [10885], "characters": "\u2A85" },                                           // 975
+  "&lessdot;": { "codepoints": [8918], "characters": "\u22D6" },                                               // 976
+  "&lesseqgtr;": { "codepoints": [8922], "characters": "\u22DA" },                                             // 977
+  "&lesseqqgtr;": { "codepoints": [10891], "characters": "\u2A8B" },                                           // 978
+  "&LessEqualGreater;": { "codepoints": [8922], "characters": "\u22DA" },                                      // 979
+  "&LessFullEqual;": { "codepoints": [8806], "characters": "\u2266" },                                         // 980
+  "&LessGreater;": { "codepoints": [8822], "characters": "\u2276" },                                           // 981
+  "&lessgtr;": { "codepoints": [8822], "characters": "\u2276" },                                               // 982
+  "&LessLess;": { "codepoints": [10913], "characters": "\u2AA1" },                                             // 983
+  "&lesssim;": { "codepoints": [8818], "characters": "\u2272" },                                               // 984
+  "&LessSlantEqual;": { "codepoints": [10877], "characters": "\u2A7D" },                                       // 985
+  "&LessTilde;": { "codepoints": [8818], "characters": "\u2272" },                                             // 986
+  "&lfisht;": { "codepoints": [10620], "characters": "\u297C" },                                               // 987
+  "&lfloor;": { "codepoints": [8970], "characters": "\u230A" },                                                // 988
+  "&Lfr;": { "codepoints": [120079], "characters": "\uD835\uDD0F" },                                           // 989
+  "&lfr;": { "codepoints": [120105], "characters": "\uD835\uDD29" },                                           // 990
+  "&lg;": { "codepoints": [8822], "characters": "\u2276" },                                                    // 991
+  "&lgE;": { "codepoints": [10897], "characters": "\u2A91" },                                                  // 992
+  "&lHar;": { "codepoints": [10594], "characters": "\u2962" },                                                 // 993
+  "&lhard;": { "codepoints": [8637], "characters": "\u21BD" },                                                 // 994
+  "&lharu;": { "codepoints": [8636], "characters": "\u21BC" },                                                 // 995
+  "&lharul;": { "codepoints": [10602], "characters": "\u296A" },                                               // 996
+  "&lhblk;": { "codepoints": [9604], "characters": "\u2584" },                                                 // 997
+  "&LJcy;": { "codepoints": [1033], "characters": "\u0409" },                                                  // 998
+  "&ljcy;": { "codepoints": [1113], "characters": "\u0459" },                                                  // 999
   "&llarr;": { "codepoints": [8647], "characters": "\u21C7" },                                                 // 1000
   "&ll;": { "codepoints": [8810], "characters": "\u226A" },                                                    // 1001
   "&Ll;": { "codepoints": [8920], "characters": "\u22D8" },                                                    // 1002
@@ -2540,7 +2532,7 @@ var isLegalCodepoint = function (cp) {                                          
   return true;                                                                                                 // 2347
 };                                                                                                             // 2348
                                                                                                                // 2349
-// http://www.whatwg.org/specs/web-apps/current-work/multipage/tokenization.html#consume-a-character-reference         // 2526
+// http://www.whatwg.org/specs/web-apps/current-work/multipage/tokenization.html#consume-a-character-reference
 //                                                                                                             // 2351
 // Matches a character reference if possible, including the initial `&`.                                       // 2352
 // Fails fatally in error cases (assuming an initial `&` is matched), like a disallowed codepoint              // 2353
@@ -2553,7 +2545,7 @@ var isLegalCodepoint = function (cp) {                                          
 // either `"`, `'`, or `>` and is supplied when parsing attribute values.  NOTE: In the current spec, the      // 2360
 // value of `allowedChar` doesn't actually seem to end up mattering, but there is still some debate about      // 2361
 // the right approach to ampersands.                                                                           // 2362
-getCharacterReference = HTMLTools.Parse.getCharacterReference = function (scanner, inAttribute, allowedChar) {         // 2539
+getCharacterReference = HTMLTools.Parse.getCharacterReference = function (scanner, inAttribute, allowedChar) {
   if (scanner.peek() !== '&')                                                                                  // 2364
     // no ampersand                                                                                            // 2365
     return null;                                                                                               // 2366
@@ -2606,965 +2598,961 @@ getCharacterReference = HTMLTools.Parse.getCharacterReference = function (scanne
   }                                                                                                            // 2413
 };                                                                                                             // 2414
                                                                                                                // 2415
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////      // 2592
-                                                                                                                       // 2593
-}).call(this);                                                                                                         // 2594
-                                                                                                                       // 2595
-                                                                                                                       // 2596
-                                                                                                                       // 2597
-                                                                                                                       // 2598
-                                                                                                                       // 2599
-                                                                                                                       // 2600
-(function(){                                                                                                           // 2601
-                                                                                                                       // 2602
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////      // 2603
-//                                                                                                             //      // 2604
-// packages/html-tools/tokenize.js                                                                             //      // 2605
-//                                                                                                             //      // 2606
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////      // 2607
-                                                                                                               //      // 2608
-// Token types:                                                                                                // 1    // 2609
-//                                                                                                             // 2    // 2610
-// { t: 'Doctype',                                                                                             // 3    // 2611
-//   v: String (entire Doctype declaration from the source),                                                   // 4    // 2612
-//   name: String,                                                                                             // 5    // 2613
-//   systemId: String (optional),                                                                              // 6    // 2614
-//   publicId: String (optional)                                                                               // 7    // 2615
-// }                                                                                                           // 8    // 2616
-//                                                                                                             // 9    // 2617
-// { t: 'Comment',                                                                                             // 10   // 2618
-//   v: String (not including "<!--" and "-->")                                                                // 11   // 2619
-// }                                                                                                           // 12   // 2620
-//                                                                                                             // 13   // 2621
-// { t: 'Chars',                                                                                               // 14   // 2622
-//   v: String (pure text like you might pass to document.createTextNode,                                      // 15   // 2623
-//              no character references)                                                                       // 16   // 2624
-// }                                                                                                           // 17   // 2625
-//                                                                                                             // 18   // 2626
-// { t: 'Tag',                                                                                                 // 19   // 2627
-//   isEnd: Boolean (optional),                                                                                // 20   // 2628
-//   isSelfClosing: Boolean (optional),                                                                        // 21   // 2629
-//   n: String (tag name, in lowercase or camel case),                                                         // 22   // 2630
-//   attrs: dictionary of { String: [tokens] }                                                                 // 23   // 2631
-//          OR [{ String: [tokens] }, TemplateTag tokens...]                                                   // 24   // 2632
-//     (only for start tags; required)                                                                         // 25   // 2633
-// }                                                                                                           // 26   // 2634
-//                                                                                                             // 27   // 2635
-// { t: 'CharRef',                                                                                             // 28   // 2636
-//   v: String (entire character reference from the source, e.g. "&amp;"),                                     // 29   // 2637
-//   cp: [Integer] (array of Unicode code point numbers it expands to)                                         // 30   // 2638
-// }                                                                                                           // 31   // 2639
-//                                                                                                             // 32   // 2640
-// We keep around both the original form of the character reference and its                                    // 33   // 2641
-// expansion so that subsequent processing steps have the option to                                            // 34   // 2642
-// re-emit it (if they are generating HTML) or interpret it.  Named and                                        // 35   // 2643
-// numerical code points may be more than 16 bits, in which case they                                          // 36   // 2644
-// need to passed through codePointToString to make a JavaScript string.                                       // 37   // 2645
-// Most named entities and all numeric character references are one codepoint                                  // 38   // 2646
-// (e.g. "&amp;" is [38]), but a few are two codepoints.                                                       // 39   // 2647
-//                                                                                                             // 40   // 2648
-// { t: 'TemplateTag',                                                                                         // 41   // 2649
-//   v: HTMLTools.TemplateTag                                                                                  // 42   // 2650
-// }                                                                                                           // 43   // 2651
-                                                                                                               // 44   // 2652
-// The HTML tokenization spec says to preprocess the input stream to replace                                   // 45   // 2653
-// CR(LF)? with LF.  However, preprocessing `scanner` would complicate things                                  // 46   // 2654
-// by making indexes not match the input (e.g. for error messages), so we just                                 // 47   // 2655
-// keep in mind as we go along that an LF might be represented by CRLF or CR.                                  // 48   // 2656
-// In most cases, it doesn't actually matter what combination of whitespace                                    // 49   // 2657
-// characters are present (e.g. inside tags).                                                                  // 50   // 2658
-var HTML_SPACE = /^[\f\n\r\t ]/;                                                                               // 51   // 2659
-                                                                                                               // 52   // 2660
-var convertCRLF = function (str) {                                                                             // 53   // 2661
-  return str.replace(/\r\n?/g, '\n');                                                                          // 54   // 2662
-};                                                                                                             // 55   // 2663
-                                                                                                               // 56   // 2664
-getComment = HTMLTools.Parse.getComment = function (scanner) {                                                 // 57   // 2665
-  if (scanner.rest().slice(0, 4) !== '<!--')                                                                   // 58   // 2666
-    return null;                                                                                               // 59   // 2667
-  scanner.pos += 4;                                                                                            // 60   // 2668
-                                                                                                               // 61   // 2669
-  // Valid comments are easy to parse; they end at the first `--`!                                             // 62   // 2670
-  // Our main job is throwing errors.                                                                          // 63   // 2671
-                                                                                                               // 64   // 2672
-  var rest = scanner.rest();                                                                                   // 65   // 2673
-  if (rest.charAt(0) === '>' || rest.slice(0, 2) === '->')                                                     // 66   // 2674
-    scanner.fatal("HTML comment can't start with > or ->");                                                    // 67   // 2675
-                                                                                                               // 68   // 2676
-  var closePos = rest.indexOf('-->');                                                                          // 69   // 2677
-  if (closePos < 0)                                                                                            // 70   // 2678
-    scanner.fatal("Unclosed HTML comment");                                                                    // 71   // 2679
-                                                                                                               // 72   // 2680
-  var commentContents = rest.slice(0, closePos);                                                               // 73   // 2681
-  if (commentContents.slice(-1) === '-')                                                                       // 74   // 2682
-    scanner.fatal("HTML comment must end at first `--`");                                                      // 75   // 2683
-  if (commentContents.indexOf("--") >= 0)                                                                      // 76   // 2684
-    scanner.fatal("HTML comment cannot contain `--` anywhere");                                                // 77   // 2685
-  if (commentContents.indexOf('\u0000') >= 0)                                                                  // 78   // 2686
-    scanner.fatal("HTML comment cannot contain NULL");                                                         // 79   // 2687
-                                                                                                               // 80   // 2688
-  scanner.pos += closePos + 3;                                                                                 // 81   // 2689
-                                                                                                               // 82   // 2690
-  return { t: 'Comment',                                                                                       // 83   // 2691
-           v: convertCRLF(commentContents) };                                                                  // 84   // 2692
-};                                                                                                             // 85   // 2693
-                                                                                                               // 86   // 2694
-var skipSpaces = function (scanner) {                                                                          // 87   // 2695
-  while (HTML_SPACE.test(scanner.peek()))                                                                      // 88   // 2696
-    scanner.pos++;                                                                                             // 89   // 2697
-};                                                                                                             // 90   // 2698
-                                                                                                               // 91   // 2699
-var requireSpaces = function (scanner) {                                                                       // 92   // 2700
-  if (! HTML_SPACE.test(scanner.peek()))                                                                       // 93   // 2701
-    scanner.fatal("Expected space");                                                                           // 94   // 2702
-  skipSpaces(scanner);                                                                                         // 95   // 2703
-};                                                                                                             // 96   // 2704
-                                                                                                               // 97   // 2705
-var getDoctypeQuotedString = function (scanner) {                                                              // 98   // 2706
-  var quote = scanner.peek();                                                                                  // 99   // 2707
-  if (! (quote === '"' || quote === "'"))                                                                      // 100  // 2708
-    scanner.fatal("Expected single or double quote in DOCTYPE");                                               // 101  // 2709
-  scanner.pos++;                                                                                               // 102  // 2710
-                                                                                                               // 103  // 2711
-  if (scanner.peek() === quote)                                                                                // 104  // 2712
-    // prevent a falsy return value (empty string)                                                             // 105  // 2713
-    scanner.fatal("Malformed DOCTYPE");                                                                        // 106  // 2714
-                                                                                                               // 107  // 2715
-  var str = '';                                                                                                // 108  // 2716
-  var ch;                                                                                                      // 109  // 2717
-  while ((ch = scanner.peek()), ch !== quote) {                                                                // 110  // 2718
-    if ((! ch) || (ch === '\u0000') || (ch === '>'))                                                           // 111  // 2719
-      scanner.fatal("Malformed DOCTYPE");                                                                      // 112  // 2720
-    str += ch;                                                                                                 // 113  // 2721
-    scanner.pos++;                                                                                             // 114  // 2722
-  }                                                                                                            // 115  // 2723
-                                                                                                               // 116  // 2724
-  scanner.pos++;                                                                                               // 117  // 2725
-                                                                                                               // 118  // 2726
-  return str;                                                                                                  // 119  // 2727
-};                                                                                                             // 120  // 2728
-                                                                                                               // 121  // 2729
-// See http://www.whatwg.org/specs/web-apps/current-work/multipage/syntax.html#the-doctype.                    // 122  // 2730
-//                                                                                                             // 123  // 2731
-// If `getDocType` sees "<!DOCTYPE" (case-insensitive), it will match or fail fatally.                         // 124  // 2732
-getDoctype = HTMLTools.Parse.getDoctype = function (scanner) {                                                 // 125  // 2733
-  if (HTMLTools.asciiLowerCase(scanner.rest().slice(0, 9)) !== '<!doctype')                                    // 126  // 2734
-    return null;                                                                                               // 127  // 2735
-  var start = scanner.pos;                                                                                     // 128  // 2736
-  scanner.pos += 9;                                                                                            // 129  // 2737
-                                                                                                               // 130  // 2738
-  requireSpaces(scanner);                                                                                      // 131  // 2739
-                                                                                                               // 132  // 2740
-  var ch = scanner.peek();                                                                                     // 133  // 2741
-  if ((! ch) || (ch === '>') || (ch === '\u0000'))                                                             // 134  // 2742
-    scanner.fatal('Malformed DOCTYPE');                                                                        // 135  // 2743
-  var name = ch;                                                                                               // 136  // 2744
-  scanner.pos++;                                                                                               // 137  // 2745
-                                                                                                               // 138  // 2746
-  while ((ch = scanner.peek()), ! (HTML_SPACE.test(ch) || ch === '>')) {                                       // 139  // 2747
-    if ((! ch) || (ch === '\u0000'))                                                                           // 140  // 2748
-      scanner.fatal('Malformed DOCTYPE');                                                                      // 141  // 2749
-    name += ch;                                                                                                // 142  // 2750
-    scanner.pos++;                                                                                             // 143  // 2751
-  }                                                                                                            // 144  // 2752
-  name = HTMLTools.asciiLowerCase(name);                                                                       // 145  // 2753
-                                                                                                               // 146  // 2754
-  // Now we're looking at a space or a `>`.                                                                    // 147  // 2755
-  skipSpaces(scanner);                                                                                         // 148  // 2756
-                                                                                                               // 149  // 2757
-  var systemId = null;                                                                                         // 150  // 2758
-  var publicId = null;                                                                                         // 151  // 2759
-                                                                                                               // 152  // 2760
-  if (scanner.peek() !== '>') {                                                                                // 153  // 2761
-    // Now we're essentially in the "After DOCTYPE name state" of the tokenizer,                               // 154  // 2762
-    // but we're not looking at space or `>`.                                                                  // 155  // 2763
-                                                                                                               // 156  // 2764
-    // this should be "public" or "system".                                                                    // 157  // 2765
-    var publicOrSystem = HTMLTools.asciiLowerCase(scanner.rest().slice(0, 6));                                 // 158  // 2766
-                                                                                                               // 159  // 2767
-    if (publicOrSystem === 'system') {                                                                         // 160  // 2768
-      scanner.pos += 6;                                                                                        // 161  // 2769
-      requireSpaces(scanner);                                                                                  // 162  // 2770
-      systemId = getDoctypeQuotedString(scanner);                                                              // 163  // 2771
-      skipSpaces(scanner);                                                                                     // 164  // 2772
-      if (scanner.peek() !== '>')                                                                              // 165  // 2773
-        scanner.fatal("Malformed DOCTYPE");                                                                    // 166  // 2774
-    } else if (publicOrSystem === 'public') {                                                                  // 167  // 2775
-      scanner.pos += 6;                                                                                        // 168  // 2776
-      requireSpaces(scanner);                                                                                  // 169  // 2777
-      publicId = getDoctypeQuotedString(scanner);                                                              // 170  // 2778
-      if (scanner.peek() !== '>') {                                                                            // 171  // 2779
-        requireSpaces(scanner);                                                                                // 172  // 2780
-        if (scanner.peek() !== '>') {                                                                          // 173  // 2781
-          systemId = getDoctypeQuotedString(scanner);                                                          // 174  // 2782
-          skipSpaces(scanner);                                                                                 // 175  // 2783
-          if (scanner.peek() !== '>')                                                                          // 176  // 2784
-            scanner.fatal("Malformed DOCTYPE");                                                                // 177  // 2785
-        }                                                                                                      // 178  // 2786
-      }                                                                                                        // 179  // 2787
-    } else {                                                                                                   // 180  // 2788
-      scanner.fatal("Expected PUBLIC or SYSTEM in DOCTYPE");                                                   // 181  // 2789
-    }                                                                                                          // 182  // 2790
-  }                                                                                                            // 183  // 2791
-                                                                                                               // 184  // 2792
-  // looking at `>`                                                                                            // 185  // 2793
-  scanner.pos++;                                                                                               // 186  // 2794
-  var result = { t: 'Doctype',                                                                                 // 187  // 2795
-                 v: scanner.input.slice(start, scanner.pos),                                                   // 188  // 2796
-                 name: name };                                                                                 // 189  // 2797
-                                                                                                               // 190  // 2798
-  if (systemId)                                                                                                // 191  // 2799
-    result.systemId = systemId;                                                                                // 192  // 2800
-  if (publicId)                                                                                                // 193  // 2801
-    result.publicId = publicId;                                                                                // 194  // 2802
-                                                                                                               // 195  // 2803
-  return result;                                                                                               // 196  // 2804
-};                                                                                                             // 197  // 2805
-                                                                                                               // 198  // 2806
-// The special character `{` is only allowed as the first character                                            // 199  // 2807
-// of a Chars, so that we have a chance to detect template tags.                                               // 200  // 2808
-var getChars = makeRegexMatcher(/^[^&<\u0000][^&<\u0000{]*/);                                                  // 201  // 2809
-                                                                                                               // 202  // 2810
-var assertIsTemplateTag = function (x) {                                                                       // 203  // 2811
-  if (! (x instanceof HTMLTools.TemplateTag))                                                                  // 204  // 2812
-    throw new Error("Expected an instance of HTMLTools.TemplateTag");                                          // 205  // 2813
-  return x;                                                                                                    // 206  // 2814
-};                                                                                                             // 207  // 2815
-                                                                                                               // 208  // 2816
-// Returns the next HTML token, or `null` if we reach EOF.                                                     // 209  // 2817
-//                                                                                                             // 210  // 2818
-// Note that if we have a `getTemplateTag` function that sometimes                                             // 211  // 2819
-// consumes characters and emits nothing (e.g. in the case of template                                         // 212  // 2820
-// comments), we may go from not-at-EOF to at-EOF and return `null`,                                           // 213  // 2821
-// while otherwise we always find some token to return.                                                        // 214  // 2822
-getHTMLToken = HTMLTools.Parse.getHTMLToken = function (scanner, dataMode) {                                   // 215  // 2823
-  var result = null;                                                                                           // 216  // 2824
-  if (scanner.getTemplateTag) {                                                                                // 217  // 2825
-    // Try to parse a template tag by calling out to the provided                                              // 218  // 2826
-    // `getTemplateTag` function.  If the function returns `null` but                                          // 219  // 2827
-    // consumes characters, it must have parsed a comment or something,                                        // 220  // 2828
-    // so we loop and try it again.  If it ever returns `null` without                                         // 221  // 2829
-    // consuming anything, that means it didn't see anything interesting                                       // 222  // 2830
-    // so we look for a normal token.  If it returns a truthy value,                                           // 223  // 2831
-    // the value must be instanceof HTMLTools.TemplateTag.  We wrap it                                         // 224  // 2832
-    // in a Special token.                                                                                     // 225  // 2833
-    var lastPos = scanner.pos;                                                                                 // 226  // 2834
-    result = scanner.getTemplateTag(                                                                           // 227  // 2835
-      scanner,                                                                                                 // 228  // 2836
-      (dataMode === 'rcdata' ? TEMPLATE_TAG_POSITION.IN_RCDATA :                                               // 229  // 2837
-       (dataMode === 'rawtext' ? TEMPLATE_TAG_POSITION.IN_RAWTEXT :                                            // 230  // 2838
-        TEMPLATE_TAG_POSITION.ELEMENT)));                                                                      // 231  // 2839
-                                                                                                               // 232  // 2840
-    if (result)                                                                                                // 233  // 2841
-      return { t: 'TemplateTag', v: assertIsTemplateTag(result) };                                             // 234  // 2842
-    else if (scanner.pos > lastPos)                                                                            // 235  // 2843
-      return null;                                                                                             // 236  // 2844
-  }                                                                                                            // 237  // 2845
-                                                                                                               // 238  // 2846
-  var chars = getChars(scanner);                                                                               // 239  // 2847
-  if (chars)                                                                                                   // 240  // 2848
-    return { t: 'Chars',                                                                                       // 241  // 2849
-             v: convertCRLF(chars) };                                                                          // 242  // 2850
-                                                                                                               // 243  // 2851
-  var ch = scanner.peek();                                                                                     // 244  // 2852
-  if (! ch)                                                                                                    // 245  // 2853
-    return null; // EOF                                                                                        // 246  // 2854
-                                                                                                               // 247  // 2855
-  if (ch === '\u0000')                                                                                         // 248  // 2856
-    scanner.fatal("Illegal NULL character");                                                                   // 249  // 2857
-                                                                                                               // 250  // 2858
-  if (ch === '&') {                                                                                            // 251  // 2859
-    if (dataMode !== 'rawtext') {                                                                              // 252  // 2860
-      var charRef = getCharacterReference(scanner);                                                            // 253  // 2861
-      if (charRef)                                                                                             // 254  // 2862
-        return charRef;                                                                                        // 255  // 2863
-    }                                                                                                          // 256  // 2864
-                                                                                                               // 257  // 2865
-    scanner.pos++;                                                                                             // 258  // 2866
-    return { t: 'Chars',                                                                                       // 259  // 2867
-             v: '&' };                                                                                         // 260  // 2868
-  }                                                                                                            // 261  // 2869
-                                                                                                               // 262  // 2870
-  // If we're here, we're looking at `<`.                                                                      // 263  // 2871
-                                                                                                               // 264  // 2872
-  if (scanner.peek() === '<' && dataMode) {                                                                    // 265  // 2873
-    // don't interpret tags                                                                                    // 266  // 2874
-    scanner.pos++;                                                                                             // 267  // 2875
-    return { t: 'Chars',                                                                                       // 268  // 2876
-             v: '<' };                                                                                         // 269  // 2877
-  }                                                                                                            // 270  // 2878
-                                                                                                               // 271  // 2879
-  // `getTag` will claim anything starting with `<` not followed by `!`.                                       // 272  // 2880
-  // `getComment` takes `<!--` and getDoctype takes `<!doctype`.                                               // 273  // 2881
-  result = (getTagToken(scanner) || getComment(scanner) || getDoctype(scanner));                               // 274  // 2882
-                                                                                                               // 275  // 2883
-  if (result)                                                                                                  // 276  // 2884
-    return result;                                                                                             // 277  // 2885
-                                                                                                               // 278  // 2886
-  scanner.fatal("Unexpected `<!` directive.");                                                                 // 279  // 2887
-};                                                                                                             // 280  // 2888
-                                                                                                               // 281  // 2889
-var getTagName = makeRegexMatcher(/^[a-zA-Z][^\f\n\r\t />{]*/);                                                // 282  // 2890
-var getClangle = makeRegexMatcher(/^>/);                                                                       // 283  // 2891
-var getSlash = makeRegexMatcher(/^\//);                                                                        // 284  // 2892
-var getAttributeName = makeRegexMatcher(/^[^>/\u0000"'<=\f\n\r\t ][^\f\n\r\t /=>"'<\u0000]*/);                 // 285  // 2893
-                                                                                                               // 286  // 2894
-// Try to parse `>` or `/>`, mutating `tag` to be self-closing in the latter                                   // 287  // 2895
-// case (and failing fatally if `/` isn't followed by `>`).                                                    // 288  // 2896
-// Return tag if successful.                                                                                   // 289  // 2897
-var handleEndOfTag = function (scanner, tag) {                                                                 // 290  // 2898
-  if (getClangle(scanner))                                                                                     // 291  // 2899
-    return tag;                                                                                                // 292  // 2900
-                                                                                                               // 293  // 2901
-  if (getSlash(scanner)) {                                                                                     // 294  // 2902
-    if (! getClangle(scanner))                                                                                 // 295  // 2903
-      scanner.fatal("Expected `>` after `/`");                                                                 // 296  // 2904
-    tag.isSelfClosing = true;                                                                                  // 297  // 2905
-    return tag;                                                                                                // 298  // 2906
-  }                                                                                                            // 299  // 2907
-                                                                                                               // 300  // 2908
-  return null;                                                                                                 // 301  // 2909
-};                                                                                                             // 302  // 2910
-                                                                                                               // 303  // 2911
-// Scan a quoted or unquoted attribute value (omit `quote` for unquoted).                                      // 304  // 2912
-var getAttributeValue = function (scanner, quote) {                                                            // 305  // 2913
-  if (quote) {                                                                                                 // 306  // 2914
-    if (scanner.peek() !== quote)                                                                              // 307  // 2915
-      return null;                                                                                             // 308  // 2916
-    scanner.pos++;                                                                                             // 309  // 2917
-  }                                                                                                            // 310  // 2918
-                                                                                                               // 311  // 2919
-  var tokens = [];                                                                                             // 312  // 2920
-  var charsTokenToExtend = null;                                                                               // 313  // 2921
-                                                                                                               // 314  // 2922
-  var charRef;                                                                                                 // 315  // 2923
-  while (true) {                                                                                               // 316  // 2924
-    var ch = scanner.peek();                                                                                   // 317  // 2925
-    var templateTag;                                                                                           // 318  // 2926
-    var curPos = scanner.pos;                                                                                  // 319  // 2927
-    if (quote && ch === quote) {                                                                               // 320  // 2928
-      scanner.pos++;                                                                                           // 321  // 2929
-      return tokens;                                                                                           // 322  // 2930
-    } else if ((! quote) && (HTML_SPACE.test(ch) || ch === '>')) {                                             // 323  // 2931
-      return tokens;                                                                                           // 324  // 2932
-    } else if (! ch) {                                                                                         // 325  // 2933
-      scanner.fatal("Unclosed attribute in tag");                                                              // 326  // 2934
-    } else if (quote ? ch === '\u0000' : ('\u0000"\'<=`'.indexOf(ch) >= 0)) {                                  // 327  // 2935
-      scanner.fatal("Unexpected character in attribute value");                                                // 328  // 2936
-    } else if (ch === '&' &&                                                                                   // 329  // 2937
-               (charRef = getCharacterReference(scanner, true,                                                 // 330  // 2938
-                                                quote || '>'))) {                                              // 331  // 2939
-      tokens.push(charRef);                                                                                    // 332  // 2940
-      charsTokenToExtend = null;                                                                               // 333  // 2941
-    } else if (scanner.getTemplateTag &&                                                                       // 334  // 2942
-               ((templateTag = scanner.getTemplateTag(                                                         // 335  // 2943
-                 scanner, TEMPLATE_TAG_POSITION.IN_ATTRIBUTE)) ||                                              // 336  // 2944
-                scanner.pos > curPos /* `{{! comment}}` */)) {                                                 // 337  // 2945
-      if (templateTag) {                                                                                       // 338  // 2946
-        tokens.push({t: 'TemplateTag',                                                                         // 339  // 2947
-                     v: assertIsTemplateTag(templateTag)});                                                    // 340  // 2948
-        charsTokenToExtend = null;                                                                             // 341  // 2949
-      }                                                                                                        // 342  // 2950
-    } else {                                                                                                   // 343  // 2951
-      if (! charsTokenToExtend) {                                                                              // 344  // 2952
-        charsTokenToExtend = { t: 'Chars', v: '' };                                                            // 345  // 2953
-        tokens.push(charsTokenToExtend);                                                                       // 346  // 2954
-      }                                                                                                        // 347  // 2955
-      charsTokenToExtend.v += (ch === '\r' ? '\n' : ch);                                                       // 348  // 2956
-      scanner.pos++;                                                                                           // 349  // 2957
-      if (quote && ch === '\r' && scanner.peek() === '\n')                                                     // 350  // 2958
-        scanner.pos++;                                                                                         // 351  // 2959
-    }                                                                                                          // 352  // 2960
-  }                                                                                                            // 353  // 2961
-};                                                                                                             // 354  // 2962
-                                                                                                               // 355  // 2963
-var hasOwnProperty = Object.prototype.hasOwnProperty;                                                          // 356  // 2964
-                                                                                                               // 357  // 2965
-getTagToken = HTMLTools.Parse.getTagToken = function (scanner) {                                               // 358  // 2966
-  if (! (scanner.peek() === '<' && scanner.rest().charAt(1) !== '!'))                                          // 359  // 2967
-    return null;                                                                                               // 360  // 2968
-  scanner.pos++;                                                                                               // 361  // 2969
-                                                                                                               // 362  // 2970
-  var tag = { t: 'Tag' };                                                                                      // 363  // 2971
-                                                                                                               // 364  // 2972
-  // now looking at the character after `<`, which is not a `!`                                                // 365  // 2973
-  if (scanner.peek() === '/') {                                                                                // 366  // 2974
-    tag.isEnd = true;                                                                                          // 367  // 2975
-    scanner.pos++;                                                                                             // 368  // 2976
-  }                                                                                                            // 369  // 2977
-                                                                                                               // 370  // 2978
-  var tagName = getTagName(scanner);                                                                           // 371  // 2979
-  if (! tagName)                                                                                               // 372  // 2980
-    scanner.fatal("Expected tag name after `<`");                                                              // 373  // 2981
-  tag.n = HTMLTools.properCaseTagName(tagName);                                                                // 374  // 2982
-                                                                                                               // 375  // 2983
-  if (scanner.peek() === '/' && tag.isEnd)                                                                     // 376  // 2984
-    scanner.fatal("End tag can't have trailing slash");                                                        // 377  // 2985
-  if (handleEndOfTag(scanner, tag))                                                                            // 378  // 2986
-    return tag;                                                                                                // 379  // 2987
-                                                                                                               // 380  // 2988
-  if (scanner.isEOF())                                                                                         // 381  // 2989
-    scanner.fatal("Unclosed `<`");                                                                             // 382  // 2990
-                                                                                                               // 383  // 2991
-  if (! HTML_SPACE.test(scanner.peek()))                                                                       // 384  // 2992
-    // e.g. `<a{{b}}>`                                                                                         // 385  // 2993
-    scanner.fatal("Expected space after tag name");                                                            // 386  // 2994
-                                                                                                               // 387  // 2995
-  // we're now in "Before attribute name state" of the tokenizer                                               // 388  // 2996
-  skipSpaces(scanner);                                                                                         // 389  // 2997
-                                                                                                               // 390  // 2998
-  if (scanner.peek() === '/' && tag.isEnd)                                                                     // 391  // 2999
-    scanner.fatal("End tag can't have trailing slash");                                                        // 392  // 3000
-  if (handleEndOfTag(scanner, tag))                                                                            // 393  // 3001
-    return tag;                                                                                                // 394  // 3002
-                                                                                                               // 395  // 3003
-  if (tag.isEnd)                                                                                               // 396  // 3004
-    scanner.fatal("End tag can't have attributes");                                                            // 397  // 3005
-                                                                                                               // 398  // 3006
-  tag.attrs = {};                                                                                              // 399  // 3007
-  var nondynamicAttrs = tag.attrs;                                                                             // 400  // 3008
-                                                                                                               // 401  // 3009
-  while (true) {                                                                                               // 402  // 3010
-    // Note: at the top of this loop, we've already skipped any spaces.                                        // 403  // 3011
-                                                                                                               // 404  // 3012
-    // This will be set to true if after parsing the attribute, we should                                      // 405  // 3013
-    // require spaces (or else an end of tag, i.e. `>` or `/>`).                                               // 406  // 3014
-    var spacesRequiredAfter = false;                                                                           // 407  // 3015
-                                                                                                               // 408  // 3016
-    // first, try for a template tag.                                                                          // 409  // 3017
-    var curPos = scanner.pos;                                                                                  // 410  // 3018
-    var templateTag = (scanner.getTemplateTag &&                                                               // 411  // 3019
-                       scanner.getTemplateTag(                                                                 // 412  // 3020
-                         scanner, TEMPLATE_TAG_POSITION.IN_START_TAG));                                        // 413  // 3021
-    if (templateTag || (scanner.pos > curPos)) {                                                               // 414  // 3022
-      if (templateTag) {                                                                                       // 415  // 3023
-        if (tag.attrs === nondynamicAttrs)                                                                     // 416  // 3024
-          tag.attrs = [nondynamicAttrs];                                                                       // 417  // 3025
-        tag.attrs.push({ t: 'TemplateTag',                                                                     // 418  // 3026
-                         v: assertIsTemplateTag(templateTag) });                                               // 419  // 3027
-      } // else, must have scanned a `{{! comment}}`                                                           // 420  // 3028
-                                                                                                               // 421  // 3029
-      spacesRequiredAfter = true;                                                                              // 422  // 3030
-    } else {                                                                                                   // 423  // 3031
-                                                                                                               // 424  // 3032
-      var attributeName = getAttributeName(scanner);                                                           // 425  // 3033
-      if (! attributeName)                                                                                     // 426  // 3034
-        scanner.fatal("Expected attribute name in tag");                                                       // 427  // 3035
-      // Throw error on `{` in attribute name.  This provides *some* error message                             // 428  // 3036
-      // if someone writes `<a x{{y}}>` or `<a x{{y}}=z>`.  The HTML tokenization                              // 429  // 3037
-      // spec doesn't say that `{` is invalid, but the DOM API (setAttribute) won't                            // 430  // 3038
-      // allow it, so who cares.                                                                               // 431  // 3039
-      if (attributeName.indexOf('{') >= 0)                                                                     // 432  // 3040
-        scanner.fatal("Unexpected `{` in attribute name.");                                                    // 433  // 3041
-      attributeName = HTMLTools.properCaseAttributeName(attributeName);                                        // 434  // 3042
-                                                                                                               // 435  // 3043
-      if (hasOwnProperty.call(nondynamicAttrs, attributeName))                                                 // 436  // 3044
-        scanner.fatal("Duplicate attribute in tag: " + attributeName);                                         // 437  // 3045
-                                                                                                               // 438  // 3046
-      nondynamicAttrs[attributeName] = [];                                                                     // 439  // 3047
-                                                                                                               // 440  // 3048
-      skipSpaces(scanner);                                                                                     // 441  // 3049
-                                                                                                               // 442  // 3050
-      if (handleEndOfTag(scanner, tag))                                                                        // 443  // 3051
-        return tag;                                                                                            // 444  // 3052
-                                                                                                               // 445  // 3053
-      var ch = scanner.peek();                                                                                 // 446  // 3054
-      if (! ch)                                                                                                // 447  // 3055
-        scanner.fatal("Unclosed <");                                                                           // 448  // 3056
-      if ('\u0000"\'<'.indexOf(ch) >= 0)                                                                       // 449  // 3057
-        scanner.fatal("Unexpected character after attribute name in tag");                                     // 450  // 3058
-                                                                                                               // 451  // 3059
-      if (ch === '=') {                                                                                        // 452  // 3060
-        scanner.pos++;                                                                                         // 453  // 3061
-                                                                                                               // 454  // 3062
-        skipSpaces(scanner);                                                                                   // 455  // 3063
-                                                                                                               // 456  // 3064
-        ch = scanner.peek();                                                                                   // 457  // 3065
-        if (! ch)                                                                                              // 458  // 3066
-          scanner.fatal("Unclosed <");                                                                         // 459  // 3067
-        if ('\u0000><=`'.indexOf(ch) >= 0)                                                                     // 460  // 3068
-          scanner.fatal("Unexpected character after = in tag");                                                // 461  // 3069
-                                                                                                               // 462  // 3070
-        if ((ch === '"') || (ch === "'"))                                                                      // 463  // 3071
-          nondynamicAttrs[attributeName] = getAttributeValue(scanner, ch);                                     // 464  // 3072
-        else                                                                                                   // 465  // 3073
-          nondynamicAttrs[attributeName] = getAttributeValue(scanner);                                         // 466  // 3074
-                                                                                                               // 467  // 3075
-        spacesRequiredAfter = true;                                                                            // 468  // 3076
-      }                                                                                                        // 469  // 3077
-    }                                                                                                          // 470  // 3078
-    // now we are in the "post-attribute" position, whether it was a template tag                              // 471  // 3079
-    // attribute (like `{{x}}`) or a normal one (like `x` or `x=y`).                                           // 472  // 3080
-                                                                                                               // 473  // 3081
-    if (handleEndOfTag(scanner, tag))                                                                          // 474  // 3082
-      return tag;                                                                                              // 475  // 3083
-                                                                                                               // 476  // 3084
-    if (scanner.isEOF())                                                                                       // 477  // 3085
-      scanner.fatal("Unclosed `<`");                                                                           // 478  // 3086
-                                                                                                               // 479  // 3087
-    if (spacesRequiredAfter)                                                                                   // 480  // 3088
-      requireSpaces(scanner);                                                                                  // 481  // 3089
-    else                                                                                                       // 482  // 3090
-      skipSpaces(scanner);                                                                                     // 483  // 3091
-                                                                                                               // 484  // 3092
-    if (handleEndOfTag(scanner, tag))                                                                          // 485  // 3093
-      return tag;                                                                                              // 486  // 3094
-  }                                                                                                            // 487  // 3095
-};                                                                                                             // 488  // 3096
-                                                                                                               // 489  // 3097
-TEMPLATE_TAG_POSITION = HTMLTools.TEMPLATE_TAG_POSITION = {                                                    // 490  // 3098
-  ELEMENT: 1,                                                                                                  // 491  // 3099
-  IN_START_TAG: 2,                                                                                             // 492  // 3100
-  IN_ATTRIBUTE: 3,                                                                                             // 493  // 3101
-  IN_RCDATA: 4,                                                                                                // 494  // 3102
-  IN_RAWTEXT: 5                                                                                                // 495  // 3103
-};                                                                                                             // 496  // 3104
-                                                                                                               // 497  // 3105
-// tagName must be proper case                                                                                 // 498  // 3106
-isLookingAtEndTag = function (scanner, tagName) {                                                              // 499  // 3107
-  var rest = scanner.rest();                                                                                   // 500  // 3108
-  var pos = 0; // into rest                                                                                    // 501  // 3109
-  var firstPart = /^<\/([a-zA-Z]+)/.exec(rest);                                                                // 502  // 3110
-  if (firstPart &&                                                                                             // 503  // 3111
-      HTMLTools.properCaseTagName(firstPart[1]) === tagName) {                                                 // 504  // 3112
-    // we've seen `</foo`, now see if the end tag continues                                                    // 505  // 3113
-    pos += firstPart[0].length;                                                                                // 506  // 3114
-    while (pos < rest.length && HTML_SPACE.test(rest.charAt(pos)))                                             // 507  // 3115
-      pos++;                                                                                                   // 508  // 3116
-    if (pos < rest.length && rest.charAt(pos) === '>')                                                         // 509  // 3117
-      return true;                                                                                             // 510  // 3118
-  }                                                                                                            // 511  // 3119
-  return false;                                                                                                // 512  // 3120
-};                                                                                                             // 513  // 3121
-                                                                                                               // 514  // 3122
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////      // 3123
-                                                                                                                       // 3124
-}).call(this);                                                                                                         // 3125
-                                                                                                                       // 3126
-                                                                                                                       // 3127
-                                                                                                                       // 3128
-                                                                                                                       // 3129
-                                                                                                                       // 3130
-                                                                                                                       // 3131
-(function(){                                                                                                           // 3132
-                                                                                                                       // 3133
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////      // 3134
-//                                                                                                             //      // 3135
-// packages/html-tools/templatetag.js                                                                          //      // 3136
-//                                                                                                             //      // 3137
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////      // 3138
-                                                                                                               //      // 3139
-// _assign is like _.extend or the upcoming Object.assign.                                                     // 1    // 3140
-// Copy src's own, enumerable properties onto tgt and return                                                   // 2    // 3141
-// tgt.                                                                                                        // 3    // 3142
-var _hasOwnProperty = Object.prototype.hasOwnProperty;                                                         // 4    // 3143
-var _assign = function (tgt, src) {                                                                            // 5    // 3144
-  for (var k in src) {                                                                                         // 6    // 3145
-    if (_hasOwnProperty.call(src, k))                                                                          // 7    // 3146
-      tgt[k] = src[k];                                                                                         // 8    // 3147
-  }                                                                                                            // 9    // 3148
-  return tgt;                                                                                                  // 10   // 3149
-};                                                                                                             // 11   // 3150
-                                                                                                               // 12   // 3151
-                                                                                                               // 13   // 3152
-HTMLTools.TemplateTag = function (props) {                                                                     // 14   // 3153
-  if (! (this instanceof HTMLTools.TemplateTag))                                                               // 15   // 3154
-    // called without `new`                                                                                    // 16   // 3155
-    return new HTMLTools.TemplateTag;                                                                          // 17   // 3156
-                                                                                                               // 18   // 3157
-  if (props)                                                                                                   // 19   // 3158
-    _assign(this, props);                                                                                      // 20   // 3159
-};                                                                                                             // 21   // 3160
-                                                                                                               // 22   // 3161
-_assign(HTMLTools.TemplateTag.prototype, {                                                                     // 23   // 3162
-  constructorName: 'HTMLTools.TemplateTag',                                                                    // 24   // 3163
-  toJS: function (visitor) {                                                                                   // 25   // 3164
-    return visitor.generateCall(this.constructorName,                                                          // 26   // 3165
-                                _assign({}, this));                                                            // 27   // 3166
-  }                                                                                                            // 28   // 3167
-});                                                                                                            // 29   // 3168
-                                                                                                               // 30   // 3169
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////      // 3170
-                                                                                                                       // 3171
-}).call(this);                                                                                                         // 3172
-                                                                                                                       // 3173
-                                                                                                                       // 3174
-                                                                                                                       // 3175
-                                                                                                                       // 3176
-                                                                                                                       // 3177
-                                                                                                                       // 3178
-(function(){                                                                                                           // 3179
-                                                                                                                       // 3180
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////      // 3181
-//                                                                                                             //      // 3182
-// packages/html-tools/parse.js                                                                                //      // 3183
-//                                                                                                             //      // 3184
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////      // 3185
-                                                                                                               //      // 3186
-                                                                                                               // 1    // 3187
-// Parse a "fragment" of HTML, up to the end of the input or a particular                                      // 2    // 3188
-// template tag (using the "shouldStop" option).                                                               // 3    // 3189
-HTMLTools.parseFragment = function (input, options) {                                                          // 4    // 3190
-  var scanner;                                                                                                 // 5    // 3191
-  if (typeof input === 'string')                                                                               // 6    // 3192
-    scanner = new Scanner(input);                                                                              // 7    // 3193
-  else                                                                                                         // 8    // 3194
-    // input can be a scanner.  We'd better not have a different                                               // 9    // 3195
-    // value for the "getTemplateTag" option as when the scanner                                               // 10   // 3196
-    // was created, because we don't do anything special to reset                                              // 11   // 3197
-    // the value (which is attached to the scanner).                                                           // 12   // 3198
-    scanner = input;                                                                                           // 13   // 3199
-                                                                                                               // 14   // 3200
-  // ```                                                                                                       // 15   // 3201
-  // { getTemplateTag: function (scanner, templateTagPosition) {                                               // 16   // 3202
-  //     if (templateTagPosition === HTMLTools.TEMPLATE_TAG_POSITION.ELEMENT) {                                // 17   // 3203
-  //       ...                                                                                                 // 18   // 3204
-  // ```                                                                                                       // 19   // 3205
-  if (options && options.getTemplateTag)                                                                       // 20   // 3206
-    scanner.getTemplateTag = options.getTemplateTag;                                                           // 21   // 3207
-                                                                                                               // 22   // 3208
-  // function (scanner) -> boolean                                                                             // 23   // 3209
-  var shouldStop = options && options.shouldStop;                                                              // 24   // 3210
-                                                                                                               // 25   // 3211
-  var result;                                                                                                  // 26   // 3212
-  if (options && options.textMode) {                                                                           // 27   // 3213
-    if (options.textMode === HTML.TEXTMODE.STRING) {                                                           // 28   // 3214
-      result = getRawText(scanner, null, shouldStop);                                                          // 29   // 3215
-    } else if (options.textMode === HTML.TEXTMODE.RCDATA) {                                                    // 30   // 3216
-      result = getRCData(scanner, null, shouldStop);                                                           // 31   // 3217
-    } else {                                                                                                   // 32   // 3218
-      throw new Error("Unsupported textMode: " + options.textMode);                                            // 33   // 3219
-    }                                                                                                          // 34   // 3220
-  } else {                                                                                                     // 35   // 3221
-    result = getContent(scanner, shouldStop);                                                                  // 36   // 3222
-  }                                                                                                            // 37   // 3223
-  if (! scanner.isEOF()) {                                                                                     // 38   // 3224
-    // If we aren't at the end of the input, we either stopped at an unmatched                                 // 39   // 3225
-    // HTML end tag or at a template tag (like `{{else}}` or `{{/if}}`).                                       // 40   // 3226
-    // Detect the former case (stopped at an HTML end tag) and throw a good                                    // 41   // 3227
-    // error.                                                                                                  // 42   // 3228
-                                                                                                               // 43   // 3229
-    var posBefore = scanner.pos;                                                                               // 44   // 3230
-                                                                                                               // 45   // 3231
-    try {                                                                                                      // 46   // 3232
-      var endTag = getHTMLToken(scanner);                                                                      // 47   // 3233
-    } catch (e) {                                                                                              // 48   // 3234
-      // ignore errors from getTemplateTag                                                                     // 49   // 3235
-    }                                                                                                          // 50   // 3236
-                                                                                                               // 51   // 3237
-    // XXX we make some assumptions about shouldStop here, like that it                                        // 52   // 3238
-    // won't tell us to stop at an HTML end tag.  Should refactor                                              // 53   // 3239
-    // `shouldStop` into something more suitable.                                                              // 54   // 3240
-    if (endTag && endTag.t === 'Tag' && endTag.isEnd) {                                                        // 55   // 3241
-      var closeTag = endTag.n;                                                                                 // 56   // 3242
-      var isVoidElement = HTML.isVoidElement(closeTag);                                                        // 57   // 3243
-      scanner.fatal("Unexpected HTML close tag" +                                                              // 58   // 3244
-                    (isVoidElement ?                                                                           // 59   // 3245
-                     '.  <' + endTag.n + '> should have no close tag.' : ''));                                 // 60   // 3246
-    }                                                                                                          // 61   // 3247
-                                                                                                               // 62   // 3248
-    scanner.pos = posBefore; // rewind, we'll continue parsing as usual                                        // 63   // 3249
-                                                                                                               // 64   // 3250
-    // If no "shouldStop" option was provided, we should have consumed the whole                               // 65   // 3251
-    // input.                                                                                                  // 66   // 3252
-    if (! shouldStop)                                                                                          // 67   // 3253
-      scanner.fatal("Expected EOF");                                                                           // 68   // 3254
-  }                                                                                                            // 69   // 3255
-                                                                                                               // 70   // 3256
-  return result;                                                                                               // 71   // 3257
-};                                                                                                             // 72   // 3258
-                                                                                                               // 73   // 3259
-// Take a numeric Unicode code point, which may be larger than 16 bits,                                        // 74   // 3260
-// and encode it as a JavaScript UTF-16 string.                                                                // 75   // 3261
-//                                                                                                             // 76   // 3262
-// Adapted from                                                                                                // 77   // 3263
-// http://stackoverflow.com/questions/7126384/expressing-utf-16-unicode-characters-in-javascript/7126661.      // 78   // 3264
-codePointToString = HTMLTools.codePointToString = function(cp) {                                               // 79   // 3265
-  if (cp >= 0 && cp <= 0xD7FF || cp >= 0xE000 && cp <= 0xFFFF) {                                               // 80   // 3266
-    return String.fromCharCode(cp);                                                                            // 81   // 3267
-  } else if (cp >= 0x10000 && cp <= 0x10FFFF) {                                                                // 82   // 3268
-                                                                                                               // 83   // 3269
-    // we substract 0x10000 from cp to get a 20-bit number                                                     // 84   // 3270
-    // in the range 0..0xFFFF                                                                                  // 85   // 3271
-    cp -= 0x10000;                                                                                             // 86   // 3272
-                                                                                                               // 87   // 3273
-    // we add 0xD800 to the number formed by the first 10 bits                                                 // 88   // 3274
-    // to give the first byte                                                                                  // 89   // 3275
-    var first = ((0xffc00 & cp) >> 10) + 0xD800;                                                               // 90   // 3276
-                                                                                                               // 91   // 3277
-    // we add 0xDC00 to the number formed by the low 10 bits                                                   // 92   // 3278
-    // to give the second byte                                                                                 // 93   // 3279
-    var second = (0x3ff & cp) + 0xDC00;                                                                        // 94   // 3280
-                                                                                                               // 95   // 3281
-    return String.fromCharCode(first) + String.fromCharCode(second);                                           // 96   // 3282
-  } else {                                                                                                     // 97   // 3283
-    return '';                                                                                                 // 98   // 3284
-  }                                                                                                            // 99   // 3285
-};                                                                                                             // 100  // 3286
-                                                                                                               // 101  // 3287
-getContent = HTMLTools.Parse.getContent = function (scanner, shouldStopFunc) {                                 // 102  // 3288
-  var items = [];                                                                                              // 103  // 3289
-                                                                                                               // 104  // 3290
-  while (! scanner.isEOF()) {                                                                                  // 105  // 3291
-    if (shouldStopFunc && shouldStopFunc(scanner))                                                             // 106  // 3292
-      break;                                                                                                   // 107  // 3293
-                                                                                                               // 108  // 3294
-    var posBefore = scanner.pos;                                                                               // 109  // 3295
-    var token = getHTMLToken(scanner);                                                                         // 110  // 3296
-    if (! token)                                                                                               // 111  // 3297
-      // tokenizer reached EOF on its own, e.g. while scanning                                                 // 112  // 3298
-      // template comments like `{{! foo}}`.                                                                   // 113  // 3299
-      continue;                                                                                                // 114  // 3300
-                                                                                                               // 115  // 3301
-    if (token.t === 'Doctype') {                                                                               // 116  // 3302
-      scanner.fatal("Unexpected Doctype");                                                                     // 117  // 3303
-    } else if (token.t === 'Chars') {                                                                          // 118  // 3304
-      pushOrAppendString(items, token.v);                                                                      // 119  // 3305
-    } else if (token.t === 'CharRef') {                                                                        // 120  // 3306
-      items.push(convertCharRef(token));                                                                       // 121  // 3307
-    } else if (token.t === 'Comment') {                                                                        // 122  // 3308
-      items.push(HTML.Comment(token.v));                                                                       // 123  // 3309
-    } else if (token.t === 'TemplateTag') {                                                                    // 124  // 3310
-      items.push(token.v);                                                                                     // 125  // 3311
-    } else if (token.t === 'Tag') {                                                                            // 126  // 3312
-      if (token.isEnd) {                                                                                       // 127  // 3313
-        // Stop when we encounter an end tag at the top level.                                                 // 128  // 3314
-        // Rewind; we'll re-parse the end tag later.                                                           // 129  // 3315
-        scanner.pos = posBefore;                                                                               // 130  // 3316
-        break;                                                                                                 // 131  // 3317
-      }                                                                                                        // 132  // 3318
-                                                                                                               // 133  // 3319
-      var tagName = token.n;                                                                                   // 134  // 3320
-      // is this an element with no close tag (a BR, HR, IMG, etc.) based                                      // 135  // 3321
-      // on its name?                                                                                          // 136  // 3322
-      var isVoid = HTML.isVoidElement(tagName);                                                                // 137  // 3323
-      if (token.isSelfClosing) {                                                                               // 138  // 3324
-        if (! (isVoid || HTML.isKnownSVGElement(tagName) || tagName.indexOf(':') >= 0))                        // 139  // 3325
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+}).call(this);
+
+
+
+
+
+
+(function(){
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                                             //
+// packages/html-tools/tokenize.js                                                                             //
+//                                                                                                             //
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+                                                                                                               //
+// Token types:                                                                                                // 1
+//                                                                                                             // 2
+// { t: 'Doctype',                                                                                             // 3
+//   v: String (entire Doctype declaration from the source),                                                   // 4
+//   name: String,                                                                                             // 5
+//   systemId: String (optional),                                                                              // 6
+//   publicId: String (optional)                                                                               // 7
+// }                                                                                                           // 8
+//                                                                                                             // 9
+// { t: 'Comment',                                                                                             // 10
+//   v: String (not including "<!--" and "-->")                                                                // 11
+// }                                                                                                           // 12
+//                                                                                                             // 13
+// { t: 'Chars',                                                                                               // 14
+//   v: String (pure text like you might pass to document.createTextNode,                                      // 15
+//              no character references)                                                                       // 16
+// }                                                                                                           // 17
+//                                                                                                             // 18
+// { t: 'Tag',                                                                                                 // 19
+//   isEnd: Boolean (optional),                                                                                // 20
+//   isSelfClosing: Boolean (optional),                                                                        // 21
+//   n: String (tag name, in lowercase or camel case),                                                         // 22
+//   attrs: dictionary of { String: [tokens] }                                                                 // 23
+//          OR [{ String: [tokens] }, TemplateTag tokens...]                                                   // 24
+//     (only for start tags; required)                                                                         // 25
+// }                                                                                                           // 26
+//                                                                                                             // 27
+// { t: 'CharRef',                                                                                             // 28
+//   v: String (entire character reference from the source, e.g. "&amp;"),                                     // 29
+//   cp: [Integer] (array of Unicode code point numbers it expands to)                                         // 30
+// }                                                                                                           // 31
+//                                                                                                             // 32
+// We keep around both the original form of the character reference and its                                    // 33
+// expansion so that subsequent processing steps have the option to                                            // 34
+// re-emit it (if they are generating HTML) or interpret it.  Named and                                        // 35
+// numerical code points may be more than 16 bits, in which case they                                          // 36
+// need to passed through codePointToString to make a JavaScript string.                                       // 37
+// Most named entities and all numeric character references are one codepoint                                  // 38
+// (e.g. "&amp;" is [38]), but a few are two codepoints.                                                       // 39
+//                                                                                                             // 40
+// { t: 'TemplateTag',                                                                                         // 41
+//   v: HTMLTools.TemplateTag                                                                                  // 42
+// }                                                                                                           // 43
+                                                                                                               // 44
+// The HTML tokenization spec says to preprocess the input stream to replace                                   // 45
+// CR(LF)? with LF.  However, preprocessing `scanner` would complicate things                                  // 46
+// by making indexes not match the input (e.g. for error messages), so we just                                 // 47
+// keep in mind as we go along that an LF might be represented by CRLF or CR.                                  // 48
+// In most cases, it doesn't actually matter what combination of whitespace                                    // 49
+// characters are present (e.g. inside tags).                                                                  // 50
+var HTML_SPACE = /^[\f\n\r\t ]/;                                                                               // 51
+                                                                                                               // 52
+var convertCRLF = function (str) {                                                                             // 53
+  return str.replace(/\r\n?/g, '\n');                                                                          // 54
+};                                                                                                             // 55
+                                                                                                               // 56
+getComment = HTMLTools.Parse.getComment = function (scanner) {                                                 // 57
+  if (scanner.rest().slice(0, 4) !== '<!--')                                                                   // 58
+    return null;                                                                                               // 59
+  scanner.pos += 4;                                                                                            // 60
+                                                                                                               // 61
+  // Valid comments are easy to parse; they end at the first `--`!                                             // 62
+  // Our main job is throwing errors.                                                                          // 63
+                                                                                                               // 64
+  var rest = scanner.rest();                                                                                   // 65
+  if (rest.charAt(0) === '>' || rest.slice(0, 2) === '->')                                                     // 66
+    scanner.fatal("HTML comment can't start with > or ->");                                                    // 67
+                                                                                                               // 68
+  var closePos = rest.indexOf('-->');                                                                          // 69
+  if (closePos < 0)                                                                                            // 70
+    scanner.fatal("Unclosed HTML comment");                                                                    // 71
+                                                                                                               // 72
+  var commentContents = rest.slice(0, closePos);                                                               // 73
+  if (commentContents.slice(-1) === '-')                                                                       // 74
+    scanner.fatal("HTML comment must end at first `--`");                                                      // 75
+  if (commentContents.indexOf("--") >= 0)                                                                      // 76
+    scanner.fatal("HTML comment cannot contain `--` anywhere");                                                // 77
+  if (commentContents.indexOf('\u0000') >= 0)                                                                  // 78
+    scanner.fatal("HTML comment cannot contain NULL");                                                         // 79
+                                                                                                               // 80
+  scanner.pos += closePos + 3;                                                                                 // 81
+                                                                                                               // 82
+  return { t: 'Comment',                                                                                       // 83
+           v: convertCRLF(commentContents) };                                                                  // 84
+};                                                                                                             // 85
+                                                                                                               // 86
+var skipSpaces = function (scanner) {                                                                          // 87
+  while (HTML_SPACE.test(scanner.peek()))                                                                      // 88
+    scanner.pos++;                                                                                             // 89
+};                                                                                                             // 90
+                                                                                                               // 91
+var requireSpaces = function (scanner) {                                                                       // 92
+  if (! HTML_SPACE.test(scanner.peek()))                                                                       // 93
+    scanner.fatal("Expected space");                                                                           // 94
+  skipSpaces(scanner);                                                                                         // 95
+};                                                                                                             // 96
+                                                                                                               // 97
+var getDoctypeQuotedString = function (scanner) {                                                              // 98
+  var quote = scanner.peek();                                                                                  // 99
+  if (! (quote === '"' || quote === "'"))                                                                      // 100
+    scanner.fatal("Expected single or double quote in DOCTYPE");                                               // 101
+  scanner.pos++;                                                                                               // 102
+                                                                                                               // 103
+  if (scanner.peek() === quote)                                                                                // 104
+    // prevent a falsy return value (empty string)                                                             // 105
+    scanner.fatal("Malformed DOCTYPE");                                                                        // 106
+                                                                                                               // 107
+  var str = '';                                                                                                // 108
+  var ch;                                                                                                      // 109
+  while ((ch = scanner.peek()), ch !== quote) {                                                                // 110
+    if ((! ch) || (ch === '\u0000') || (ch === '>'))                                                           // 111
+      scanner.fatal("Malformed DOCTYPE");                                                                      // 112
+    str += ch;                                                                                                 // 113
+    scanner.pos++;                                                                                             // 114
+  }                                                                                                            // 115
+                                                                                                               // 116
+  scanner.pos++;                                                                                               // 117
+                                                                                                               // 118
+  return str;                                                                                                  // 119
+};                                                                                                             // 120
+                                                                                                               // 121
+// See http://www.whatwg.org/specs/web-apps/current-work/multipage/syntax.html#the-doctype.                    // 122
+//                                                                                                             // 123
+// If `getDocType` sees "<!DOCTYPE" (case-insensitive), it will match or fail fatally.                         // 124
+getDoctype = HTMLTools.Parse.getDoctype = function (scanner) {                                                 // 125
+  if (HTMLTools.asciiLowerCase(scanner.rest().slice(0, 9)) !== '<!doctype')                                    // 126
+    return null;                                                                                               // 127
+  var start = scanner.pos;                                                                                     // 128
+  scanner.pos += 9;                                                                                            // 129
+                                                                                                               // 130
+  requireSpaces(scanner);                                                                                      // 131
+                                                                                                               // 132
+  var ch = scanner.peek();                                                                                     // 133
+  if ((! ch) || (ch === '>') || (ch === '\u0000'))                                                             // 134
+    scanner.fatal('Malformed DOCTYPE');                                                                        // 135
+  var name = ch;                                                                                               // 136
+  scanner.pos++;                                                                                               // 137
+                                                                                                               // 138
+  while ((ch = scanner.peek()), ! (HTML_SPACE.test(ch) || ch === '>')) {                                       // 139
+    if ((! ch) || (ch === '\u0000'))                                                                           // 140
+      scanner.fatal('Malformed DOCTYPE');                                                                      // 141
+    name += ch;                                                                                                // 142
+    scanner.pos++;                                                                                             // 143
+  }                                                                                                            // 144
+  name = HTMLTools.asciiLowerCase(name);                                                                       // 145
+                                                                                                               // 146
+  // Now we're looking at a space or a `>`.                                                                    // 147
+  skipSpaces(scanner);                                                                                         // 148
+                                                                                                               // 149
+  var systemId = null;                                                                                         // 150
+  var publicId = null;                                                                                         // 151
+                                                                                                               // 152
+  if (scanner.peek() !== '>') {                                                                                // 153
+    // Now we're essentially in the "After DOCTYPE name state" of the tokenizer,                               // 154
+    // but we're not looking at space or `>`.                                                                  // 155
+                                                                                                               // 156
+    // this should be "public" or "system".                                                                    // 157
+    var publicOrSystem = HTMLTools.asciiLowerCase(scanner.rest().slice(0, 6));                                 // 158
+                                                                                                               // 159
+    if (publicOrSystem === 'system') {                                                                         // 160
+      scanner.pos += 6;                                                                                        // 161
+      requireSpaces(scanner);                                                                                  // 162
+      systemId = getDoctypeQuotedString(scanner);                                                              // 163
+      skipSpaces(scanner);                                                                                     // 164
+      if (scanner.peek() !== '>')                                                                              // 165
+        scanner.fatal("Malformed DOCTYPE");                                                                    // 166
+    } else if (publicOrSystem === 'public') {                                                                  // 167
+      scanner.pos += 6;                                                                                        // 168
+      requireSpaces(scanner);                                                                                  // 169
+      publicId = getDoctypeQuotedString(scanner);                                                              // 170
+      if (scanner.peek() !== '>') {                                                                            // 171
+        requireSpaces(scanner);                                                                                // 172
+        if (scanner.peek() !== '>') {                                                                          // 173
+          systemId = getDoctypeQuotedString(scanner);                                                          // 174
+          skipSpaces(scanner);                                                                                 // 175
+          if (scanner.peek() !== '>')                                                                          // 176
+            scanner.fatal("Malformed DOCTYPE");                                                                // 177
+        }                                                                                                      // 178
+      }                                                                                                        // 179
+    } else {                                                                                                   // 180
+      scanner.fatal("Expected PUBLIC or SYSTEM in DOCTYPE");                                                   // 181
+    }                                                                                                          // 182
+  }                                                                                                            // 183
+                                                                                                               // 184
+  // looking at `>`                                                                                            // 185
+  scanner.pos++;                                                                                               // 186
+  var result = { t: 'Doctype',                                                                                 // 187
+                 v: scanner.input.slice(start, scanner.pos),                                                   // 188
+                 name: name };                                                                                 // 189
+                                                                                                               // 190
+  if (systemId)                                                                                                // 191
+    result.systemId = systemId;                                                                                // 192
+  if (publicId)                                                                                                // 193
+    result.publicId = publicId;                                                                                // 194
+                                                                                                               // 195
+  return result;                                                                                               // 196
+};                                                                                                             // 197
+                                                                                                               // 198
+// The special character `{` is only allowed as the first character                                            // 199
+// of a Chars, so that we have a chance to detect template tags.                                               // 200
+var getChars = makeRegexMatcher(/^[^&<\u0000][^&<\u0000{]*/);                                                  // 201
+                                                                                                               // 202
+var assertIsTemplateTag = function (x) {                                                                       // 203
+  if (! (x instanceof HTMLTools.TemplateTag))                                                                  // 204
+    throw new Error("Expected an instance of HTMLTools.TemplateTag");                                          // 205
+  return x;                                                                                                    // 206
+};                                                                                                             // 207
+                                                                                                               // 208
+// Returns the next HTML token, or `null` if we reach EOF.                                                     // 209
+//                                                                                                             // 210
+// Note that if we have a `getTemplateTag` function that sometimes                                             // 211
+// consumes characters and emits nothing (e.g. in the case of template                                         // 212
+// comments), we may go from not-at-EOF to at-EOF and return `null`,                                           // 213
+// while otherwise we always find some token to return.                                                        // 214
+getHTMLToken = HTMLTools.Parse.getHTMLToken = function (scanner, dataMode) {                                   // 215
+  var result = null;                                                                                           // 216
+  if (scanner.getTemplateTag) {                                                                                // 217
+    // Try to parse a template tag by calling out to the provided                                              // 218
+    // `getTemplateTag` function.  If the function returns `null` but                                          // 219
+    // consumes characters, it must have parsed a comment or something,                                        // 220
+    // so we loop and try it again.  If it ever returns `null` without                                         // 221
+    // consuming anything, that means it didn't see anything interesting                                       // 222
+    // so we look for a normal token.  If it returns a truthy value,                                           // 223
+    // the value must be instanceof HTMLTools.TemplateTag.  We wrap it                                         // 224
+    // in a Special token.                                                                                     // 225
+    var lastPos = scanner.pos;                                                                                 // 226
+    result = scanner.getTemplateTag(                                                                           // 227
+      scanner,                                                                                                 // 228
+      (dataMode === 'rcdata' ? TEMPLATE_TAG_POSITION.IN_RCDATA :                                               // 229
+       (dataMode === 'rawtext' ? TEMPLATE_TAG_POSITION.IN_RAWTEXT :                                            // 230
+        TEMPLATE_TAG_POSITION.ELEMENT)));                                                                      // 231
+                                                                                                               // 232
+    if (result)                                                                                                // 233
+      return { t: 'TemplateTag', v: assertIsTemplateTag(result) };                                             // 234
+    else if (scanner.pos > lastPos)                                                                            // 235
+      return null;                                                                                             // 236
+  }                                                                                                            // 237
+                                                                                                               // 238
+  var chars = getChars(scanner);                                                                               // 239
+  if (chars)                                                                                                   // 240
+    return { t: 'Chars',                                                                                       // 241
+             v: convertCRLF(chars) };                                                                          // 242
+                                                                                                               // 243
+  var ch = scanner.peek();                                                                                     // 244
+  if (! ch)                                                                                                    // 245
+    return null; // EOF                                                                                        // 246
+                                                                                                               // 247
+  if (ch === '\u0000')                                                                                         // 248
+    scanner.fatal("Illegal NULL character");                                                                   // 249
+                                                                                                               // 250
+  if (ch === '&') {                                                                                            // 251
+    if (dataMode !== 'rawtext') {                                                                              // 252
+      var charRef = getCharacterReference(scanner);                                                            // 253
+      if (charRef)                                                                                             // 254
+        return charRef;                                                                                        // 255
+    }                                                                                                          // 256
+                                                                                                               // 257
+    scanner.pos++;                                                                                             // 258
+    return { t: 'Chars',                                                                                       // 259
+             v: '&' };                                                                                         // 260
+  }                                                                                                            // 261
+                                                                                                               // 262
+  // If we're here, we're looking at `<`.                                                                      // 263
+                                                                                                               // 264
+  if (scanner.peek() === '<' && dataMode) {                                                                    // 265
+    // don't interpret tags                                                                                    // 266
+    scanner.pos++;                                                                                             // 267
+    return { t: 'Chars',                                                                                       // 268
+             v: '<' };                                                                                         // 269
+  }                                                                                                            // 270
+                                                                                                               // 271
+  // `getTag` will claim anything starting with `<` not followed by `!`.                                       // 272
+  // `getComment` takes `<!--` and getDoctype takes `<!doctype`.                                               // 273
+  result = (getTagToken(scanner) || getComment(scanner) || getDoctype(scanner));                               // 274
+                                                                                                               // 275
+  if (result)                                                                                                  // 276
+    return result;                                                                                             // 277
+                                                                                                               // 278
+  scanner.fatal("Unexpected `<!` directive.");                                                                 // 279
+};                                                                                                             // 280
+                                                                                                               // 281
+var getTagName = makeRegexMatcher(/^[a-zA-Z][^\f\n\r\t />{]*/);                                                // 282
+var getClangle = makeRegexMatcher(/^>/);                                                                       // 283
+var getSlash = makeRegexMatcher(/^\//);                                                                        // 284
+var getAttributeName = makeRegexMatcher(/^[^>/\u0000"'<=\f\n\r\t ][^\f\n\r\t /=>"'<\u0000]*/);                 // 285
+                                                                                                               // 286
+// Try to parse `>` or `/>`, mutating `tag` to be self-closing in the latter                                   // 287
+// case (and failing fatally if `/` isn't followed by `>`).                                                    // 288
+// Return tag if successful.                                                                                   // 289
+var handleEndOfTag = function (scanner, tag) {                                                                 // 290
+  if (getClangle(scanner))                                                                                     // 291
+    return tag;                                                                                                // 292
+                                                                                                               // 293
+  if (getSlash(scanner)) {                                                                                     // 294
+    if (! getClangle(scanner))                                                                                 // 295
+      scanner.fatal("Expected `>` after `/`");                                                                 // 296
+    tag.isSelfClosing = true;                                                                                  // 297
+    return tag;                                                                                                // 298
+  }                                                                                                            // 299
+                                                                                                               // 300
+  return null;                                                                                                 // 301
+};                                                                                                             // 302
+                                                                                                               // 303
+// Scan a quoted or unquoted attribute value (omit `quote` for unquoted).                                      // 304
+var getAttributeValue = function (scanner, quote) {                                                            // 305
+  if (quote) {                                                                                                 // 306
+    if (scanner.peek() !== quote)                                                                              // 307
+      return null;                                                                                             // 308
+    scanner.pos++;                                                                                             // 309
+  }                                                                                                            // 310
+                                                                                                               // 311
+  var tokens = [];                                                                                             // 312
+  var charsTokenToExtend = null;                                                                               // 313
+                                                                                                               // 314
+  var charRef;                                                                                                 // 315
+  while (true) {                                                                                               // 316
+    var ch = scanner.peek();                                                                                   // 317
+    var templateTag;                                                                                           // 318
+    var curPos = scanner.pos;                                                                                  // 319
+    if (quote && ch === quote) {                                                                               // 320
+      scanner.pos++;                                                                                           // 321
+      return tokens;                                                                                           // 322
+    } else if ((! quote) && (HTML_SPACE.test(ch) || ch === '>')) {                                             // 323
+      return tokens;                                                                                           // 324
+    } else if (! ch) {                                                                                         // 325
+      scanner.fatal("Unclosed attribute in tag");                                                              // 326
+    } else if (quote ? ch === '\u0000' : ('\u0000"\'<=`'.indexOf(ch) >= 0)) {                                  // 327
+      scanner.fatal("Unexpected character in attribute value");                                                // 328
+    } else if (ch === '&' &&                                                                                   // 329
+               (charRef = getCharacterReference(scanner, true,                                                 // 330
+                                                quote || '>'))) {                                              // 331
+      tokens.push(charRef);                                                                                    // 332
+      charsTokenToExtend = null;                                                                               // 333
+    } else if (scanner.getTemplateTag &&                                                                       // 334
+               ((templateTag = scanner.getTemplateTag(                                                         // 335
+                 scanner, TEMPLATE_TAG_POSITION.IN_ATTRIBUTE)) ||                                              // 336
+                scanner.pos > curPos /* `{{! comment}}` */)) {                                                 // 337
+      if (templateTag) {                                                                                       // 338
+        tokens.push({t: 'TemplateTag',                                                                         // 339
+                     v: assertIsTemplateTag(templateTag)});                                                    // 340
+        charsTokenToExtend = null;                                                                             // 341
+      }                                                                                                        // 342
+    } else {                                                                                                   // 343
+      if (! charsTokenToExtend) {                                                                              // 344
+        charsTokenToExtend = { t: 'Chars', v: '' };                                                            // 345
+        tokens.push(charsTokenToExtend);                                                                       // 346
+      }                                                                                                        // 347
+      charsTokenToExtend.v += (ch === '\r' ? '\n' : ch);                                                       // 348
+      scanner.pos++;                                                                                           // 349
+      if (quote && ch === '\r' && scanner.peek() === '\n')                                                     // 350
+        scanner.pos++;                                                                                         // 351
+    }                                                                                                          // 352
+  }                                                                                                            // 353
+};                                                                                                             // 354
+                                                                                                               // 355
+var hasOwnProperty = Object.prototype.hasOwnProperty;                                                          // 356
+                                                                                                               // 357
+getTagToken = HTMLTools.Parse.getTagToken = function (scanner) {                                               // 358
+  if (! (scanner.peek() === '<' && scanner.rest().charAt(1) !== '!'))                                          // 359
+    return null;                                                                                               // 360
+  scanner.pos++;                                                                                               // 361
+                                                                                                               // 362
+  var tag = { t: 'Tag' };                                                                                      // 363
+                                                                                                               // 364
+  // now looking at the character after `<`, which is not a `!`                                                // 365
+  if (scanner.peek() === '/') {                                                                                // 366
+    tag.isEnd = true;                                                                                          // 367
+    scanner.pos++;                                                                                             // 368
+  }                                                                                                            // 369
+                                                                                                               // 370
+  var tagName = getTagName(scanner);                                                                           // 371
+  if (! tagName)                                                                                               // 372
+    scanner.fatal("Expected tag name after `<`");                                                              // 373
+  tag.n = HTMLTools.properCaseTagName(tagName);                                                                // 374
+                                                                                                               // 375
+  if (scanner.peek() === '/' && tag.isEnd)                                                                     // 376
+    scanner.fatal("End tag can't have trailing slash");                                                        // 377
+  if (handleEndOfTag(scanner, tag))                                                                            // 378
+    return tag;                                                                                                // 379
+                                                                                                               // 380
+  if (scanner.isEOF())                                                                                         // 381
+    scanner.fatal("Unclosed `<`");                                                                             // 382
+                                                                                                               // 383
+  if (! HTML_SPACE.test(scanner.peek()))                                                                       // 384
+    // e.g. `<a{{b}}>`                                                                                         // 385
+    scanner.fatal("Expected space after tag name");                                                            // 386
+                                                                                                               // 387
+  // we're now in "Before attribute name state" of the tokenizer                                               // 388
+  skipSpaces(scanner);                                                                                         // 389
+                                                                                                               // 390
+  if (scanner.peek() === '/' && tag.isEnd)                                                                     // 391
+    scanner.fatal("End tag can't have trailing slash");                                                        // 392
+  if (handleEndOfTag(scanner, tag))                                                                            // 393
+    return tag;                                                                                                // 394
+                                                                                                               // 395
+  if (tag.isEnd)                                                                                               // 396
+    scanner.fatal("End tag can't have attributes");                                                            // 397
+                                                                                                               // 398
+  tag.attrs = {};                                                                                              // 399
+  var nondynamicAttrs = tag.attrs;                                                                             // 400
+                                                                                                               // 401
+  while (true) {                                                                                               // 402
+    // Note: at the top of this loop, we've already skipped any spaces.                                        // 403
+                                                                                                               // 404
+    // This will be set to true if after parsing the attribute, we should                                      // 405
+    // require spaces (or else an end of tag, i.e. `>` or `/>`).                                               // 406
+    var spacesRequiredAfter = false;                                                                           // 407
+                                                                                                               // 408
+    // first, try for a template tag.                                                                          // 409
+    var curPos = scanner.pos;                                                                                  // 410
+    var templateTag = (scanner.getTemplateTag &&                                                               // 411
+                       scanner.getTemplateTag(                                                                 // 412
+                         scanner, TEMPLATE_TAG_POSITION.IN_START_TAG));                                        // 413
+    if (templateTag || (scanner.pos > curPos)) {                                                               // 414
+      if (templateTag) {                                                                                       // 415
+        if (tag.attrs === nondynamicAttrs)                                                                     // 416
+          tag.attrs = [nondynamicAttrs];                                                                       // 417
+        tag.attrs.push({ t: 'TemplateTag',                                                                     // 418
+                         v: assertIsTemplateTag(templateTag) });                                               // 419
+      } // else, must have scanned a `{{! comment}}`                                                           // 420
+                                                                                                               // 421
+      spacesRequiredAfter = true;                                                                              // 422
+    } else {                                                                                                   // 423
+                                                                                                               // 424
+      var attributeName = getAttributeName(scanner);                                                           // 425
+      if (! attributeName)                                                                                     // 426
+        scanner.fatal("Expected attribute name in tag");                                                       // 427
+      // Throw error on `{` in attribute name.  This provides *some* error message                             // 428
+      // if someone writes `<a x{{y}}>` or `<a x{{y}}=z>`.  The HTML tokenization                              // 429
+      // spec doesn't say that `{` is invalid, but the DOM API (setAttribute) won't                            // 430
+      // allow it, so who cares.                                                                               // 431
+      if (attributeName.indexOf('{') >= 0)                                                                     // 432
+        scanner.fatal("Unexpected `{` in attribute name.");                                                    // 433
+      attributeName = HTMLTools.properCaseAttributeName(attributeName);                                        // 434
+                                                                                                               // 435
+      if (hasOwnProperty.call(nondynamicAttrs, attributeName))                                                 // 436
+        scanner.fatal("Duplicate attribute in tag: " + attributeName);                                         // 437
+                                                                                                               // 438
+      nondynamicAttrs[attributeName] = [];                                                                     // 439
+                                                                                                               // 440
+      skipSpaces(scanner);                                                                                     // 441
+                                                                                                               // 442
+      if (handleEndOfTag(scanner, tag))                                                                        // 443
+        return tag;                                                                                            // 444
+                                                                                                               // 445
+      var ch = scanner.peek();                                                                                 // 446
+      if (! ch)                                                                                                // 447
+        scanner.fatal("Unclosed <");                                                                           // 448
+      if ('\u0000"\'<'.indexOf(ch) >= 0)                                                                       // 449
+        scanner.fatal("Unexpected character after attribute name in tag");                                     // 450
+                                                                                                               // 451
+      if (ch === '=') {                                                                                        // 452
+        scanner.pos++;                                                                                         // 453
+                                                                                                               // 454
+        skipSpaces(scanner);                                                                                   // 455
+                                                                                                               // 456
+        ch = scanner.peek();                                                                                   // 457
+        if (! ch)                                                                                              // 458
+          scanner.fatal("Unclosed <");                                                                         // 459
+        if ('\u0000><=`'.indexOf(ch) >= 0)                                                                     // 460
+          scanner.fatal("Unexpected character after = in tag");                                                // 461
+                                                                                                               // 462
+        if ((ch === '"') || (ch === "'"))                                                                      // 463
+          nondynamicAttrs[attributeName] = getAttributeValue(scanner, ch);                                     // 464
+        else                                                                                                   // 465
+          nondynamicAttrs[attributeName] = getAttributeValue(scanner);                                         // 466
+                                                                                                               // 467
+        spacesRequiredAfter = true;                                                                            // 468
+      }                                                                                                        // 469
+    }                                                                                                          // 470
+    // now we are in the "post-attribute" position, whether it was a template tag                              // 471
+    // attribute (like `{{x}}`) or a normal one (like `x` or `x=y`).                                           // 472
+                                                                                                               // 473
+    if (handleEndOfTag(scanner, tag))                                                                          // 474
+      return tag;                                                                                              // 475
+                                                                                                               // 476
+    if (scanner.isEOF())                                                                                       // 477
+      scanner.fatal("Unclosed `<`");                                                                           // 478
+                                                                                                               // 479
+    if (spacesRequiredAfter)                                                                                   // 480
+      requireSpaces(scanner);                                                                                  // 481
+    else                                                                                                       // 482
+      skipSpaces(scanner);                                                                                     // 483
+                                                                                                               // 484
+    if (handleEndOfTag(scanner, tag))                                                                          // 485
+      return tag;                                                                                              // 486
+  }                                                                                                            // 487
+};                                                                                                             // 488
+                                                                                                               // 489
+TEMPLATE_TAG_POSITION = HTMLTools.TEMPLATE_TAG_POSITION = {                                                    // 490
+  ELEMENT: 1,                                                                                                  // 491
+  IN_START_TAG: 2,                                                                                             // 492
+  IN_ATTRIBUTE: 3,                                                                                             // 493
+  IN_RCDATA: 4,                                                                                                // 494
+  IN_RAWTEXT: 5                                                                                                // 495
+};                                                                                                             // 496
+                                                                                                               // 497
+// tagName must be proper case                                                                                 // 498
+isLookingAtEndTag = function (scanner, tagName) {                                                              // 499
+  var rest = scanner.rest();                                                                                   // 500
+  var pos = 0; // into rest                                                                                    // 501
+  var firstPart = /^<\/([a-zA-Z]+)/.exec(rest);                                                                // 502
+  if (firstPart &&                                                                                             // 503
+      HTMLTools.properCaseTagName(firstPart[1]) === tagName) {                                                 // 504
+    // we've seen `</foo`, now see if the end tag continues                                                    // 505
+    pos += firstPart[0].length;                                                                                // 506
+    while (pos < rest.length && HTML_SPACE.test(rest.charAt(pos)))                                             // 507
+      pos++;                                                                                                   // 508
+    if (pos < rest.length && rest.charAt(pos) === '>')                                                         // 509
+      return true;                                                                                             // 510
+  }                                                                                                            // 511
+  return false;                                                                                                // 512
+};                                                                                                             // 513
+                                                                                                               // 514
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+}).call(this);
+
+
+
+
+
+
+(function(){
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                                             //
+// packages/html-tools/templatetag.js                                                                          //
+//                                                                                                             //
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+                                                                                                               //
+// _assign is like _.extend or the upcoming Object.assign.                                                     // 1
+// Copy src's own, enumerable properties onto tgt and return                                                   // 2
+// tgt.                                                                                                        // 3
+var _hasOwnProperty = Object.prototype.hasOwnProperty;                                                         // 4
+var _assign = function (tgt, src) {                                                                            // 5
+  for (var k in src) {                                                                                         // 6
+    if (_hasOwnProperty.call(src, k))                                                                          // 7
+      tgt[k] = src[k];                                                                                         // 8
+  }                                                                                                            // 9
+  return tgt;                                                                                                  // 10
+};                                                                                                             // 11
+                                                                                                               // 12
+                                                                                                               // 13
+HTMLTools.TemplateTag = function (props) {                                                                     // 14
+  if (! (this instanceof HTMLTools.TemplateTag))                                                               // 15
+    // called without `new`                                                                                    // 16
+    return new HTMLTools.TemplateTag;                                                                          // 17
+                                                                                                               // 18
+  if (props)                                                                                                   // 19
+    _assign(this, props);                                                                                      // 20
+};                                                                                                             // 21
+                                                                                                               // 22
+_assign(HTMLTools.TemplateTag.prototype, {                                                                     // 23
+  constructorName: 'HTMLTools.TemplateTag',                                                                    // 24
+  toJS: function (visitor) {                                                                                   // 25
+    return visitor.generateCall(this.constructorName,                                                          // 26
+                                _assign({}, this));                                                            // 27
+  }                                                                                                            // 28
+});                                                                                                            // 29
+                                                                                                               // 30
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+}).call(this);
+
+
+
+
+
+
+(function(){
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                                             //
+// packages/html-tools/parse.js                                                                                //
+//                                                                                                             //
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+                                                                                                               //
+                                                                                                               // 1
+// Parse a "fragment" of HTML, up to the end of the input or a particular                                      // 2
+// template tag (using the "shouldStop" option).                                                               // 3
+HTMLTools.parseFragment = function (input, options) {                                                          // 4
+  var scanner;                                                                                                 // 5
+  if (typeof input === 'string')                                                                               // 6
+    scanner = new Scanner(input);                                                                              // 7
+  else                                                                                                         // 8
+    // input can be a scanner.  We'd better not have a different                                               // 9
+    // value for the "getTemplateTag" option as when the scanner                                               // 10
+    // was created, because we don't do anything special to reset                                              // 11
+    // the value (which is attached to the scanner).                                                           // 12
+    scanner = input;                                                                                           // 13
+                                                                                                               // 14
+  // ```                                                                                                       // 15
+  // { getTemplateTag: function (scanner, templateTagPosition) {                                               // 16
+  //     if (templateTagPosition === HTMLTools.TEMPLATE_TAG_POSITION.ELEMENT) {                                // 17
+  //       ...                                                                                                 // 18
+  // ```                                                                                                       // 19
+  if (options && options.getTemplateTag)                                                                       // 20
+    scanner.getTemplateTag = options.getTemplateTag;                                                           // 21
+                                                                                                               // 22
+  // function (scanner) -> boolean                                                                             // 23
+  var shouldStop = options && options.shouldStop;                                                              // 24
+                                                                                                               // 25
+  var result;                                                                                                  // 26
+  if (options && options.textMode) {                                                                           // 27
+    if (options.textMode === HTML.TEXTMODE.STRING) {                                                           // 28
+      result = getRawText(scanner, null, shouldStop);                                                          // 29
+    } else if (options.textMode === HTML.TEXTMODE.RCDATA) {                                                    // 30
+      result = getRCData(scanner, null, shouldStop);                                                           // 31
+    } else {                                                                                                   // 32
+      throw new Error("Unsupported textMode: " + options.textMode);                                            // 33
+    }                                                                                                          // 34
+  } else {                                                                                                     // 35
+    result = getContent(scanner, shouldStop);                                                                  // 36
+  }                                                                                                            // 37
+  if (! scanner.isEOF()) {                                                                                     // 38
+    // If we aren't at the end of the input, we either stopped at an unmatched                                 // 39
+    // HTML end tag or at a template tag (like `{{else}}` or `{{/if}}`).                                       // 40
+    // Detect the former case (stopped at an HTML end tag) and throw a good                                    // 41
+    // error.                                                                                                  // 42
+                                                                                                               // 43
+    var posBefore = scanner.pos;                                                                               // 44
+                                                                                                               // 45
+    try {                                                                                                      // 46
+      var endTag = getHTMLToken(scanner);                                                                      // 47
+    } catch (e) {                                                                                              // 48
+      // ignore errors from getTemplateTag                                                                     // 49
+    }                                                                                                          // 50
+                                                                                                               // 51
+    // XXX we make some assumptions about shouldStop here, like that it                                        // 52
+    // won't tell us to stop at an HTML end tag.  Should refactor                                              // 53
+    // `shouldStop` into something more suitable.                                                              // 54
+    if (endTag && endTag.t === 'Tag' && endTag.isEnd) {                                                        // 55
+      var closeTag = endTag.n;                                                                                 // 56
+      var isVoidElement = HTML.isVoidElement(closeTag);                                                        // 57
+      scanner.fatal("Unexpected HTML close tag" +                                                              // 58
+                    (isVoidElement ?                                                                           // 59
+                     '.  <' + endTag.n + '> should have no close tag.' : ''));                                 // 60
+    }                                                                                                          // 61
+                                                                                                               // 62
+    scanner.pos = posBefore; // rewind, we'll continue parsing as usual                                        // 63
+                                                                                                               // 64
+    // If no "shouldStop" option was provided, we should have consumed the whole                               // 65
+    // input.                                                                                                  // 66
+    if (! shouldStop)                                                                                          // 67
+      scanner.fatal("Expected EOF");                                                                           // 68
+  }                                                                                                            // 69
+                                                                                                               // 70
+  return result;                                                                                               // 71
+};                                                                                                             // 72
+                                                                                                               // 73
+// Take a numeric Unicode code point, which may be larger than 16 bits,                                        // 74
+// and encode it as a JavaScript UTF-16 string.                                                                // 75
+//                                                                                                             // 76
+// Adapted from                                                                                                // 77
+// http://stackoverflow.com/questions/7126384/expressing-utf-16-unicode-characters-in-javascript/7126661.      // 78
+codePointToString = HTMLTools.codePointToString = function(cp) {                                               // 79
+  if (cp >= 0 && cp <= 0xD7FF || cp >= 0xE000 && cp <= 0xFFFF) {                                               // 80
+    return String.fromCharCode(cp);                                                                            // 81
+  } else if (cp >= 0x10000 && cp <= 0x10FFFF) {                                                                // 82
+                                                                                                               // 83
+    // we substract 0x10000 from cp to get a 20-bit number                                                     // 84
+    // in the range 0..0xFFFF                                                                                  // 85
+    cp -= 0x10000;                                                                                             // 86
+                                                                                                               // 87
+    // we add 0xD800 to the number formed by the first 10 bits                                                 // 88
+    // to give the first byte                                                                                  // 89
+    var first = ((0xffc00 & cp) >> 10) + 0xD800;                                                               // 90
+                                                                                                               // 91
+    // we add 0xDC00 to the number formed by the low 10 bits                                                   // 92
+    // to give the second byte                                                                                 // 93
+    var second = (0x3ff & cp) + 0xDC00;                                                                        // 94
+                                                                                                               // 95
+    return String.fromCharCode(first) + String.fromCharCode(second);                                           // 96
+  } else {                                                                                                     // 97
+    return '';                                                                                                 // 98
+  }                                                                                                            // 99
+};                                                                                                             // 100
+                                                                                                               // 101
+getContent = HTMLTools.Parse.getContent = function (scanner, shouldStopFunc) {                                 // 102
+  var items = [];                                                                                              // 103
+                                                                                                               // 104
+  while (! scanner.isEOF()) {                                                                                  // 105
+    if (shouldStopFunc && shouldStopFunc(scanner))                                                             // 106
+      break;                                                                                                   // 107
+                                                                                                               // 108
+    var posBefore = scanner.pos;                                                                               // 109
+    var token = getHTMLToken(scanner);                                                                         // 110
+    if (! token)                                                                                               // 111
+      // tokenizer reached EOF on its own, e.g. while scanning                                                 // 112
+      // template comments like `{{! foo}}`.                                                                   // 113
+      continue;                                                                                                // 114
+                                                                                                               // 115
+    if (token.t === 'Doctype') {                                                                               // 116
+      scanner.fatal("Unexpected Doctype");                                                                     // 117
+    } else if (token.t === 'Chars') {                                                                          // 118
+      pushOrAppendString(items, token.v);                                                                      // 119
+    } else if (token.t === 'CharRef') {                                                                        // 120
+      items.push(convertCharRef(token));                                                                       // 121
+    } else if (token.t === 'Comment') {                                                                        // 122
+      items.push(HTML.Comment(token.v));                                                                       // 123
+    } else if (token.t === 'TemplateTag') {                                                                    // 124
+      items.push(token.v);                                                                                     // 125
+    } else if (token.t === 'Tag') {                                                                            // 126
+      if (token.isEnd) {                                                                                       // 127
+        // Stop when we encounter an end tag at the top level.                                                 // 128
+        // Rewind; we'll re-parse the end tag later.                                                           // 129
+        scanner.pos = posBefore;                                                                               // 130
+        break;                                                                                                 // 131
+      }                                                                                                        // 132
+                                                                                                               // 133
+      var tagName = token.n;                                                                                   // 134
+      // is this an element with no close tag (a BR, HR, IMG, etc.) based                                      // 135
+      // on its name?                                                                                          // 136
+      var isVoid = HTML.isVoidElement(tagName);                                                                // 137
+      if (token.isSelfClosing) {                                                                               // 138
+        if (! (isVoid || HTML.isKnownSVGElement(tagName) || tagName.indexOf(':') >= 0))                        // 139
           scanner.fatal('Only certain elements like BR, HR, IMG, etc. (and foreign elements like SVG) are allowed to self-close');
-      }                                                                                                        // 141  // 3327
-                                                                                                               // 142  // 3328
-      // result of parseAttrs may be null                                                                      // 143  // 3329
-      var attrs = parseAttrs(token.attrs);                                                                     // 144  // 3330
-      // arrays need to be wrapped in HTML.Attrs(...)                                                          // 145  // 3331
-      // when used to construct tags                                                                           // 146  // 3332
-      if (HTML.isArray(attrs))                                                                                 // 147  // 3333
-        attrs = HTML.Attrs.apply(null, attrs);                                                                 // 148  // 3334
-                                                                                                               // 149  // 3335
-      var tagFunc = HTML.getTag(tagName);                                                                      // 150  // 3336
-      if (isVoid || token.isSelfClosing) {                                                                     // 151  // 3337
-        items.push(attrs ? tagFunc(attrs) : tagFunc());                                                        // 152  // 3338
-      } else {                                                                                                 // 153  // 3339
-        // parse HTML tag contents.                                                                            // 154  // 3340
-                                                                                                               // 155  // 3341
+      }                                                                                                        // 141
+                                                                                                               // 142
+      // result of parseAttrs may be null                                                                      // 143
+      var attrs = parseAttrs(token.attrs);                                                                     // 144
+      // arrays need to be wrapped in HTML.Attrs(...)                                                          // 145
+      // when used to construct tags                                                                           // 146
+      if (HTML.isArray(attrs))                                                                                 // 147
+        attrs = HTML.Attrs.apply(null, attrs);                                                                 // 148
+                                                                                                               // 149
+      var tagFunc = HTML.getTag(tagName);                                                                      // 150
+      if (isVoid || token.isSelfClosing) {                                                                     // 151
+        items.push(attrs ? tagFunc(attrs) : tagFunc());                                                        // 152
+      } else {                                                                                                 // 153
+        // parse HTML tag contents.                                                                            // 154
+                                                                                                               // 155
         // HTML treats a final `/` in a tag as part of an attribute, as in `<a href=/foo/>`, but the template author who writes `<circle r={{r}}/>`, say, may not be thinking about that, so generate a good error message in the "looks like self-close" case.
-        var looksLikeSelfClose = (scanner.input.substr(scanner.pos - 2, 2) === '/>');                          // 157  // 3343
-                                                                                                               // 158  // 3344
-        var content = null;                                                                                    // 159  // 3345
-        if (token.n === 'textarea') {                                                                          // 160  // 3346
-          if (scanner.peek() === '\n')                                                                         // 161  // 3347
-            scanner.pos++;                                                                                     // 162  // 3348
-          var textareaValue = getRCData(scanner, token.n, shouldStopFunc);                                     // 163  // 3349
-          if (textareaValue) {                                                                                 // 164  // 3350
-            if (attrs instanceof HTML.Attrs) {                                                                 // 165  // 3351
-              attrs = HTML.Attrs.apply(                                                                        // 166  // 3352
-                null, attrs.value.concat([{value: textareaValue}]));                                           // 167  // 3353
-            } else {                                                                                           // 168  // 3354
-              attrs = (attrs || {});                                                                           // 169  // 3355
-              attrs.value = textareaValue;                                                                     // 170  // 3356
-            }                                                                                                  // 171  // 3357
-          }                                                                                                    // 172  // 3358
-        } else if (token.n === 'script' || token.n === 'style') {                                              // 173  // 3359
-          content = getRawText(scanner, token.n, shouldStopFunc);                                              // 174  // 3360
-        } else {                                                                                               // 175  // 3361
-          content = getContent(scanner, shouldStopFunc);                                                       // 176  // 3362
-        }                                                                                                      // 177  // 3363
-                                                                                                               // 178  // 3364
-        var endTag = getHTMLToken(scanner);                                                                    // 179  // 3365
-                                                                                                               // 180  // 3366
-        if (! (endTag && endTag.t === 'Tag' && endTag.isEnd && endTag.n === tagName))                          // 181  // 3367
+        var looksLikeSelfClose = (scanner.input.substr(scanner.pos - 2, 2) === '/>');                          // 157
+                                                                                                               // 158
+        var content = null;                                                                                    // 159
+        if (token.n === 'textarea') {                                                                          // 160
+          if (scanner.peek() === '\n')                                                                         // 161
+            scanner.pos++;                                                                                     // 162
+          var textareaValue = getRCData(scanner, token.n, shouldStopFunc);                                     // 163
+          if (textareaValue) {                                                                                 // 164
+            if (attrs instanceof HTML.Attrs) {                                                                 // 165
+              attrs = HTML.Attrs.apply(                                                                        // 166
+                null, attrs.value.concat([{value: textareaValue}]));                                           // 167
+            } else {                                                                                           // 168
+              attrs = (attrs || {});                                                                           // 169
+              attrs.value = textareaValue;                                                                     // 170
+            }                                                                                                  // 171
+          }                                                                                                    // 172
+        } else if (token.n === 'script' || token.n === 'style') {                                              // 173
+          content = getRawText(scanner, token.n, shouldStopFunc);                                              // 174
+        } else {                                                                                               // 175
+          content = getContent(scanner, shouldStopFunc);                                                       // 176
+        }                                                                                                      // 177
+                                                                                                               // 178
+        var endTag = getHTMLToken(scanner);                                                                    // 179
+                                                                                                               // 180
+        if (! (endTag && endTag.t === 'Tag' && endTag.isEnd && endTag.n === tagName))                          // 181
           scanner.fatal('Expected "' + tagName + '" end tag' + (looksLikeSelfClose ? ' -- if the "<' + token.n + ' />" tag was supposed to self-close, try adding a space before the "/"' : ''));
-                                                                                                               // 183  // 3369
-        // XXX support implied end tags in cases allowed by the spec                                           // 184  // 3370
-                                                                                                               // 185  // 3371
-        // make `content` into an array suitable for applying tag constructor                                  // 186  // 3372
-        // as in `FOO.apply(null, content)`.                                                                   // 187  // 3373
-        if (content == null)                                                                                   // 188  // 3374
-          content = [];                                                                                        // 189  // 3375
-        else if (! (content instanceof Array))                                                                 // 190  // 3376
-          content = [content];                                                                                 // 191  // 3377
-                                                                                                               // 192  // 3378
-        items.push(HTML.getTag(tagName).apply(                                                                 // 193  // 3379
-          null, (attrs ? [attrs] : []).concat(content)));                                                      // 194  // 3380
-      }                                                                                                        // 195  // 3381
-    } else {                                                                                                   // 196  // 3382
-      scanner.fatal("Unknown token type: " + token.t);                                                         // 197  // 3383
-    }                                                                                                          // 198  // 3384
-  }                                                                                                            // 199  // 3385
-                                                                                                               // 200  // 3386
-  if (items.length === 0)                                                                                      // 201  // 3387
-    return null;                                                                                               // 202  // 3388
-  else if (items.length === 1)                                                                                 // 203  // 3389
-    return items[0];                                                                                           // 204  // 3390
-  else                                                                                                         // 205  // 3391
-    return items;                                                                                              // 206  // 3392
-};                                                                                                             // 207  // 3393
-                                                                                                               // 208  // 3394
-var pushOrAppendString = function (items, string) {                                                            // 209  // 3395
-  if (items.length &&                                                                                          // 210  // 3396
-      typeof items[items.length - 1] === 'string')                                                             // 211  // 3397
-    items[items.length - 1] += string;                                                                         // 212  // 3398
-  else                                                                                                         // 213  // 3399
-    items.push(string);                                                                                        // 214  // 3400
-};                                                                                                             // 215  // 3401
-                                                                                                               // 216  // 3402
-// get RCDATA to go in the lowercase (or camel case) tagName (e.g. "textarea")                                 // 217  // 3403
-getRCData = HTMLTools.Parse.getRCData = function (scanner, tagName, shouldStopFunc) {                          // 218  // 3404
-  var items = [];                                                                                              // 219  // 3405
-                                                                                                               // 220  // 3406
-  while (! scanner.isEOF()) {                                                                                  // 221  // 3407
-    // break at appropriate end tag                                                                            // 222  // 3408
-    if (tagName && isLookingAtEndTag(scanner, tagName))                                                        // 223  // 3409
-      break;                                                                                                   // 224  // 3410
-                                                                                                               // 225  // 3411
-    if (shouldStopFunc && shouldStopFunc(scanner))                                                             // 226  // 3412
-      break;                                                                                                   // 227  // 3413
-                                                                                                               // 228  // 3414
-    var token = getHTMLToken(scanner, 'rcdata');                                                               // 229  // 3415
-    if (! token)                                                                                               // 230  // 3416
-      // tokenizer reached EOF on its own, e.g. while scanning                                                 // 231  // 3417
-      // template comments like `{{! foo}}`.                                                                   // 232  // 3418
-      continue;                                                                                                // 233  // 3419
-                                                                                                               // 234  // 3420
-    if (token.t === 'Chars') {                                                                                 // 235  // 3421
-      pushOrAppendString(items, token.v);                                                                      // 236  // 3422
-    } else if (token.t === 'CharRef') {                                                                        // 237  // 3423
-      items.push(convertCharRef(token));                                                                       // 238  // 3424
-    } else if (token.t === 'TemplateTag') {                                                                    // 239  // 3425
-      items.push(token.v);                                                                                     // 240  // 3426
-    } else {                                                                                                   // 241  // 3427
-      // (can't happen)                                                                                        // 242  // 3428
-      scanner.fatal("Unknown or unexpected token type: " + token.t);                                           // 243  // 3429
-    }                                                                                                          // 244  // 3430
-  }                                                                                                            // 245  // 3431
-                                                                                                               // 246  // 3432
-  if (items.length === 0)                                                                                      // 247  // 3433
-    return null;                                                                                               // 248  // 3434
-  else if (items.length === 1)                                                                                 // 249  // 3435
-    return items[0];                                                                                           // 250  // 3436
-  else                                                                                                         // 251  // 3437
-    return items;                                                                                              // 252  // 3438
-};                                                                                                             // 253  // 3439
-                                                                                                               // 254  // 3440
-var getRawText = function (scanner, tagName, shouldStopFunc) {                                                 // 255  // 3441
-  var items = [];                                                                                              // 256  // 3442
-                                                                                                               // 257  // 3443
-  while (! scanner.isEOF()) {                                                                                  // 258  // 3444
-    // break at appropriate end tag                                                                            // 259  // 3445
-    if (tagName && isLookingAtEndTag(scanner, tagName))                                                        // 260  // 3446
-      break;                                                                                                   // 261  // 3447
-                                                                                                               // 262  // 3448
-    if (shouldStopFunc && shouldStopFunc(scanner))                                                             // 263  // 3449
-      break;                                                                                                   // 264  // 3450
-                                                                                                               // 265  // 3451
-    var token = getHTMLToken(scanner, 'rawtext');                                                              // 266  // 3452
-    if (! token)                                                                                               // 267  // 3453
-      // tokenizer reached EOF on its own, e.g. while scanning                                                 // 268  // 3454
-      // template comments like `{{! foo}}`.                                                                   // 269  // 3455
-      continue;                                                                                                // 270  // 3456
-                                                                                                               // 271  // 3457
-    if (token.t === 'Chars') {                                                                                 // 272  // 3458
-      pushOrAppendString(items, token.v);                                                                      // 273  // 3459
-    } else if (token.t === 'TemplateTag') {                                                                    // 274  // 3460
-      items.push(token.v);                                                                                     // 275  // 3461
-    } else {                                                                                                   // 276  // 3462
-      // (can't happen)                                                                                        // 277  // 3463
-      scanner.fatal("Unknown or unexpected token type: " + token.t);                                           // 278  // 3464
-    }                                                                                                          // 279  // 3465
-  }                                                                                                            // 280  // 3466
-                                                                                                               // 281  // 3467
-  if (items.length === 0)                                                                                      // 282  // 3468
-    return null;                                                                                               // 283  // 3469
-  else if (items.length === 1)                                                                                 // 284  // 3470
-    return items[0];                                                                                           // 285  // 3471
-  else                                                                                                         // 286  // 3472
-    return items;                                                                                              // 287  // 3473
-};                                                                                                             // 288  // 3474
-                                                                                                               // 289  // 3475
-// Input: A token like `{ t: 'CharRef', v: '&amp;', cp: [38] }`.                                               // 290  // 3476
-//                                                                                                             // 291  // 3477
-// Output: A tag like `HTML.CharRef({ html: '&amp;', str: '&' })`.                                             // 292  // 3478
-var convertCharRef = function (token) {                                                                        // 293  // 3479
-  var codePoints = token.cp;                                                                                   // 294  // 3480
-  var str = '';                                                                                                // 295  // 3481
-  for (var i = 0; i < codePoints.length; i++)                                                                  // 296  // 3482
-    str += codePointToString(codePoints[i]);                                                                   // 297  // 3483
-  return HTML.CharRef({ html: token.v, str: str });                                                            // 298  // 3484
-};                                                                                                             // 299  // 3485
-                                                                                                               // 300  // 3486
-// Input is always a dictionary (even if zero attributes) and each                                             // 301  // 3487
-// value in the dictionary is an array of `Chars`, `CharRef`,                                                  // 302  // 3488
-// and maybe `TemplateTag` tokens.                                                                             // 303  // 3489
-//                                                                                                             // 304  // 3490
-// Output is null if there are zero attributes, and otherwise a                                                // 305  // 3491
-// dictionary, or an array of dictionaries and template tags.                                                  // 306  // 3492
-// Each value in the dictionary is HTMLjs (e.g. a                                                              // 307  // 3493
-// string or an array of `Chars`, `CharRef`, and `TemplateTag`                                                 // 308  // 3494
-// nodes).                                                                                                     // 309  // 3495
-//                                                                                                             // 310  // 3496
-// An attribute value with no input tokens is represented as "",                                               // 311  // 3497
-// not an empty array, in order to prop open empty attributes                                                  // 312  // 3498
-// with no template tags.                                                                                      // 313  // 3499
-var parseAttrs = function (attrs) {                                                                            // 314  // 3500
-  var result = null;                                                                                           // 315  // 3501
-                                                                                                               // 316  // 3502
-  if (HTML.isArray(attrs)) {                                                                                   // 317  // 3503
-    // first element is nondynamic attrs, rest are template tags                                               // 318  // 3504
-    var nondynamicAttrs = parseAttrs(attrs[0]);                                                                // 319  // 3505
-    if (nondynamicAttrs) {                                                                                     // 320  // 3506
-      result = (result || []);                                                                                 // 321  // 3507
-      result.push(nondynamicAttrs);                                                                            // 322  // 3508
-    }                                                                                                          // 323  // 3509
-    for (var i = 1; i < attrs.length; i++) {                                                                   // 324  // 3510
-      var token = attrs[i];                                                                                    // 325  // 3511
-      if (token.t !== 'TemplateTag')                                                                           // 326  // 3512
-        throw new Error("Expected TemplateTag token");                                                         // 327  // 3513
-      result = (result || []);                                                                                 // 328  // 3514
-      result.push(token.v);                                                                                    // 329  // 3515
-    }                                                                                                          // 330  // 3516
-    return result;                                                                                             // 331  // 3517
-  }                                                                                                            // 332  // 3518
-                                                                                                               // 333  // 3519
-  for (var k in attrs) {                                                                                       // 334  // 3520
-    if (! result)                                                                                              // 335  // 3521
-      result = {};                                                                                             // 336  // 3522
-                                                                                                               // 337  // 3523
-    var inValue = attrs[k];                                                                                    // 338  // 3524
-    var outParts = [];                                                                                         // 339  // 3525
-    for (var i = 0; i < inValue.length; i++) {                                                                 // 340  // 3526
-      var token = inValue[i];                                                                                  // 341  // 3527
-      if (token.t === 'CharRef') {                                                                             // 342  // 3528
-        outParts.push(convertCharRef(token));                                                                  // 343  // 3529
-      } else if (token.t === 'TemplateTag') {                                                                  // 344  // 3530
-        outParts.push(token.v);                                                                                // 345  // 3531
-      } else if (token.t === 'Chars') {                                                                        // 346  // 3532
-        pushOrAppendString(outParts, token.v);                                                                 // 347  // 3533
-      }                                                                                                        // 348  // 3534
-    }                                                                                                          // 349  // 3535
-                                                                                                               // 350  // 3536
-    var outValue = (inValue.length === 0 ? '' :                                                                // 351  // 3537
-                    (outParts.length === 1 ? outParts[0] : outParts));                                         // 352  // 3538
-    var properKey = HTMLTools.properCaseAttributeName(k);                                                      // 353  // 3539
-    result[properKey] = outValue;                                                                              // 354  // 3540
-  }                                                                                                            // 355  // 3541
-                                                                                                               // 356  // 3542
-  return result;                                                                                               // 357  // 3543
-};                                                                                                             // 358  // 3544
-                                                                                                               // 359  // 3545
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////      // 3546
-                                                                                                                       // 3547
-}).call(this);                                                                                                         // 3548
-                                                                                                                       // 3549
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+                                                                                                               // 183
+        // XXX support implied end tags in cases allowed by the spec                                           // 184
+                                                                                                               // 185
+        // make `content` into an array suitable for applying tag constructor                                  // 186
+        // as in `FOO.apply(null, content)`.                                                                   // 187
+        if (content == null)                                                                                   // 188
+          content = [];                                                                                        // 189
+        else if (! (content instanceof Array))                                                                 // 190
+          content = [content];                                                                                 // 191
+                                                                                                               // 192
+        items.push(HTML.getTag(tagName).apply(                                                                 // 193
+          null, (attrs ? [attrs] : []).concat(content)));                                                      // 194
+      }                                                                                                        // 195
+    } else {                                                                                                   // 196
+      scanner.fatal("Unknown token type: " + token.t);                                                         // 197
+    }                                                                                                          // 198
+  }                                                                                                            // 199
+                                                                                                               // 200
+  if (items.length === 0)                                                                                      // 201
+    return null;                                                                                               // 202
+  else if (items.length === 1)                                                                                 // 203
+    return items[0];                                                                                           // 204
+  else                                                                                                         // 205
+    return items;                                                                                              // 206
+};                                                                                                             // 207
+                                                                                                               // 208
+var pushOrAppendString = function (items, string) {                                                            // 209
+  if (items.length &&                                                                                          // 210
+      typeof items[items.length - 1] === 'string')                                                             // 211
+    items[items.length - 1] += string;                                                                         // 212
+  else                                                                                                         // 213
+    items.push(string);                                                                                        // 214
+};                                                                                                             // 215
+                                                                                                               // 216
+// get RCDATA to go in the lowercase (or camel case) tagName (e.g. "textarea")                                 // 217
+getRCData = HTMLTools.Parse.getRCData = function (scanner, tagName, shouldStopFunc) {                          // 218
+  var items = [];                                                                                              // 219
+                                                                                                               // 220
+  while (! scanner.isEOF()) {                                                                                  // 221
+    // break at appropriate end tag                                                                            // 222
+    if (tagName && isLookingAtEndTag(scanner, tagName))                                                        // 223
+      break;                                                                                                   // 224
+                                                                                                               // 225
+    if (shouldStopFunc && shouldStopFunc(scanner))                                                             // 226
+      break;                                                                                                   // 227
+                                                                                                               // 228
+    var token = getHTMLToken(scanner, 'rcdata');                                                               // 229
+    if (! token)                                                                                               // 230
+      // tokenizer reached EOF on its own, e.g. while scanning                                                 // 231
+      // template comments like `{{! foo}}`.                                                                   // 232
+      continue;                                                                                                // 233
+                                                                                                               // 234
+    if (token.t === 'Chars') {                                                                                 // 235
+      pushOrAppendString(items, token.v);                                                                      // 236
+    } else if (token.t === 'CharRef') {                                                                        // 237
+      items.push(convertCharRef(token));                                                                       // 238
+    } else if (token.t === 'TemplateTag') {                                                                    // 239
+      items.push(token.v);                                                                                     // 240
+    } else {                                                                                                   // 241
+      // (can't happen)                                                                                        // 242
+      scanner.fatal("Unknown or unexpected token type: " + token.t);                                           // 243
+    }                                                                                                          // 244
+  }                                                                                                            // 245
+                                                                                                               // 246
+  if (items.length === 0)                                                                                      // 247
+    return null;                                                                                               // 248
+  else if (items.length === 1)                                                                                 // 249
+    return items[0];                                                                                           // 250
+  else                                                                                                         // 251
+    return items;                                                                                              // 252
+};                                                                                                             // 253
+                                                                                                               // 254
+var getRawText = function (scanner, tagName, shouldStopFunc) {                                                 // 255
+  var items = [];                                                                                              // 256
+                                                                                                               // 257
+  while (! scanner.isEOF()) {                                                                                  // 258
+    // break at appropriate end tag                                                                            // 259
+    if (tagName && isLookingAtEndTag(scanner, tagName))                                                        // 260
+      break;                                                                                                   // 261
+                                                                                                               // 262
+    if (shouldStopFunc && shouldStopFunc(scanner))                                                             // 263
+      break;                                                                                                   // 264
+                                                                                                               // 265
+    var token = getHTMLToken(scanner, 'rawtext');                                                              // 266
+    if (! token)                                                                                               // 267
+      // tokenizer reached EOF on its own, e.g. while scanning                                                 // 268
+      // template comments like `{{! foo}}`.                                                                   // 269
+      continue;                                                                                                // 270
+                                                                                                               // 271
+    if (token.t === 'Chars') {                                                                                 // 272
+      pushOrAppendString(items, token.v);                                                                      // 273
+    } else if (token.t === 'TemplateTag') {                                                                    // 274
+      items.push(token.v);                                                                                     // 275
+    } else {                                                                                                   // 276
+      // (can't happen)                                                                                        // 277
+      scanner.fatal("Unknown or unexpected token type: " + token.t);                                           // 278
+    }                                                                                                          // 279
+  }                                                                                                            // 280
+                                                                                                               // 281
+  if (items.length === 0)                                                                                      // 282
+    return null;                                                                                               // 283
+  else if (items.length === 1)                                                                                 // 284
+    return items[0];                                                                                           // 285
+  else                                                                                                         // 286
+    return items;                                                                                              // 287
+};                                                                                                             // 288
+                                                                                                               // 289
+// Input: A token like `{ t: 'CharRef', v: '&amp;', cp: [38] }`.                                               // 290
+//                                                                                                             // 291
+// Output: A tag like `HTML.CharRef({ html: '&amp;', str: '&' })`.                                             // 292
+var convertCharRef = function (token) {                                                                        // 293
+  var codePoints = token.cp;                                                                                   // 294
+  var str = '';                                                                                                // 295
+  for (var i = 0; i < codePoints.length; i++)                                                                  // 296
+    str += codePointToString(codePoints[i]);                                                                   // 297
+  return HTML.CharRef({ html: token.v, str: str });                                                            // 298
+};                                                                                                             // 299
+                                                                                                               // 300
+// Input is always a dictionary (even if zero attributes) and each                                             // 301
+// value in the dictionary is an array of `Chars`, `CharRef`,                                                  // 302
+// and maybe `TemplateTag` tokens.                                                                             // 303
+//                                                                                                             // 304
+// Output is null if there are zero attributes, and otherwise a                                                // 305
+// dictionary, or an array of dictionaries and template tags.                                                  // 306
+// Each value in the dictionary is HTMLjs (e.g. a                                                              // 307
+// string or an array of `Chars`, `CharRef`, and `TemplateTag`                                                 // 308
+// nodes).                                                                                                     // 309
+//                                                                                                             // 310
+// An attribute value with no input tokens is represented as "",                                               // 311
+// not an empty array, in order to prop open empty attributes                                                  // 312
+// with no template tags.                                                                                      // 313
+var parseAttrs = function (attrs) {                                                                            // 314
+  var result = null;                                                                                           // 315
+                                                                                                               // 316
+  if (HTML.isArray(attrs)) {                                                                                   // 317
+    // first element is nondynamic attrs, rest are template tags                                               // 318
+    var nondynamicAttrs = parseAttrs(attrs[0]);                                                                // 319
+    if (nondynamicAttrs) {                                                                                     // 320
+      result = (result || []);                                                                                 // 321
+      result.push(nondynamicAttrs);                                                                            // 322
+    }                                                                                                          // 323
+    for (var i = 1; i < attrs.length; i++) {                                                                   // 324
+      var token = attrs[i];                                                                                    // 325
+      if (token.t !== 'TemplateTag')                                                                           // 326
+        throw new Error("Expected TemplateTag token");                                                         // 327
+      result = (result || []);                                                                                 // 328
+      result.push(token.v);                                                                                    // 329
+    }                                                                                                          // 330
+    return result;                                                                                             // 331
+  }                                                                                                            // 332
+                                                                                                               // 333
+  for (var k in attrs) {                                                                                       // 334
+    if (! result)                                                                                              // 335
+      result = {};                                                                                             // 336
+                                                                                                               // 337
+    var inValue = attrs[k];                                                                                    // 338
+    var outParts = [];                                                                                         // 339
+    for (var i = 0; i < inValue.length; i++) {                                                                 // 340
+      var token = inValue[i];                                                                                  // 341
+      if (token.t === 'CharRef') {                                                                             // 342
+        outParts.push(convertCharRef(token));                                                                  // 343
+      } else if (token.t === 'TemplateTag') {                                                                  // 344
+        outParts.push(token.v);                                                                                // 345
+      } else if (token.t === 'Chars') {                                                                        // 346
+        pushOrAppendString(outParts, token.v);                                                                 // 347
+      }                                                                                                        // 348
+    }                                                                                                          // 349
+                                                                                                               // 350
+    var outValue = (inValue.length === 0 ? '' :                                                                // 351
+                    (outParts.length === 1 ? outParts[0] : outParts));                                         // 352
+    var properKey = HTMLTools.properCaseAttributeName(k);                                                      // 353
+    result[properKey] = outValue;                                                                              // 354
+  }                                                                                                            // 355
+                                                                                                               // 356
+  return result;                                                                                               // 357
+};                                                                                                             // 358
+                                                                                                               // 359
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 }).call(this);
 

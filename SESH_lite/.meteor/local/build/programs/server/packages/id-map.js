@@ -10,30 +10,22 @@ var IdMap;
 
 (function(){
 
-//////////////////////////////////////////////////////////////////////////////////////
-//                                                                                  //
-// packages/id-map/packages/id-map.js                                               //
-//                                                                                  //
-//////////////////////////////////////////////////////////////////////////////////////
-                                                                                    //
-(function(){                                                                        // 1
-                                                                                    // 2
-////////////////////////////////////////////////////////////////////////////////    // 3
-//                                                                            //    // 4
-// packages/id-map/id-map.js                                                  //    // 5
-//                                                                            //    // 6
-////////////////////////////////////////////////////////////////////////////////    // 7
-                                                                              //    // 8
-IdMap = function (idStringify, idParse) {                                     // 1  // 9
-  var self = this;                                                            // 2  // 10
-  self._map = {};                                                             // 3  // 11
-  self._idStringify = idStringify || JSON.stringify;                          // 4  // 12
-  self._idParse = idParse || JSON.parse;                                      // 5  // 13
-};                                                                            // 6  // 14
-                                                                              // 7  // 15
-// Some of these methods are designed to match methods on OrderedDict, since  // 8  // 16
-// (eg) ObserveMultiplex and _CachingChangeObserver use them interchangeably.       // 17
-// (Conceivably, this should be replaced with "UnorderedDict" with a specific       // 18
+////////////////////////////////////////////////////////////////////////////////
+//                                                                            //
+// packages/id-map/id-map.js                                                  //
+//                                                                            //
+////////////////////////////////////////////////////////////////////////////////
+                                                                              //
+IdMap = function (idStringify, idParse) {                                     // 1
+  var self = this;                                                            // 2
+  self._map = {};                                                             // 3
+  self._idStringify = idStringify || JSON.stringify;                          // 4
+  self._idParse = idParse || JSON.parse;                                      // 5
+};                                                                            // 6
+                                                                              // 7
+// Some of these methods are designed to match methods on OrderedDict, since  // 8
+// (eg) ObserveMultiplex and _CachingChangeObserver use them interchangeably.
+// (Conceivably, this should be replaced with "UnorderedDict" with a specific
 // set of methods that overlap between the two.)                              // 11
                                                                               // 12
 _.extend(IdMap.prototype, {                                                   // 13
@@ -89,7 +81,7 @@ _.extend(IdMap.prototype, {                                                   //
     self._map[key] = def;                                                     // 63
     return def;                                                               // 64
   },                                                                          // 65
-  // Assumes that values are EJSON-cloneable, and that we don't need to clone       // 74
+  // Assumes that values are EJSON-cloneable, and that we don't need to clone
   // IDs (ie, that nobody is going to mutate an ObjectId).                    // 67
   clone: function () {                                                        // 68
     var self = this;                                                          // 69
@@ -102,11 +94,7 @@ _.extend(IdMap.prototype, {                                                   //
 });                                                                           // 76
                                                                               // 77
                                                                               // 78
-////////////////////////////////////////////////////////////////////////////////    // 87
-                                                                                    // 88
-}).call(this);                                                                      // 89
-                                                                                    // 90
-//////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 
 }).call(this);
 

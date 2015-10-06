@@ -10,14 +10,6 @@ var makeErrorByStatus, populateData, HTTP, HTTPInternals;
 
 (function(){
 
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//                                                                                                                     //
-// packages/http/packages/http.js                                                                                      //
-//                                                                                                                     //
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-                                                                                                                       //
-(function(){                                                                                                           // 1
-                                                                                                                       // 2
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                                                  //
 // packages/http/httpcall_common.js                                                                                 //
@@ -69,7 +61,7 @@ HTTP = {};                                                                      
  * @summary Send an HTTP `GET` request. Equivalent to calling [`HTTP.call`](#http_call) with "GET" as the first argument.
  * @param {String} url The URL to which the request should be sent.                                                 // 44
  * @param {Object} [callOptions] Options passed on to [`HTTP.call`](#http_call).                                    // 45
- * @param {Function} [asyncCallback] Callback that is called when the request is completed. Required on the client.    // 54
+ * @param {Function} [asyncCallback] Callback that is called when the request is completed. Required on the client.
  * @locus Anywhere                                                                                                  // 47
  */                                                                                                                 // 48
 HTTP.get = function (/* varargs */) {                                                                               // 49
@@ -80,7 +72,7 @@ HTTP.get = function (/* varargs */) {                                           
  * @summary Send an HTTP `POST` request. Equivalent to calling [`HTTP.call`](#http_call) with "POST" as the first argument.
  * @param {String} url The URL to which the request should be sent.                                                 // 55
  * @param {Object} [callOptions] Options passed on to [`HTTP.call`](#http_call).                                    // 56
- * @param {Function} [asyncCallback] Callback that is called when the request is completed. Required on the client.    // 65
+ * @param {Function} [asyncCallback] Callback that is called when the request is completed. Required on the client.
  * @locus Anywhere                                                                                                  // 58
  */                                                                                                                 // 59
 HTTP.post = function (/* varargs */) {                                                                              // 60
@@ -91,7 +83,7 @@ HTTP.post = function (/* varargs */) {                                          
  * @summary Send an HTTP `PUT` request. Equivalent to calling [`HTTP.call`](#http_call) with "PUT" as the first argument.
  * @param {String} url The URL to which the request should be sent.                                                 // 66
  * @param {Object} [callOptions] Options passed on to [`HTTP.call`](#http_call).                                    // 67
- * @param {Function} [asyncCallback] Callback that is called when the request is completed. Required on the client.    // 76
+ * @param {Function} [asyncCallback] Callback that is called when the request is completed. Required on the client.
  * @locus Anywhere                                                                                                  // 69
  */                                                                                                                 // 70
 HTTP.put = function (/* varargs */) {                                                                               // 71
@@ -102,7 +94,7 @@ HTTP.put = function (/* varargs */) {                                           
  * @summary Send an HTTP `DELETE` request. Equivalent to calling [`HTTP.call`](#http_call) with "DELETE" as the first argument. (Named `del` to avoid conflic with the Javascript keyword `delete`)
  * @param {String} url The URL to which the request should be sent.                                                 // 77
  * @param {Object} [callOptions] Options passed on to [`HTTP.call`](#http_call).                                    // 78
- * @param {Function} [asyncCallback] Callback that is called when the request is completed. Required on the client.    // 87
+ * @param {Function} [asyncCallback] Callback that is called when the request is completed. Required on the client.
  * @locus Anywhere                                                                                                  // 80
  */                                                                                                                 // 81
 HTTP.del = function (/* varargs */) {                                                                               // 82
@@ -110,16 +102,16 @@ HTTP.del = function (/* varargs */) {                                           
 };                                                                                                                  // 84
                                                                                                                     // 85
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-                                                                                                                       // 95
-}).call(this);                                                                                                         // 96
-                                                                                                                       // 97
-                                                                                                                       // 98
-                                                                                                                       // 99
-                                                                                                                       // 100
-                                                                                                                       // 101
-                                                                                                                       // 102
-(function(){                                                                                                           // 103
-                                                                                                                       // 104
+
+}).call(this);
+
+
+
+
+
+
+(function(){
+
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                                                  //
 // packages/http/httpcall_server.js                                                                                 //
@@ -249,16 +241,16 @@ var _call = function(method, url, options, callback) {                          
 HTTP.call = Meteor.wrapAsync(_call);                                                                                // 121
                                                                                                                     // 122
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-                                                                                                                       // 234
-}).call(this);                                                                                                         // 235
-                                                                                                                       // 236
-                                                                                                                       // 237
-                                                                                                                       // 238
-                                                                                                                       // 239
-                                                                                                                       // 240
-                                                                                                                       // 241
-(function(){                                                                                                           // 242
-                                                                                                                       // 243
+
+}).call(this);
+
+
+
+
+
+
+(function(){
+
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                                                  //
 // packages/http/deprecated.js                                                                                      //
@@ -270,10 +262,6 @@ HTTP.call = Meteor.wrapAsync(_call);                                            
 Meteor.http = HTTP;                                                                                                 // 3
                                                                                                                     // 4
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-                                                                                                                       // 255
-}).call(this);                                                                                                         // 256
-                                                                                                                       // 257
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 }).call(this);
 

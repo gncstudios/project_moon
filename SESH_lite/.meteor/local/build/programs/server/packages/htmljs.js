@@ -10,141 +10,133 @@ var HTML, IDENTITY, SLICE;
 
 (function(){
 
-///////////////////////////////////////////////////////////////////////////////////////////////
-//                                                                                           //
-// packages/htmljs/packages/htmljs.js                                                        //
-//                                                                                           //
-///////////////////////////////////////////////////////////////////////////////////////////////
-                                                                                             //
-(function(){                                                                                 // 1
-                                                                                             // 2
-////////////////////////////////////////////////////////////////////////////////////////     // 3
-//                                                                                    //     // 4
-// packages/htmljs/preamble.js                                                        //     // 5
-//                                                                                    //     // 6
-////////////////////////////////////////////////////////////////////////////////////////     // 7
-                                                                                      //     // 8
-HTML = {};                                                                            // 1   // 9
-                                                                                      // 2   // 10
-IDENTITY = function (x) { return x; };                                                // 3   // 11
-SLICE = Array.prototype.slice;                                                        // 4   // 12
-                                                                                      // 5   // 13
-////////////////////////////////////////////////////////////////////////////////////////     // 14
-                                                                                             // 15
-}).call(this);                                                                               // 16
-                                                                                             // 17
-                                                                                             // 18
-                                                                                             // 19
-                                                                                             // 20
-                                                                                             // 21
-                                                                                             // 22
-(function(){                                                                                 // 23
-                                                                                             // 24
-////////////////////////////////////////////////////////////////////////////////////////     // 25
-//                                                                                    //     // 26
-// packages/htmljs/visitors.js                                                        //     // 27
-//                                                                                    //     // 28
-////////////////////////////////////////////////////////////////////////////////////////     // 29
-                                                                                      //     // 30
-////////////////////////////// VISITORS                                               // 1   // 31
-                                                                                      // 2   // 32
-// _assign is like _.extend or the upcoming Object.assign.                            // 3   // 33
-// Copy src's own, enumerable properties onto tgt and return                          // 4   // 34
-// tgt.                                                                               // 5   // 35
-var _hasOwnProperty = Object.prototype.hasOwnProperty;                                // 6   // 36
-var _assign = function (tgt, src) {                                                   // 7   // 37
-  for (var k in src) {                                                                // 8   // 38
-    if (_hasOwnProperty.call(src, k))                                                 // 9   // 39
-      tgt[k] = src[k];                                                                // 10  // 40
-  }                                                                                   // 11  // 41
-  return tgt;                                                                         // 12  // 42
-};                                                                                    // 13  // 43
-                                                                                      // 14  // 44
-HTML.Visitor = function (props) {                                                     // 15  // 45
-  _assign(this, props);                                                               // 16  // 46
-};                                                                                    // 17  // 47
-                                                                                      // 18  // 48
-HTML.Visitor.def = function (options) {                                               // 19  // 49
-  _assign(this.prototype, options);                                                   // 20  // 50
-};                                                                                    // 21  // 51
-                                                                                      // 22  // 52
-HTML.Visitor.extend = function (options) {                                            // 23  // 53
-  var curType = this;                                                                 // 24  // 54
-  var subType = function HTMLVisitorSubtype(/*arguments*/) {                          // 25  // 55
-    HTML.Visitor.apply(this, arguments);                                              // 26  // 56
-  };                                                                                  // 27  // 57
-  subType.prototype = new curType;                                                    // 28  // 58
-  subType.extend = curType.extend;                                                    // 29  // 59
-  subType.def = curType.def;                                                          // 30  // 60
-  if (options)                                                                        // 31  // 61
-    _assign(subType.prototype, options);                                              // 32  // 62
-  return subType;                                                                     // 33  // 63
-};                                                                                    // 34  // 64
-                                                                                      // 35  // 65
-HTML.Visitor.def({                                                                    // 36  // 66
-  visit: function (content/*, ...*/) {                                                // 37  // 67
-    if (content == null)                                                              // 38  // 68
-      // null or undefined.                                                           // 39  // 69
-      return this.visitNull.apply(this, arguments);                                   // 40  // 70
-                                                                                      // 41  // 71
-    if (typeof content === 'object') {                                                // 42  // 72
-      if (content.htmljsType) {                                                       // 43  // 73
-        switch (content.htmljsType) {                                                 // 44  // 74
-        case HTML.Tag.htmljsType:                                                     // 45  // 75
-          return this.visitTag.apply(this, arguments);                                // 46  // 76
-        case HTML.CharRef.htmljsType:                                                 // 47  // 77
-          return this.visitCharRef.apply(this, arguments);                            // 48  // 78
-        case HTML.Comment.htmljsType:                                                 // 49  // 79
-          return this.visitComment.apply(this, arguments);                            // 50  // 80
-        case HTML.Raw.htmljsType:                                                     // 51  // 81
-          return this.visitRaw.apply(this, arguments);                                // 52  // 82
-        default:                                                                      // 53  // 83
-          throw new Error("Unknown htmljs type: " + content.htmljsType);              // 54  // 84
-        }                                                                             // 55  // 85
-      }                                                                               // 56  // 86
-                                                                                      // 57  // 87
-      if (HTML.isArray(content))                                                      // 58  // 88
-        return this.visitArray.apply(this, arguments);                                // 59  // 89
-                                                                                      // 60  // 90
-      return this.visitObject.apply(this, arguments);                                 // 61  // 91
-                                                                                      // 62  // 92
-    } else if ((typeof content === 'string') ||                                       // 63  // 93
-               (typeof content === 'boolean') ||                                      // 64  // 94
-               (typeof content === 'number')) {                                       // 65  // 95
-      return this.visitPrimitive.apply(this, arguments);                              // 66  // 96
-                                                                                      // 67  // 97
-    } else if (typeof content === 'function') {                                       // 68  // 98
-      return this.visitFunction.apply(this, arguments);                               // 69  // 99
-    }                                                                                 // 70  // 100
-                                                                                      // 71  // 101
-    throw new Error("Unexpected object in htmljs: " + content);                       // 72  // 102
-                                                                                      // 73  // 103
-  },                                                                                  // 74  // 104
-  visitNull: function (nullOrUndefined/*, ...*/) {},                                  // 75  // 105
-  visitPrimitive: function (stringBooleanOrNumber/*, ...*/) {},                       // 76  // 106
-  visitArray: function (array/*, ...*/) {},                                           // 77  // 107
-  visitComment: function (comment/*, ...*/) {},                                       // 78  // 108
-  visitCharRef: function (charRef/*, ...*/) {},                                       // 79  // 109
-  visitRaw: function (raw/*, ...*/) {},                                               // 80  // 110
-  visitTag: function (tag/*, ...*/) {},                                               // 81  // 111
-  visitObject: function (obj/*, ...*/) {                                              // 82  // 112
-    throw new Error("Unexpected object in htmljs: " + obj);                           // 83  // 113
-  },                                                                                  // 84  // 114
-  visitFunction: function (fn/*, ...*/) {                                             // 85  // 115
-    throw new Error("Unexpected function in htmljs: " + obj);                         // 86  // 116
-  }                                                                                   // 87  // 117
-});                                                                                   // 88  // 118
-                                                                                      // 89  // 119
-HTML.TransformingVisitor = HTML.Visitor.extend();                                     // 90  // 120
-HTML.TransformingVisitor.def({                                                        // 91  // 121
-  visitNull: IDENTITY,                                                                // 92  // 122
-  visitPrimitive: IDENTITY,                                                           // 93  // 123
-  visitArray: function (array/*, ...*/) {                                             // 94  // 124
-    var argsCopy = SLICE.call(arguments);                                             // 95  // 125
-    var result = array;                                                               // 96  // 126
-    for (var i = 0; i < array.length; i++) {                                          // 97  // 127
-      var oldItem = array[i];                                                         // 98  // 128
-      argsCopy[0] = oldItem;                                                          // 99  // 129
+////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                    //
+// packages/htmljs/preamble.js                                                        //
+//                                                                                    //
+////////////////////////////////////////////////////////////////////////////////////////
+                                                                                      //
+HTML = {};                                                                            // 1
+                                                                                      // 2
+IDENTITY = function (x) { return x; };                                                // 3
+SLICE = Array.prototype.slice;                                                        // 4
+                                                                                      // 5
+////////////////////////////////////////////////////////////////////////////////////////
+
+}).call(this);
+
+
+
+
+
+
+(function(){
+
+////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                    //
+// packages/htmljs/visitors.js                                                        //
+//                                                                                    //
+////////////////////////////////////////////////////////////////////////////////////////
+                                                                                      //
+////////////////////////////// VISITORS                                               // 1
+                                                                                      // 2
+// _assign is like _.extend or the upcoming Object.assign.                            // 3
+// Copy src's own, enumerable properties onto tgt and return                          // 4
+// tgt.                                                                               // 5
+var _hasOwnProperty = Object.prototype.hasOwnProperty;                                // 6
+var _assign = function (tgt, src) {                                                   // 7
+  for (var k in src) {                                                                // 8
+    if (_hasOwnProperty.call(src, k))                                                 // 9
+      tgt[k] = src[k];                                                                // 10
+  }                                                                                   // 11
+  return tgt;                                                                         // 12
+};                                                                                    // 13
+                                                                                      // 14
+HTML.Visitor = function (props) {                                                     // 15
+  _assign(this, props);                                                               // 16
+};                                                                                    // 17
+                                                                                      // 18
+HTML.Visitor.def = function (options) {                                               // 19
+  _assign(this.prototype, options);                                                   // 20
+};                                                                                    // 21
+                                                                                      // 22
+HTML.Visitor.extend = function (options) {                                            // 23
+  var curType = this;                                                                 // 24
+  var subType = function HTMLVisitorSubtype(/*arguments*/) {                          // 25
+    HTML.Visitor.apply(this, arguments);                                              // 26
+  };                                                                                  // 27
+  subType.prototype = new curType;                                                    // 28
+  subType.extend = curType.extend;                                                    // 29
+  subType.def = curType.def;                                                          // 30
+  if (options)                                                                        // 31
+    _assign(subType.prototype, options);                                              // 32
+  return subType;                                                                     // 33
+};                                                                                    // 34
+                                                                                      // 35
+HTML.Visitor.def({                                                                    // 36
+  visit: function (content/*, ...*/) {                                                // 37
+    if (content == null)                                                              // 38
+      // null or undefined.                                                           // 39
+      return this.visitNull.apply(this, arguments);                                   // 40
+                                                                                      // 41
+    if (typeof content === 'object') {                                                // 42
+      if (content.htmljsType) {                                                       // 43
+        switch (content.htmljsType) {                                                 // 44
+        case HTML.Tag.htmljsType:                                                     // 45
+          return this.visitTag.apply(this, arguments);                                // 46
+        case HTML.CharRef.htmljsType:                                                 // 47
+          return this.visitCharRef.apply(this, arguments);                            // 48
+        case HTML.Comment.htmljsType:                                                 // 49
+          return this.visitComment.apply(this, arguments);                            // 50
+        case HTML.Raw.htmljsType:                                                     // 51
+          return this.visitRaw.apply(this, arguments);                                // 52
+        default:                                                                      // 53
+          throw new Error("Unknown htmljs type: " + content.htmljsType);              // 54
+        }                                                                             // 55
+      }                                                                               // 56
+                                                                                      // 57
+      if (HTML.isArray(content))                                                      // 58
+        return this.visitArray.apply(this, arguments);                                // 59
+                                                                                      // 60
+      return this.visitObject.apply(this, arguments);                                 // 61
+                                                                                      // 62
+    } else if ((typeof content === 'string') ||                                       // 63
+               (typeof content === 'boolean') ||                                      // 64
+               (typeof content === 'number')) {                                       // 65
+      return this.visitPrimitive.apply(this, arguments);                              // 66
+                                                                                      // 67
+    } else if (typeof content === 'function') {                                       // 68
+      return this.visitFunction.apply(this, arguments);                               // 69
+    }                                                                                 // 70
+                                                                                      // 71
+    throw new Error("Unexpected object in htmljs: " + content);                       // 72
+                                                                                      // 73
+  },                                                                                  // 74
+  visitNull: function (nullOrUndefined/*, ...*/) {},                                  // 75
+  visitPrimitive: function (stringBooleanOrNumber/*, ...*/) {},                       // 76
+  visitArray: function (array/*, ...*/) {},                                           // 77
+  visitComment: function (comment/*, ...*/) {},                                       // 78
+  visitCharRef: function (charRef/*, ...*/) {},                                       // 79
+  visitRaw: function (raw/*, ...*/) {},                                               // 80
+  visitTag: function (tag/*, ...*/) {},                                               // 81
+  visitObject: function (obj/*, ...*/) {                                              // 82
+    throw new Error("Unexpected object in htmljs: " + obj);                           // 83
+  },                                                                                  // 84
+  visitFunction: function (fn/*, ...*/) {                                             // 85
+    throw new Error("Unexpected function in htmljs: " + obj);                         // 86
+  }                                                                                   // 87
+});                                                                                   // 88
+                                                                                      // 89
+HTML.TransformingVisitor = HTML.Visitor.extend();                                     // 90
+HTML.TransformingVisitor.def({                                                        // 91
+  visitNull: IDENTITY,                                                                // 92
+  visitPrimitive: IDENTITY,                                                           // 93
+  visitArray: function (array/*, ...*/) {                                             // 94
+    var argsCopy = SLICE.call(arguments);                                             // 95
+    var result = array;                                                               // 96
+    for (var i = 0; i < array.length; i++) {                                          // 97
+      var oldItem = array[i];                                                         // 98
+      argsCopy[0] = oldItem;                                                          // 99
       var newItem = this.visit.apply(this, argsCopy);                                 // 100
       if (newItem !== oldItem) {                                                      // 101
         // copy `array` on write                                                      // 102
@@ -378,121 +370,121 @@ HTML.ToHTMLVisitor.def({                                                        
   }                                                                                   // 330
 });                                                                                   // 331
                                                                                       // 332
-////////////////////////////////////////////////////////////////////////////////////////     // 363
-                                                                                             // 364
-}).call(this);                                                                               // 365
-                                                                                             // 366
-                                                                                             // 367
-                                                                                             // 368
-                                                                                             // 369
-                                                                                             // 370
-                                                                                             // 371
-(function(){                                                                                 // 372
-                                                                                             // 373
-////////////////////////////////////////////////////////////////////////////////////////     // 374
-//                                                                                    //     // 375
-// packages/htmljs/html.js                                                            //     // 376
-//                                                                                    //     // 377
-////////////////////////////////////////////////////////////////////////////////////////     // 378
-                                                                                      //     // 379
-                                                                                      // 1   // 380
-                                                                                      // 2   // 381
-HTML.Tag = function () {};                                                            // 3   // 382
-HTML.Tag.prototype.tagName = ''; // this will be set per Tag subclass                 // 4   // 383
-HTML.Tag.prototype.attrs = null;                                                      // 5   // 384
-HTML.Tag.prototype.children = Object.freeze ? Object.freeze([]) : [];                 // 6   // 385
-HTML.Tag.prototype.htmljsType = HTML.Tag.htmljsType = ['Tag'];                        // 7   // 386
-                                                                                      // 8   // 387
-// Given "p" create the function `HTML.P`.                                            // 9   // 388
-var makeTagConstructor = function (tagName) {                                         // 10  // 389
-  // HTMLTag is the per-tagName constructor of a HTML.Tag subclass                    // 11  // 390
-  var HTMLTag = function (/*arguments*/) {                                            // 12  // 391
-    // Work with or without `new`.  If not called with `new`,                         // 13  // 392
-    // perform instantiation by recursively calling this constructor.                 // 14  // 393
-    // We can't pass varargs, so pass no args.                                        // 15  // 394
-    var instance = (this instanceof HTML.Tag) ? this : new HTMLTag;                   // 16  // 395
-                                                                                      // 17  // 396
-    var i = 0;                                                                        // 18  // 397
-    var attrs = arguments.length && arguments[0];                                     // 19  // 398
-    if (attrs && (typeof attrs === 'object')) {                                       // 20  // 399
-      // Treat vanilla JS object as an attributes dictionary.                         // 21  // 400
-      if (! HTML.isConstructedObject(attrs)) {                                        // 22  // 401
-        instance.attrs = attrs;                                                       // 23  // 402
-        i++;                                                                          // 24  // 403
-      } else if (attrs instanceof HTML.Attrs) {                                       // 25  // 404
-        var array = attrs.value;                                                      // 26  // 405
-        if (array.length === 1) {                                                     // 27  // 406
-          instance.attrs = array[0];                                                  // 28  // 407
-        } else if (array.length > 1) {                                                // 29  // 408
-          instance.attrs = array;                                                     // 30  // 409
-        }                                                                             // 31  // 410
-        i++;                                                                          // 32  // 411
-      }                                                                               // 33  // 412
-    }                                                                                 // 34  // 413
-                                                                                      // 35  // 414
-                                                                                      // 36  // 415
-    // If no children, don't create an array at all, use the prototype's              // 37  // 416
-    // (frozen, empty) array.  This way we don't create an empty array                // 38  // 417
-    // every time someone creates a tag without `new` and this constructor            // 39  // 418
-    // calls itself with no arguments (above).                                        // 40  // 419
-    if (i < arguments.length)                                                         // 41  // 420
-      instance.children = SLICE.call(arguments, i);                                   // 42  // 421
-                                                                                      // 43  // 422
-    return instance;                                                                  // 44  // 423
-  };                                                                                  // 45  // 424
-  HTMLTag.prototype = new HTML.Tag;                                                   // 46  // 425
-  HTMLTag.prototype.constructor = HTMLTag;                                            // 47  // 426
-  HTMLTag.prototype.tagName = tagName;                                                // 48  // 427
-                                                                                      // 49  // 428
-  return HTMLTag;                                                                     // 50  // 429
-};                                                                                    // 51  // 430
-                                                                                      // 52  // 431
-// Not an HTMLjs node, but a wrapper to pass multiple attrs dictionaries              // 53  // 432
-// to a tag (for the purpose of implementing dynamic attributes).                     // 54  // 433
-var Attrs = HTML.Attrs = function (/*attrs dictionaries*/) {                          // 55  // 434
-  // Work with or without `new`.  If not called with `new`,                           // 56  // 435
-  // perform instantiation by recursively calling this constructor.                   // 57  // 436
-  // We can't pass varargs, so pass no args.                                          // 58  // 437
-  var instance = (this instanceof Attrs) ? this : new Attrs;                          // 59  // 438
-                                                                                      // 60  // 439
-  instance.value = SLICE.call(arguments);                                             // 61  // 440
-                                                                                      // 62  // 441
-  return instance;                                                                    // 63  // 442
-};                                                                                    // 64  // 443
-                                                                                      // 65  // 444
-////////////////////////////// KNOWN ELEMENTS                                         // 66  // 445
-                                                                                      // 67  // 446
-HTML.getTag = function (tagName) {                                                    // 68  // 447
-  var symbolName = HTML.getSymbolName(tagName);                                       // 69  // 448
-  if (symbolName === tagName) // all-caps tagName                                     // 70  // 449
-    throw new Error("Use the lowercase or camelCase form of '" + tagName + "' here");        // 450
-                                                                                      // 72  // 451
-  if (! HTML[symbolName])                                                             // 73  // 452
-    HTML[symbolName] = makeTagConstructor(tagName);                                   // 74  // 453
-                                                                                      // 75  // 454
-  return HTML[symbolName];                                                            // 76  // 455
-};                                                                                    // 77  // 456
-                                                                                      // 78  // 457
-HTML.ensureTag = function (tagName) {                                                 // 79  // 458
-  HTML.getTag(tagName); // don't return it                                            // 80  // 459
-};                                                                                    // 81  // 460
-                                                                                      // 82  // 461
-HTML.isTagEnsured = function (tagName) {                                              // 83  // 462
-  return HTML.isKnownElement(tagName);                                                // 84  // 463
-};                                                                                    // 85  // 464
-                                                                                      // 86  // 465
-HTML.getSymbolName = function (tagName) {                                             // 87  // 466
-  // "foo-bar" -> "FOO_BAR"                                                           // 88  // 467
-  return tagName.toUpperCase().replace(/-/g, '_');                                    // 89  // 468
-};                                                                                    // 90  // 469
-                                                                                      // 91  // 470
+////////////////////////////////////////////////////////////////////////////////////////
+
+}).call(this);
+
+
+
+
+
+
+(function(){
+
+////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                    //
+// packages/htmljs/html.js                                                            //
+//                                                                                    //
+////////////////////////////////////////////////////////////////////////////////////////
+                                                                                      //
+                                                                                      // 1
+                                                                                      // 2
+HTML.Tag = function () {};                                                            // 3
+HTML.Tag.prototype.tagName = ''; // this will be set per Tag subclass                 // 4
+HTML.Tag.prototype.attrs = null;                                                      // 5
+HTML.Tag.prototype.children = Object.freeze ? Object.freeze([]) : [];                 // 6
+HTML.Tag.prototype.htmljsType = HTML.Tag.htmljsType = ['Tag'];                        // 7
+                                                                                      // 8
+// Given "p" create the function `HTML.P`.                                            // 9
+var makeTagConstructor = function (tagName) {                                         // 10
+  // HTMLTag is the per-tagName constructor of a HTML.Tag subclass                    // 11
+  var HTMLTag = function (/*arguments*/) {                                            // 12
+    // Work with or without `new`.  If not called with `new`,                         // 13
+    // perform instantiation by recursively calling this constructor.                 // 14
+    // We can't pass varargs, so pass no args.                                        // 15
+    var instance = (this instanceof HTML.Tag) ? this : new HTMLTag;                   // 16
+                                                                                      // 17
+    var i = 0;                                                                        // 18
+    var attrs = arguments.length && arguments[0];                                     // 19
+    if (attrs && (typeof attrs === 'object')) {                                       // 20
+      // Treat vanilla JS object as an attributes dictionary.                         // 21
+      if (! HTML.isConstructedObject(attrs)) {                                        // 22
+        instance.attrs = attrs;                                                       // 23
+        i++;                                                                          // 24
+      } else if (attrs instanceof HTML.Attrs) {                                       // 25
+        var array = attrs.value;                                                      // 26
+        if (array.length === 1) {                                                     // 27
+          instance.attrs = array[0];                                                  // 28
+        } else if (array.length > 1) {                                                // 29
+          instance.attrs = array;                                                     // 30
+        }                                                                             // 31
+        i++;                                                                          // 32
+      }                                                                               // 33
+    }                                                                                 // 34
+                                                                                      // 35
+                                                                                      // 36
+    // If no children, don't create an array at all, use the prototype's              // 37
+    // (frozen, empty) array.  This way we don't create an empty array                // 38
+    // every time someone creates a tag without `new` and this constructor            // 39
+    // calls itself with no arguments (above).                                        // 40
+    if (i < arguments.length)                                                         // 41
+      instance.children = SLICE.call(arguments, i);                                   // 42
+                                                                                      // 43
+    return instance;                                                                  // 44
+  };                                                                                  // 45
+  HTMLTag.prototype = new HTML.Tag;                                                   // 46
+  HTMLTag.prototype.constructor = HTMLTag;                                            // 47
+  HTMLTag.prototype.tagName = tagName;                                                // 48
+                                                                                      // 49
+  return HTMLTag;                                                                     // 50
+};                                                                                    // 51
+                                                                                      // 52
+// Not an HTMLjs node, but a wrapper to pass multiple attrs dictionaries              // 53
+// to a tag (for the purpose of implementing dynamic attributes).                     // 54
+var Attrs = HTML.Attrs = function (/*attrs dictionaries*/) {                          // 55
+  // Work with or without `new`.  If not called with `new`,                           // 56
+  // perform instantiation by recursively calling this constructor.                   // 57
+  // We can't pass varargs, so pass no args.                                          // 58
+  var instance = (this instanceof Attrs) ? this : new Attrs;                          // 59
+                                                                                      // 60
+  instance.value = SLICE.call(arguments);                                             // 61
+                                                                                      // 62
+  return instance;                                                                    // 63
+};                                                                                    // 64
+                                                                                      // 65
+////////////////////////////// KNOWN ELEMENTS                                         // 66
+                                                                                      // 67
+HTML.getTag = function (tagName) {                                                    // 68
+  var symbolName = HTML.getSymbolName(tagName);                                       // 69
+  if (symbolName === tagName) // all-caps tagName                                     // 70
+    throw new Error("Use the lowercase or camelCase form of '" + tagName + "' here");
+                                                                                      // 72
+  if (! HTML[symbolName])                                                             // 73
+    HTML[symbolName] = makeTagConstructor(tagName);                                   // 74
+                                                                                      // 75
+  return HTML[symbolName];                                                            // 76
+};                                                                                    // 77
+                                                                                      // 78
+HTML.ensureTag = function (tagName) {                                                 // 79
+  HTML.getTag(tagName); // don't return it                                            // 80
+};                                                                                    // 81
+                                                                                      // 82
+HTML.isTagEnsured = function (tagName) {                                              // 83
+  return HTML.isKnownElement(tagName);                                                // 84
+};                                                                                    // 85
+                                                                                      // 86
+HTML.getSymbolName = function (tagName) {                                             // 87
+  // "foo-bar" -> "FOO_BAR"                                                           // 88
+  return tagName.toUpperCase().replace(/-/g, '_');                                    // 89
+};                                                                                    // 90
+                                                                                      // 91
 HTML.knownElementNames = 'a abbr acronym address applet area article aside audio b base basefont bdi bdo big blockquote body br button canvas caption center cite code col colgroup command data datagrid datalist dd del details dfn dir div dl dt em embed eventsource fieldset figcaption figure font footer form frame frameset h1 h2 h3 h4 h5 h6 head header hgroup hr html i iframe img input ins isindex kbd keygen label legend li link main map mark menu meta meter nav noframes noscript object ol optgroup option output p param pre progress q rp rt ruby s samp script section select small source span strike strong style sub summary sup table tbody td textarea tfoot th thead time title tr track tt u ul var video wbr'.split(' ');
-// (we add the SVG ones below)                                                        // 93  // 472
-                                                                                      // 94  // 473
+// (we add the SVG ones below)                                                        // 93
+                                                                                      // 94
 HTML.knownSVGElementNames = 'altGlyph altGlyphDef altGlyphItem animate animateColor animateMotion animateTransform circle clipPath color-profile cursor defs desc ellipse feBlend feColorMatrix feComponentTransfer feComposite feConvolveMatrix feDiffuseLighting feDisplacementMap feDistantLight feFlood feFuncA feFuncB feFuncG feFuncR feGaussianBlur feImage feMerge feMergeNode feMorphology feOffset fePointLight feSpecularLighting feSpotLight feTile feTurbulence filter font font-face font-face-format font-face-name font-face-src font-face-uri foreignObject g glyph glyphRef hkern image line linearGradient marker mask metadata missing-glyph path pattern polygon polyline radialGradient rect set stop style svg switch symbol text textPath title tref tspan use view vkern'.split(' ');
-// Append SVG element names to list of known element names                            // 96  // 475
-HTML.knownElementNames = HTML.knownElementNames.concat(HTML.knownSVGElementNames);    // 97  // 476
-                                                                                      // 98  // 477
+// Append SVG element names to list of known element names                            // 96
+HTML.knownElementNames = HTML.knownElementNames.concat(HTML.knownSVGElementNames);    // 97
+                                                                                      // 98
 HTML.voidElementNames = 'area base br col command embed hr img input keygen link meta param source track wbr'.split(' ');
                                                                                       // 100
 // Speed up search through lists of known elements by creating internal "sets"        // 101
@@ -664,11 +656,7 @@ HTML.toText = function (content, textMode) {                                    
   return visitor.visit(content);                                                      // 267
 };                                                                                    // 268
                                                                                       // 269
-////////////////////////////////////////////////////////////////////////////////////////     // 649
-                                                                                             // 650
-}).call(this);                                                                               // 651
-                                                                                             // 652
-///////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////
 
 }).call(this);
 

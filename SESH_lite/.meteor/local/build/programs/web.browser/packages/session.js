@@ -21,29 +21,21 @@ var Session;
 
 (function(){
 
-///////////////////////////////////////////////////////////////////////////////////////
-//                                                                                   //
-// packages/session/packages/session.js                                              //
-//                                                                                   //
-///////////////////////////////////////////////////////////////////////////////////////
-                                                                                     //
-(function(){                                                                         // 1
-                                                                                     // 2
-/////////////////////////////////////////////////////////////////////////////////    // 3
-//                                                                             //    // 4
-// packages/session/session.js                                                 //    // 5
-//                                                                             //    // 6
-/////////////////////////////////////////////////////////////////////////////////    // 7
-                                                                               //    // 8
-Session = new ReactiveDict('session');                                         // 1  // 9
-                                                                               // 2  // 10
-// Documentation here is really awkward because the methods are defined        // 3  // 11
-// elsewhere                                                                   // 4  // 12
-                                                                               // 5  // 13
-/**                                                                            // 6  // 14
- * @memberOf Session                                                           // 7  // 15
- * @method set                                                                 // 8  // 16
- * @summary Set a variable in the session. Notify any listeners that the value       // 17
+/////////////////////////////////////////////////////////////////////////////////
+//                                                                             //
+// packages/session/session.js                                                 //
+//                                                                             //
+/////////////////////////////////////////////////////////////////////////////////
+                                                                               //
+Session = new ReactiveDict('session');                                         // 1
+                                                                               // 2
+// Documentation here is really awkward because the methods are defined        // 3
+// elsewhere                                                                   // 4
+                                                                               // 5
+/**                                                                            // 6
+ * @memberOf Session                                                           // 7
+ * @method set                                                                 // 8
+ * @summary Set a variable in the session. Notify any listeners that the value
  * has changed (eg: redraw templates, and rerun any                            // 10
  * [`Tracker.autorun`](#tracker_autorun) computations, that called             // 11
  * [`Session.get`](#session_get) on this `key`.)                               // 12
@@ -87,11 +79,7 @@ Session = new ReactiveDict('session');                                         /
  * test against                                                                // 50
  */                                                                            // 51
                                                                                // 52
-/////////////////////////////////////////////////////////////////////////////////    // 61
-                                                                                     // 62
-}).call(this);                                                                       // 63
-                                                                                     // 64
-///////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////
 
 }).call(this);
 

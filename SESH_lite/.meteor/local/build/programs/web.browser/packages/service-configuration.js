@@ -21,29 +21,21 @@ var ServiceConfiguration;
 
 (function(){
 
-//////////////////////////////////////////////////////////////////////////////////////////////
-//                                                                                          //
-// packages/service-configuration/packages/service-configuration.js                         //
-//                                                                                          //
-//////////////////////////////////////////////////////////////////////////////////////////////
-                                                                                            //
-(function(){                                                                                // 1
-                                                                                            // 2
-////////////////////////////////////////////////////////////////////////////////////////    // 3
-//                                                                                    //    // 4
-// packages/service-configuration/service_configuration_common.js                     //    // 5
-//                                                                                    //    // 6
-////////////////////////////////////////////////////////////////////////////////////////    // 7
-                                                                                      //    // 8
-if (typeof ServiceConfiguration === 'undefined') {                                    // 1  // 9
-  ServiceConfiguration = {};                                                          // 2  // 10
-}                                                                                     // 3  // 11
-                                                                                      // 4  // 12
-                                                                                      // 5  // 13
-// Table containing documents with configuration options for each                     // 6  // 14
-// login service                                                                      // 7  // 15
-ServiceConfiguration.configurations = new Mongo.Collection(                           // 8  // 16
-  "meteor_accounts_loginServiceConfiguration", {                                      // 9  // 17
+////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                    //
+// packages/service-configuration/service_configuration_common.js                     //
+//                                                                                    //
+////////////////////////////////////////////////////////////////////////////////////////
+                                                                                      //
+if (typeof ServiceConfiguration === 'undefined') {                                    // 1
+  ServiceConfiguration = {};                                                          // 2
+}                                                                                     // 3
+                                                                                      // 4
+                                                                                      // 5
+// Table containing documents with configuration options for each                     // 6
+// login service                                                                      // 7
+ServiceConfiguration.configurations = new Mongo.Collection(                           // 8
+  "meteor_accounts_loginServiceConfiguration", {                                      // 9
     _preventAutopublish: true,                                                        // 10
     connection: Meteor.isClient ? Accounts.connection : Meteor.connection             // 11
   });                                                                                 // 12
@@ -65,13 +57,9 @@ ServiceConfiguration.ConfigError = function (serviceName) {                     
   }                                                                                   // 28
 };                                                                                    // 29
 ServiceConfiguration.ConfigError.prototype = new Error();                             // 30
-ServiceConfiguration.ConfigError.prototype.name = 'ServiceConfiguration.ConfigError';       // 39
+ServiceConfiguration.ConfigError.prototype.name = 'ServiceConfiguration.ConfigError';
                                                                                       // 32
-////////////////////////////////////////////////////////////////////////////////////////    // 41
-                                                                                            // 42
-}).call(this);                                                                              // 43
-                                                                                            // 44
-//////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////
 
 }).call(this);
 

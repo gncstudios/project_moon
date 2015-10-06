@@ -21,29 +21,21 @@ var MongoID;
 
 (function(){
 
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//                                                                                                          //
-// packages/mongo-id/packages/mongo-id.js                                                                   //
-//                                                                                                          //
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////
-                                                                                                            //
-(function(){                                                                                                // 1
-                                                                                                            // 2
-////////////////////////////////////////////////////////////////////////////////////////////////////////    // 3
-//                                                                                                    //    // 4
-// packages/mongo-id/id.js                                                                            //    // 5
-//                                                                                                    //    // 6
-////////////////////////////////////////////////////////////////////////////////////////////////////////    // 7
-                                                                                                      //    // 8
-MongoID = {};                                                                                         // 1  // 9
-                                                                                                      // 2  // 10
-MongoID._looksLikeObjectID = function (str) {                                                         // 3  // 11
-  return str.length === 24 && str.match(/^[0-9a-f]*$/);                                               // 4  // 12
-};                                                                                                    // 5  // 13
-                                                                                                      // 6  // 14
-MongoID.ObjectID = function (hexString) {                                                             // 7  // 15
-  //random-based impl of Mongo ObjectID                                                               // 8  // 16
-  var self = this;                                                                                    // 9  // 17
+////////////////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                                    //
+// packages/mongo-id/id.js                                                                            //
+//                                                                                                    //
+////////////////////////////////////////////////////////////////////////////////////////////////////////
+                                                                                                      //
+MongoID = {};                                                                                         // 1
+                                                                                                      // 2
+MongoID._looksLikeObjectID = function (str) {                                                         // 3
+  return str.length === 24 && str.match(/^[0-9a-f]*$/);                                               // 4
+};                                                                                                    // 5
+                                                                                                      // 6
+MongoID.ObjectID = function (hexString) {                                                             // 7
+  //random-based impl of Mongo ObjectID                                                               // 8
+  var self = this;                                                                                    // 9
   if (hexString) {                                                                                    // 10
     hexString = hexString.toLowerCase();                                                              // 11
     if (!MongoID._looksLikeObjectID(hexString)) {                                                     // 12
@@ -99,7 +91,7 @@ MongoID.idStringify = function (id) {                                           
     } else if (id.substr(0, 1) === "-" || // escape previously dashed strings                         // 62
                id.substr(0, 1) === "~" || // escape escaped numbers, true, false                      // 63
                MongoID._looksLikeObjectID(id) || // escape object-id-form strings                     // 64
-               id.substr(0, 1) === '{') { // escape object-form strings, for maybe implementing later       // 73
+               id.substr(0, 1) === '{') { // escape object-form strings, for maybe implementing later
       return "-" + id;                                                                                // 66
     } else {                                                                                          // 67
       return id; // other strings go through unchanged.                                               // 68
@@ -131,11 +123,7 @@ MongoID.idParse = function (id) {                                               
 };                                                                                                    // 94
                                                                                                       // 95
                                                                                                       // 96
-////////////////////////////////////////////////////////////////////////////////////////////////////////    // 105
-                                                                                                            // 106
-}).call(this);                                                                                              // 107
-                                                                                                            // 108
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 }).call(this);
 

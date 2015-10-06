@@ -10,119 +10,111 @@ var check, Match;
 
 (function(){
 
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//                                                                                                         //
-// packages/check/packages/check.js                                                                        //
-//                                                                                                         //
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////
-                                                                                                           //
-(function(){                                                                                               // 1
-                                                                                                           // 2
-//////////////////////////////////////////////////////////////////////////////////////////////////////     // 3
-//                                                                                                  //     // 4
-// packages/check/match.js                                                                          //     // 5
-//                                                                                                  //     // 6
-//////////////////////////////////////////////////////////////////////////////////////////////////////     // 7
-                                                                                                    //     // 8
-// XXX docs                                                                                         // 1   // 9
-                                                                                                    // 2   // 10
-// Things we explicitly do NOT support:                                                             // 3   // 11
-//    - heterogenous arrays                                                                         // 4   // 12
-                                                                                                    // 5   // 13
-var currentArgumentChecker = new Meteor.EnvironmentVariable;                                        // 6   // 14
-                                                                                                    // 7   // 15
-/**                                                                                                 // 8   // 16
- * @summary Check that a value matches a [pattern](#matchpatterns).                                 // 9   // 17
- * If the value does not match the pattern, throw a `Match.Error`.                                  // 10  // 18
- *                                                                                                  // 11  // 19
- * Particularly useful to assert that arguments to a function have the right                        // 12  // 20
- * types and structure.                                                                             // 13  // 21
- * @locus Anywhere                                                                                  // 14  // 22
- * @param {Any} value The value to check                                                            // 15  // 23
- * @param {MatchPattern} pattern The pattern to match                                               // 16  // 24
- * `value` against                                                                                  // 17  // 25
- */                                                                                                 // 18  // 26
-check = function (value, pattern) {                                                                 // 19  // 27
-  // Record that check got called, if somebody cared.                                               // 20  // 28
-  //                                                                                                // 21  // 29
-  // We use getOrNullIfOutsideFiber so that it's OK to call check()                                 // 22  // 30
-  // from non-Fiber server contexts; the downside is that if you forget to                          // 23  // 31
-  // bindEnvironment on some random callback in your method/publisher,                              // 24  // 32
-  // it might not find the argumentChecker and you'll get an error about                            // 25  // 33
-  // not checking an argument that it looks like you're checking (instead                           // 26  // 34
-  // of just getting a "Node code must run in a Fiber" error).                                      // 27  // 35
-  var argChecker = currentArgumentChecker.getOrNullIfOutsideFiber();                                // 28  // 36
-  if (argChecker)                                                                                   // 29  // 37
-    argChecker.checking(value);                                                                     // 30  // 38
-  try {                                                                                             // 31  // 39
-    checkSubtree(value, pattern);                                                                   // 32  // 40
-  } catch (err) {                                                                                   // 33  // 41
-    if ((err instanceof Match.Error) && err.path)                                                   // 34  // 42
-      err.message += " in field " + err.path;                                                       // 35  // 43
-    throw err;                                                                                      // 36  // 44
-  }                                                                                                 // 37  // 45
-};                                                                                                  // 38  // 46
-                                                                                                    // 39  // 47
-/**                                                                                                 // 40  // 48
- * @namespace Match                                                                                 // 41  // 49
- * @summary The namespace for all Match types and methods.                                          // 42  // 50
- */                                                                                                 // 43  // 51
-Match = {                                                                                           // 44  // 52
-  Optional: function (pattern) {                                                                    // 45  // 53
-    return new Optional(pattern);                                                                   // 46  // 54
-  },                                                                                                // 47  // 55
-  OneOf: function (/*arguments*/) {                                                                 // 48  // 56
-    return new OneOf(_.toArray(arguments));                                                         // 49  // 57
-  },                                                                                                // 50  // 58
-  Any: ['__any__'],                                                                                 // 51  // 59
-  Where: function (condition) {                                                                     // 52  // 60
-    return new Where(condition);                                                                    // 53  // 61
-  },                                                                                                // 54  // 62
-  ObjectIncluding: function (pattern) {                                                             // 55  // 63
-    return new ObjectIncluding(pattern);                                                            // 56  // 64
-  },                                                                                                // 57  // 65
-  ObjectWithValues: function (pattern) {                                                            // 58  // 66
-    return new ObjectWithValues(pattern);                                                           // 59  // 67
-  },                                                                                                // 60  // 68
-  // Matches only signed 32-bit integers                                                            // 61  // 69
-  Integer: ['__integer__'],                                                                         // 62  // 70
-                                                                                                    // 63  // 71
-  // XXX matchers should know how to describe themselves for errors                                 // 64  // 72
-  Error: Meteor.makeErrorType("Match.Error", function (msg) {                                       // 65  // 73
-    this.message = "Match error: " + msg;                                                           // 66  // 74
-    // The path of the value that failed to match. Initially empty, this gets                       // 67  // 75
-    // populated by catching and rethrowing the exception as it goes back up the                    // 68  // 76
-    // stack.                                                                                       // 69  // 77
-    // E.g.: "vals[3].entity.created"                                                               // 70  // 78
-    this.path = "";                                                                                 // 71  // 79
-    // If this gets sent over DDP, don't give full internal details but at least                    // 72  // 80
-    // provide something better than 500 Internal server error.                                     // 73  // 81
-    this.sanitizedError = new Meteor.Error(400, "Match failed");                                    // 74  // 82
-  }),                                                                                               // 75  // 83
-                                                                                                    // 76  // 84
-  // Tests to see if value matches pattern. Unlike check, it merely returns true                    // 77  // 85
-  // or false (unless an error other than Match.Error was thrown). It does not                      // 78  // 86
-  // interact with _failIfArgumentsAreNotAllChecked.                                                // 79  // 87
-  // XXX maybe also implement a Match.match which returns more information about                    // 80  // 88
-  //     failures but without using exception handling or doing what check()                        // 81  // 89
-  //     does with _failIfArgumentsAreNotAllChecked and Meteor.Error conversion                     // 82  // 90
-                                                                                                    // 83  // 91
-  /**                                                                                               // 84  // 92
-   * @summary Returns true if the value matches the pattern.                                        // 85  // 93
-   * @locus Anywhere                                                                                // 86  // 94
-   * @param {Any} value The value to check                                                          // 87  // 95
-   * @param {MatchPattern} pattern The pattern to match `value` against                             // 88  // 96
-   */                                                                                               // 89  // 97
-  test: function (value, pattern) {                                                                 // 90  // 98
-    try {                                                                                           // 91  // 99
-      checkSubtree(value, pattern);                                                                 // 92  // 100
-      return true;                                                                                  // 93  // 101
-    } catch (e) {                                                                                   // 94  // 102
-      if (e instanceof Match.Error)                                                                 // 95  // 103
-        return false;                                                                               // 96  // 104
-      // Rethrow other errors.                                                                      // 97  // 105
-      throw e;                                                                                      // 98  // 106
-    }                                                                                               // 99  // 107
+//////////////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                                  //
+// packages/check/match.js                                                                          //
+//                                                                                                  //
+//////////////////////////////////////////////////////////////////////////////////////////////////////
+                                                                                                    //
+// XXX docs                                                                                         // 1
+                                                                                                    // 2
+// Things we explicitly do NOT support:                                                             // 3
+//    - heterogenous arrays                                                                         // 4
+                                                                                                    // 5
+var currentArgumentChecker = new Meteor.EnvironmentVariable;                                        // 6
+                                                                                                    // 7
+/**                                                                                                 // 8
+ * @summary Check that a value matches a [pattern](#matchpatterns).                                 // 9
+ * If the value does not match the pattern, throw a `Match.Error`.                                  // 10
+ *                                                                                                  // 11
+ * Particularly useful to assert that arguments to a function have the right                        // 12
+ * types and structure.                                                                             // 13
+ * @locus Anywhere                                                                                  // 14
+ * @param {Any} value The value to check                                                            // 15
+ * @param {MatchPattern} pattern The pattern to match                                               // 16
+ * `value` against                                                                                  // 17
+ */                                                                                                 // 18
+check = function (value, pattern) {                                                                 // 19
+  // Record that check got called, if somebody cared.                                               // 20
+  //                                                                                                // 21
+  // We use getOrNullIfOutsideFiber so that it's OK to call check()                                 // 22
+  // from non-Fiber server contexts; the downside is that if you forget to                          // 23
+  // bindEnvironment on some random callback in your method/publisher,                              // 24
+  // it might not find the argumentChecker and you'll get an error about                            // 25
+  // not checking an argument that it looks like you're checking (instead                           // 26
+  // of just getting a "Node code must run in a Fiber" error).                                      // 27
+  var argChecker = currentArgumentChecker.getOrNullIfOutsideFiber();                                // 28
+  if (argChecker)                                                                                   // 29
+    argChecker.checking(value);                                                                     // 30
+  try {                                                                                             // 31
+    checkSubtree(value, pattern);                                                                   // 32
+  } catch (err) {                                                                                   // 33
+    if ((err instanceof Match.Error) && err.path)                                                   // 34
+      err.message += " in field " + err.path;                                                       // 35
+    throw err;                                                                                      // 36
+  }                                                                                                 // 37
+};                                                                                                  // 38
+                                                                                                    // 39
+/**                                                                                                 // 40
+ * @namespace Match                                                                                 // 41
+ * @summary The namespace for all Match types and methods.                                          // 42
+ */                                                                                                 // 43
+Match = {                                                                                           // 44
+  Optional: function (pattern) {                                                                    // 45
+    return new Optional(pattern);                                                                   // 46
+  },                                                                                                // 47
+  OneOf: function (/*arguments*/) {                                                                 // 48
+    return new OneOf(_.toArray(arguments));                                                         // 49
+  },                                                                                                // 50
+  Any: ['__any__'],                                                                                 // 51
+  Where: function (condition) {                                                                     // 52
+    return new Where(condition);                                                                    // 53
+  },                                                                                                // 54
+  ObjectIncluding: function (pattern) {                                                             // 55
+    return new ObjectIncluding(pattern);                                                            // 56
+  },                                                                                                // 57
+  ObjectWithValues: function (pattern) {                                                            // 58
+    return new ObjectWithValues(pattern);                                                           // 59
+  },                                                                                                // 60
+  // Matches only signed 32-bit integers                                                            // 61
+  Integer: ['__integer__'],                                                                         // 62
+                                                                                                    // 63
+  // XXX matchers should know how to describe themselves for errors                                 // 64
+  Error: Meteor.makeErrorType("Match.Error", function (msg) {                                       // 65
+    this.message = "Match error: " + msg;                                                           // 66
+    // The path of the value that failed to match. Initially empty, this gets                       // 67
+    // populated by catching and rethrowing the exception as it goes back up the                    // 68
+    // stack.                                                                                       // 69
+    // E.g.: "vals[3].entity.created"                                                               // 70
+    this.path = "";                                                                                 // 71
+    // If this gets sent over DDP, don't give full internal details but at least                    // 72
+    // provide something better than 500 Internal server error.                                     // 73
+    this.sanitizedError = new Meteor.Error(400, "Match failed");                                    // 74
+  }),                                                                                               // 75
+                                                                                                    // 76
+  // Tests to see if value matches pattern. Unlike check, it merely returns true                    // 77
+  // or false (unless an error other than Match.Error was thrown). It does not                      // 78
+  // interact with _failIfArgumentsAreNotAllChecked.                                                // 79
+  // XXX maybe also implement a Match.match which returns more information about                    // 80
+  //     failures but without using exception handling or doing what check()                        // 81
+  //     does with _failIfArgumentsAreNotAllChecked and Meteor.Error conversion                     // 82
+                                                                                                    // 83
+  /**                                                                                               // 84
+   * @summary Returns true if the value matches the pattern.                                        // 85
+   * @locus Anywhere                                                                                // 86
+   * @param {Any} value The value to check                                                          // 87
+   * @param {MatchPattern} pattern The pattern to match `value` against                             // 88
+   */                                                                                               // 89
+  test: function (value, pattern) {                                                                 // 90
+    try {                                                                                           // 91
+      checkSubtree(value, pattern);                                                                 // 92
+      return true;                                                                                  // 93
+    } catch (e) {                                                                                   // 94
+      if (e instanceof Match.Error)                                                                 // 95
+        return false;                                                                               // 96
+      // Rethrow other errors.                                                                      // 97
+      throw e;                                                                                      // 98
+    }                                                                                               // 99
   },                                                                                                // 100
                                                                                                     // 101
   // Runs `f.apply(context, args)`. If check() is not called on every element of                    // 102
@@ -193,7 +185,7 @@ var checkSubtree = function (value, pattern) {                                  
   }                                                                                                 // 167
                                                                                                     // 168
   // Strings, numbers, and booleans match literally. Goes well with Match.OneOf.                    // 169
-  if (typeof pattern === "string" || typeof pattern === "number" || typeof pattern === "boolean") {        // 178
+  if (typeof pattern === "string" || typeof pattern === "number" || typeof pattern === "boolean") {
     if (value === pattern)                                                                          // 171
       return;                                                                                       // 172
     throw new Match.Error("Expected " + pattern + ", got " +                                        // 173
@@ -407,11 +399,7 @@ var _prependPath = function (key, base) {                                       
 };                                                                                                  // 381
                                                                                                     // 382
                                                                                                     // 383
-//////////////////////////////////////////////////////////////////////////////////////////////////////     // 392
-                                                                                                           // 393
-}).call(this);                                                                                             // 394
-                                                                                                           // 395
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////
 
 }).call(this);
 

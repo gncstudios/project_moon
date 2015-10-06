@@ -26,119 +26,111 @@ var Spacebars;
 
 (function(){
 
-//////////////////////////////////////////////////////////////////////////////////////////
-//                                                                                      //
-// packages/spacebars/packages/spacebars.js                                             //
-//                                                                                      //
-//////////////////////////////////////////////////////////////////////////////////////////
-                                                                                        //
-(function(){                                                                            // 1
-                                                                                        // 2
-///////////////////////////////////////////////////////////////////////////////////     // 3
-//                                                                               //     // 4
-// packages/spacebars/spacebars-runtime.js                                       //     // 5
-//                                                                               //     // 6
-///////////////////////////////////////////////////////////////////////////////////     // 7
-                                                                                 //     // 8
-Spacebars = {};                                                                  // 1   // 9
-                                                                                 // 2   // 10
-var tripleEquals = function (a, b) { return a === b; };                          // 3   // 11
-                                                                                 // 4   // 12
-Spacebars.include = function (templateOrFunction, contentFunc, elseFunc) {       // 5   // 13
-  if (! templateOrFunction)                                                      // 6   // 14
-    return null;                                                                 // 7   // 15
-                                                                                 // 8   // 16
-  if (typeof templateOrFunction !== 'function') {                                // 9   // 17
-    var template = templateOrFunction;                                           // 10  // 18
-    if (! Blaze.isTemplate(template))                                            // 11  // 19
-      throw new Error("Expected template or null, found: " + template);          // 12  // 20
-    var view = templateOrFunction.constructView(contentFunc, elseFunc);          // 13  // 21
-    view.__startsNewLexicalScope = true;                                         // 14  // 22
-    return view;                                                                 // 15  // 23
-  }                                                                              // 16  // 24
-                                                                                 // 17  // 25
-  var templateVar = Blaze.ReactiveVar(null, tripleEquals);                       // 18  // 26
-  var view = Blaze.View('Spacebars.include', function () {                       // 19  // 27
-    var template = templateVar.get();                                            // 20  // 28
-    if (template === null)                                                       // 21  // 29
-      return null;                                                               // 22  // 30
-                                                                                 // 23  // 31
-    if (! Blaze.isTemplate(template))                                            // 24  // 32
-      throw new Error("Expected template or null, found: " + template);          // 25  // 33
-                                                                                 // 26  // 34
-    return template.constructView(contentFunc, elseFunc);                        // 27  // 35
-  });                                                                            // 28  // 36
-  view.__templateVar = templateVar;                                              // 29  // 37
-  view.onViewCreated(function () {                                               // 30  // 38
-    this.autorun(function () {                                                   // 31  // 39
-      templateVar.set(templateOrFunction());                                     // 32  // 40
-    });                                                                          // 33  // 41
-  });                                                                            // 34  // 42
-  view.__startsNewLexicalScope = true;                                           // 35  // 43
-                                                                                 // 36  // 44
-  return view;                                                                   // 37  // 45
-};                                                                               // 38  // 46
-                                                                                 // 39  // 47
-// Executes `{{foo bar baz}}` when called on `(foo, bar, baz)`.                  // 40  // 48
-// If `bar` and `baz` are functions, they are called before                      // 41  // 49
-// `foo` is called on them.                                                      // 42  // 50
-//                                                                               // 43  // 51
-// This is the shared part of Spacebars.mustache and                             // 44  // 52
-// Spacebars.attrMustache, which differ in how they post-process the             // 45  // 53
-// result.                                                                       // 46  // 54
-Spacebars.mustacheImpl = function (value/*, args*/) {                            // 47  // 55
-  var args = arguments;                                                          // 48  // 56
-  // if we have any arguments (pos or kw), add an options argument               // 49  // 57
-  // if there isn't one.                                                         // 50  // 58
-  if (args.length > 1) {                                                         // 51  // 59
-    var kw = args[args.length - 1];                                              // 52  // 60
-    if (! (kw instanceof Spacebars.kw)) {                                        // 53  // 61
-      kw = Spacebars.kw();                                                       // 54  // 62
-      // clone arguments into an actual array, then push                         // 55  // 63
-      // the empty kw object.                                                    // 56  // 64
-      args = Array.prototype.slice.call(arguments);                              // 57  // 65
-      args.push(kw);                                                             // 58  // 66
-    } else {                                                                     // 59  // 67
-      // For each keyword arg, call it if it's a function                        // 60  // 68
-      var newHash = {};                                                          // 61  // 69
-      for (var k in kw.hash) {                                                   // 62  // 70
-        var v = kw.hash[k];                                                      // 63  // 71
-        newHash[k] = (typeof v === 'function' ? v() : v);                        // 64  // 72
-      }                                                                          // 65  // 73
-      args[args.length - 1] = Spacebars.kw(newHash);                             // 66  // 74
-    }                                                                            // 67  // 75
-  }                                                                              // 68  // 76
-                                                                                 // 69  // 77
-  return Spacebars.call.apply(null, args);                                       // 70  // 78
-};                                                                               // 71  // 79
-                                                                                 // 72  // 80
-Spacebars.mustache = function (value/*, args*/) {                                // 73  // 81
-  var result = Spacebars.mustacheImpl.apply(null, arguments);                    // 74  // 82
-                                                                                 // 75  // 83
-  if (result instanceof Spacebars.SafeString)                                    // 76  // 84
-    return HTML.Raw(result.toString());                                          // 77  // 85
-  else                                                                           // 78  // 86
-    // map `null`, `undefined`, and `false` to null, which is important          // 79  // 87
-    // so that attributes with nully values are considered absent.               // 80  // 88
-    // stringify anything else (e.g. strings, booleans, numbers including 0).    // 81  // 89
-    return (result == null || result === false) ? null : String(result);         // 82  // 90
-};                                                                               // 83  // 91
-                                                                                 // 84  // 92
-Spacebars.attrMustache = function (value/*, args*/) {                            // 85  // 93
-  var result = Spacebars.mustacheImpl.apply(null, arguments);                    // 86  // 94
-                                                                                 // 87  // 95
-  if (result == null || result === '') {                                         // 88  // 96
-    return null;                                                                 // 89  // 97
-  } else if (typeof result === 'object') {                                       // 90  // 98
-    return result;                                                               // 91  // 99
-  } else if (typeof result === 'string' && HTML.isValidAttributeName(result)) {  // 92  // 100
-    var obj = {};                                                                // 93  // 101
-    obj[result] = '';                                                            // 94  // 102
-    return obj;                                                                  // 95  // 103
-  } else {                                                                       // 96  // 104
-    throw new Error("Expected valid attribute name, '', null, or object");       // 97  // 105
-  }                                                                              // 98  // 106
-};                                                                               // 99  // 107
+///////////////////////////////////////////////////////////////////////////////////
+//                                                                               //
+// packages/spacebars/spacebars-runtime.js                                       //
+//                                                                               //
+///////////////////////////////////////////////////////////////////////////////////
+                                                                                 //
+Spacebars = {};                                                                  // 1
+                                                                                 // 2
+var tripleEquals = function (a, b) { return a === b; };                          // 3
+                                                                                 // 4
+Spacebars.include = function (templateOrFunction, contentFunc, elseFunc) {       // 5
+  if (! templateOrFunction)                                                      // 6
+    return null;                                                                 // 7
+                                                                                 // 8
+  if (typeof templateOrFunction !== 'function') {                                // 9
+    var template = templateOrFunction;                                           // 10
+    if (! Blaze.isTemplate(template))                                            // 11
+      throw new Error("Expected template or null, found: " + template);          // 12
+    var view = templateOrFunction.constructView(contentFunc, elseFunc);          // 13
+    view.__startsNewLexicalScope = true;                                         // 14
+    return view;                                                                 // 15
+  }                                                                              // 16
+                                                                                 // 17
+  var templateVar = Blaze.ReactiveVar(null, tripleEquals);                       // 18
+  var view = Blaze.View('Spacebars.include', function () {                       // 19
+    var template = templateVar.get();                                            // 20
+    if (template === null)                                                       // 21
+      return null;                                                               // 22
+                                                                                 // 23
+    if (! Blaze.isTemplate(template))                                            // 24
+      throw new Error("Expected template or null, found: " + template);          // 25
+                                                                                 // 26
+    return template.constructView(contentFunc, elseFunc);                        // 27
+  });                                                                            // 28
+  view.__templateVar = templateVar;                                              // 29
+  view.onViewCreated(function () {                                               // 30
+    this.autorun(function () {                                                   // 31
+      templateVar.set(templateOrFunction());                                     // 32
+    });                                                                          // 33
+  });                                                                            // 34
+  view.__startsNewLexicalScope = true;                                           // 35
+                                                                                 // 36
+  return view;                                                                   // 37
+};                                                                               // 38
+                                                                                 // 39
+// Executes `{{foo bar baz}}` when called on `(foo, bar, baz)`.                  // 40
+// If `bar` and `baz` are functions, they are called before                      // 41
+// `foo` is called on them.                                                      // 42
+//                                                                               // 43
+// This is the shared part of Spacebars.mustache and                             // 44
+// Spacebars.attrMustache, which differ in how they post-process the             // 45
+// result.                                                                       // 46
+Spacebars.mustacheImpl = function (value/*, args*/) {                            // 47
+  var args = arguments;                                                          // 48
+  // if we have any arguments (pos or kw), add an options argument               // 49
+  // if there isn't one.                                                         // 50
+  if (args.length > 1) {                                                         // 51
+    var kw = args[args.length - 1];                                              // 52
+    if (! (kw instanceof Spacebars.kw)) {                                        // 53
+      kw = Spacebars.kw();                                                       // 54
+      // clone arguments into an actual array, then push                         // 55
+      // the empty kw object.                                                    // 56
+      args = Array.prototype.slice.call(arguments);                              // 57
+      args.push(kw);                                                             // 58
+    } else {                                                                     // 59
+      // For each keyword arg, call it if it's a function                        // 60
+      var newHash = {};                                                          // 61
+      for (var k in kw.hash) {                                                   // 62
+        var v = kw.hash[k];                                                      // 63
+        newHash[k] = (typeof v === 'function' ? v() : v);                        // 64
+      }                                                                          // 65
+      args[args.length - 1] = Spacebars.kw(newHash);                             // 66
+    }                                                                            // 67
+  }                                                                              // 68
+                                                                                 // 69
+  return Spacebars.call.apply(null, args);                                       // 70
+};                                                                               // 71
+                                                                                 // 72
+Spacebars.mustache = function (value/*, args*/) {                                // 73
+  var result = Spacebars.mustacheImpl.apply(null, arguments);                    // 74
+                                                                                 // 75
+  if (result instanceof Spacebars.SafeString)                                    // 76
+    return HTML.Raw(result.toString());                                          // 77
+  else                                                                           // 78
+    // map `null`, `undefined`, and `false` to null, which is important          // 79
+    // so that attributes with nully values are considered absent.               // 80
+    // stringify anything else (e.g. strings, booleans, numbers including 0).    // 81
+    return (result == null || result === false) ? null : String(result);         // 82
+};                                                                               // 83
+                                                                                 // 84
+Spacebars.attrMustache = function (value/*, args*/) {                            // 85
+  var result = Spacebars.mustacheImpl.apply(null, arguments);                    // 86
+                                                                                 // 87
+  if (result == null || result === '') {                                         // 88
+    return null;                                                                 // 89
+  } else if (typeof result === 'object') {                                       // 90
+    return result;                                                               // 91
+  } else if (typeof result === 'string' && HTML.isValidAttributeName(result)) {  // 92
+    var obj = {};                                                                // 93
+    obj[result] = '';                                                            // 94
+    return obj;                                                                  // 95
+  } else {                                                                       // 96
+    throw new Error("Expected valid attribute name, '', null, or object");       // 97
+  }                                                                              // 98
+};                                                                               // 99
                                                                                  // 100
 Spacebars.dataMustache = function (value/*, args*/) {                            // 101
   var result = Spacebars.mustacheImpl.apply(null, arguments);                    // 102
@@ -192,7 +184,7 @@ Spacebars.kw = function (hash) {                                                
 };                                                                               // 150
                                                                                  // 151
 // Call this as `Spacebars.SafeString("some HTML")`.  The return value           // 152
-// is `instanceof Spacebars.SafeString` (and `instanceof Handlebars.SafeString).        // 161
+// is `instanceof Spacebars.SafeString` (and `instanceof Handlebars.SafeString).
 Spacebars.SafeString = function (html) {                                         // 154
   if (! (this instanceof Spacebars.SafeString))                                  // 155
     // called without new; call with new                                         // 156
@@ -321,11 +313,7 @@ Spacebars.With = function (argFunc, contentFunc, elseFunc) {                    
 // XXX COMPAT WITH 0.9.0                                                         // 279
 Spacebars.TemplateWith = Blaze._TemplateWith;                                    // 280
                                                                                  // 281
-///////////////////////////////////////////////////////////////////////////////////     // 290
-                                                                                        // 291
-}).call(this);                                                                          // 292
-                                                                                        // 293
-//////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////
 
 }).call(this);
 
