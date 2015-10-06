@@ -1,0 +1,47 @@
+/* Imports for global scope */
+
+Spiderable = Package.spiderable.Spiderable;
+Roles = Package['alanning:roles'].Roles;
+Router = Package['iron:router'].Router;
+RouteController = Package['iron:router'].RouteController;
+moment = Package['mrt:moment'].moment;
+_s = Package['mrt:underscore-string-latest']._s;
+CollectionHooks = Package['matb33:collection-hooks'].CollectionHooks;
+MongoInternals = Package.mongo.MongoInternals;
+Mongo = Package.mongo.Mongo;
+Tracker = Package.tracker.Tracker;
+Deps = Package.tracker.Deps;
+Log = Package.logging.Log;
+Random = Package.random.Random;
+EJSON = Package.ejson.EJSON;
+Spacebars = Package.spacebars.Spacebars;
+check = Package.check.check;
+Match = Package.check.Match;
+ECMAScript = Package.ecmascript.ECMAScript;
+SimpleSchema = Package['aldeed:simple-schema'].SimpleSchema;
+MongoObject = Package['aldeed:simple-schema'].MongoObject;
+Shower = Package['copleykj:shower'].Shower;
+ReactiveVar = Package['reactive-var'].ReactiveVar;
+Accounts = Package['accounts-base'].Accounts;
+AccountsServer = Package['accounts-base'].AccountsServer;
+Iron = Package['iron:core'].Iron;
+Meteor = Package.meteor.Meteor;
+WebApp = Package.webapp.WebApp;
+main = Package.webapp.main;
+WebAppInternals = Package.webapp.WebAppInternals;
+_ = Package.underscore._;
+DDP = Package['ddp-client'].DDP;
+DDPServer = Package['ddp-server'].DDPServer;
+LaunchScreen = Package['launch-screen'].LaunchScreen;
+Blaze = Package.ui.Blaze;
+UI = Package.ui.UI;
+Handlebars = Package.ui.Handlebars;
+AccountsTemplates = Package['useraccounts:core'].AccountsTemplates;
+babelHelpers = Package['babel-runtime'].babelHelpers;
+Promise = Package.promise.Promise;
+Map = Package['ecmascript-collections'].Map;
+Set = Package['ecmascript-collections'].Set;
+Autoupdate = Package.autoupdate.Autoupdate;
+HTML = Package.htmljs.HTML;
+T9n = Package['softwarerero:accounts-t9n'].T9n;
+
