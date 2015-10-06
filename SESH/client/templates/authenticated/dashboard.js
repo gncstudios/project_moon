@@ -3,7 +3,7 @@ Template.dashboard.onRendered( () => {
   // For Locations
   if (GoogleMaps.loaded()) {
     $("#classLocation").geocomplete({
-      map: "#classLocationMap"
+      map: "#classLocationMap "
     });
   } // end of locations
 

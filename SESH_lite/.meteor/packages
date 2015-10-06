@@ -36,3 +36,5 @@ ecmascript
 aldeed:simple-schema
 copleykj:shower
 reactive-var
+materialize:materialize@=0.97.0
+jeremy:geocomplete
