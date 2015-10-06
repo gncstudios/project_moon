@@ -1,13 +1,25 @@
 <template name="dashboard">
-  <h3>Dashboard</h3>
-  <p>Here are your e-mails:</p>
-  <ul>
-  {{#each currentUser.emails}}
-  <li>{{address}}</li>
-  {{/each}}
-  </ul>
-  <form id="test">
-    <input name="test" value="yep"/>
-    <input type="submit" value="Submit"/>
-  </form>
+  <h3>Class</h3>
+  <p>Teach a new class</p>
+
+  <div class="form-group">
+    <input type="text" class="form-control" id="className" placeholder="Class Name">
+  </div>
+  <div class="form-group">
+    <input type="text" class="form-control" id="classCost" placeholder="$0.00">
+  </div>
+  <div class="form-group">
+    <input type="text" class="form-control" id="classCost" placeholder="0:00">
+  </div>
+  <div class="form-group">
+    <input type="text" class="form-control" id="classLocation" placeholder="Enter Cities, Streets, Zipcodes">
+    <div class="map-container">
+      {{> googleMap id="classLocationMap" options=classLocationOptions}}
+    </div>
+  </div>
+
+
+  <div class="form-group text-center">
+    <button class="btn btn-success">Teach</button>
+  </div>
 </template>

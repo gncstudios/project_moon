@@ -3,3 +3,19 @@
 @import "objects/forms";
 
 @import "components/login";
+
+
+$brand-primary: #2196F3;
+
+.navbar {
+  background-color: $brand-primary;
+}
+.white-text {
+  color:white !important;
+}
+
+.map-container {
+  width: 800px;
+  max-width: 100%;
+  height: 500px;
+}

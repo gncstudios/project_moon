@@ -18,6 +18,9 @@ Meeting.deny({
 });
 
 let CollectionSchema = new SimpleSchema({
+  /*
+    I like this. - Sam
+  */
   "owner": {
     type: String,
     label: "The ID of the owner of the meeting."
@@ -31,10 +34,13 @@ let CollectionSchema = new SimpleSchema({
     label: "The time of the meeting"
   },
   "attendees": {
+    /*
+      So are attendees goign to have a type? teacher or student? this may solve
+      the many to many.
+    */
     type: [String],
     label: "The users attending the event"
   }
 });
 
 Meeting.attachSchema( CollectionSchema );
-
