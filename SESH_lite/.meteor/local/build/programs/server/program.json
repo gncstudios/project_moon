@@ -382,10 +382,6 @@
       "path": "packages/copleykj_shower.js"
     },
     {
-      "sourceMap": "packages/materialize_materialize.js.map",
-      "path": "packages/materialize_materialize.js"
-    },
-    {
       "sourceMap": "packages/dburles_google-maps.js.map",
       "path": "packages/dburles_google-maps.js"
     },

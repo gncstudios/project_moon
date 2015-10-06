@@ -26,7 +26,6 @@ SimpleSchema = Package['aldeed:simple-schema'].SimpleSchema;
 MongoObject = Package['aldeed:simple-schema'].MongoObject;
 Shower = Package['copleykj:shower'].Shower;
 ReactiveVar = Package['reactive-var'].ReactiveVar;
-Materialize = Package['materialize:materialize'].Materialize;
 Accounts = Package['accounts-base'].Accounts;
 AccountsClient = Package['accounts-base'].AccountsClient;
 Iron = Package['iron:core'].Iron;
