@@ -1126,11 +1126,11 @@
       "where": "client",
       "type": "js",
       "cacheable": true,
-      "url": "/app/client/templates/dashboard/template.dashboard.js?260f6de4c3493299508579031acde5434fdeeb6a",
+      "url": "/app/client/templates/dashboard/template.dashboard.js?a0568532001ac39d3d137c2190e1cf5fffe502f9",
       "sourceMap": "app/client/templates/dashboard/template.dashboard.js.map",
-      "sourceMapUrl": "/app/client/templates/dashboard/260f6de4c3493299508579031acde5434fdeeb6a.map",
-      "size": 3576,
-      "hash": "260f6de4c3493299508579031acde5434fdeeb6a"
+      "sourceMapUrl": "/app/client/templates/dashboard/a0568532001ac39d3d137c2190e1cf5fffe502f9.map",
+      "size": 3963,
+      "hash": "a0568532001ac39d3d137c2190e1cf5fffe502f9"
     },
     {
       "path": "app/client/templates/home/template.home.js",
@@ -1203,11 +1203,11 @@
       "where": "client",
       "type": "js",
       "cacheable": true,
-      "url": "/app/client/templates/dashboard/dashboard.js?e747748a833b50fa2453378d25fbd88a25ee6025",
+      "url": "/app/client/templates/dashboard/dashboard.js?2219b4a86ece7324d7463c18acf9c5d11f86bda6",
       "sourceMap": "app/client/templates/dashboard/dashboard.js.map",
-      "sourceMapUrl": "/app/client/templates/dashboard/e747748a833b50fa2453378d25fbd88a25ee6025.map",
-      "size": 8546,
-      "hash": "e747748a833b50fa2453378d25fbd88a25ee6025"
+      "sourceMapUrl": "/app/client/templates/dashboard/2219b4a86ece7324d7463c18acf9c5d11f86bda6.map",
+      "size": 11510,
+      "hash": "2219b4a86ece7324d7463c18acf9c5d11f86bda6"
     },
     {
       "path": "app/client/templates/home/home.js",

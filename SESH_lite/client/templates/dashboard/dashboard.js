@@ -17,6 +17,8 @@ Template.dashboard.events({
     Meetings.insert({
       name: $("[name='name']").val(),
       cost: $("[name='cost']").val() || 1.00,
+      lat: $("[name='lat']").val(),
+      lng: $("[name='lng']").val(),
       owner: Meteor.userId()
     });
 
@@ -70,23 +72,65 @@ Template.dashboard.helpers({
   }
 });
 
-Template.dashboard.helpers({
-  title:function(){
-    return "YAY TITLE";
-  }
-});
+
 Template.dashboard.onCreated(function() {
   // We can use the `ready` callback to interact with the map API once the map is ready.
   GoogleMaps.ready('exampleMap', function(map) {
 
 
-    // Add a marker to the map once it's ready
-    var marker = new google.maps.Marker({
-      position: map.options.center,
-      map: map.instance
-    });
+Meetings.find().observe({  
+  added: function(document) {
+    // Create a marker for this document
+    var lat = document.lat;
+    var lng = document.lng;
+    if(lat && lng) {
+      var marker = new google.maps.Marker({
+        draggable: true,
+        animation: google.maps.Animation.DROP,
+        position: new google.maps.LatLng(lat, lng),
+        map: map.instance,
+        // We store the document _id on the marker in order 
+        // to update the document within the 'dragend' event below.
+        id: document._id
+      });
+
+
+      // This listener lets us drag markers on the map and update their corresponding document.
+      google.maps.event.addListener(marker, 'dragend', function(event) {
+        Markers.update(marker.id, { $set: { lat: event.latLng.lat(), lng: event.latLng.lng() }});
+      });
+      if(document._id) {
+      // Store this marker instance within the markers object.
+        markers[document._id] = marker;
+      } else {
+        console.log("no document _id??");
+      }
+    }
+  },
+  changed: function(newDocument, oldDocument) {
+    if(markers[newDocument._id]) {
+      markers[newDocument._id].setPosition({ lat: newDocument.lat, lng: newDocument.lng });
+    }
+  },
+  removed: function(oldDocument) {
+    
+    console.log("removed:")
+    console.log(oldDocument);
+    markers[oldDocument._id].setMap(null);
+
+    // Clear the event listener
+    google.maps.event.clearInstanceListeners(
+      markers[oldDocument._id]);
+
+    // Remove the reference to this marker instance
+    delete markers[oldDocument._id];
+  }
+});
+
+    $("[name='lat']").val(map.options.center.lat()+Math.random()-0.5);
+    $("[name='lng']").val(map.options.center.lng()+Math.random()-0.5);
     //console.log(map.options.center);
-    for(let i = 0; i < 10; i++) {
+    for(let i = 0; false && i < 10; i++) {
       setTimeout(function() {
         let position = new google.maps.LatLng(map.options.center.lat()+Math.random()-0.5, map.options.center.lng()+Math.random()-0.5);
         let marker = new google.maps.Marker({
@@ -101,4 +145,5 @@ Template.dashboard.onCreated(function() {
       }, 50*i);
     }
   });
+
 });
