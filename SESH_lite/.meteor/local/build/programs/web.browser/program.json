@@ -1051,9 +1051,9 @@
       "where": "client",
       "type": "js",
       "cacheable": true,
-      "url": "/packages/global-imports.js?d5b68fa5abf9f98d8c1ffa18fc21fd52997103fa",
+      "url": "/packages/global-imports.js?589437d82a256a42aca8752e63a154a34ad09c12",
       "size": 1940,
-      "hash": "d5b68fa5abf9f98d8c1ffa18fc21fd52997103fa"
+      "hash": "589437d82a256a42aca8752e63a154a34ad09c12"
     },
     {
       "path": "app/client/templates/_shared/template._layout.js",
@@ -1082,11 +1082,11 @@
       "where": "client",
       "type": "js",
       "cacheable": true,
-      "url": "/app/client/templates/_shared/template.header.js?a3d5a37bc9ebaad09bf07f5724f0e9a782c341f4",
+      "url": "/app/client/templates/_shared/template.header.js?63b7d4377db599a83c8712299015c060260b39d3",
       "sourceMap": "app/client/templates/_shared/template.header.js.map",
-      "sourceMapUrl": "/app/client/templates/_shared/a3d5a37bc9ebaad09bf07f5724f0e9a782c341f4.map",
-      "size": 4052,
-      "hash": "a3d5a37bc9ebaad09bf07f5724f0e9a782c341f4"
+      "sourceMapUrl": "/app/client/templates/_shared/63b7d4377db599a83c8712299015c060260b39d3.map",
+      "size": 4213,
+      "hash": "63b7d4377db599a83c8712299015c060260b39d3"
     },
     {
       "path": "app/client/templates/_shared/template.loading.js",
@@ -1104,11 +1104,11 @@
       "where": "client",
       "type": "js",
       "cacheable": true,
-      "url": "/app/client/templates/_shared/template.meetingRow.js?24861dd531f98a07811c78d4445e3b765b5d706d",
+      "url": "/app/client/templates/_shared/template.meetingRow.js?40ba31e4827172661dca012115defb7f3da582dc",
       "sourceMap": "app/client/templates/_shared/template.meetingRow.js.map",
-      "sourceMapUrl": "/app/client/templates/_shared/24861dd531f98a07811c78d4445e3b765b5d706d.map",
-      "size": 1245,
-      "hash": "24861dd531f98a07811c78d4445e3b765b5d706d"
+      "sourceMapUrl": "/app/client/templates/_shared/40ba31e4827172661dca012115defb7f3da582dc.map",
+      "size": 1269,
+      "hash": "40ba31e4827172661dca012115defb7f3da582dc"
     },
     {
       "path": "app/client/templates/_shared/template.notFound.js",
@@ -1126,22 +1126,22 @@
       "where": "client",
       "type": "js",
       "cacheable": true,
-      "url": "/app/client/templates/dashboard/template.dashboard.js?f092fa414572892cde7cfddba85880fb79e98ab0",
+      "url": "/app/client/templates/dashboard/template.dashboard.js?260f6de4c3493299508579031acde5434fdeeb6a",
       "sourceMap": "app/client/templates/dashboard/template.dashboard.js.map",
-      "sourceMapUrl": "/app/client/templates/dashboard/f092fa414572892cde7cfddba85880fb79e98ab0.map",
-      "size": 2674,
-      "hash": "f092fa414572892cde7cfddba85880fb79e98ab0"
+      "sourceMapUrl": "/app/client/templates/dashboard/260f6de4c3493299508579031acde5434fdeeb6a.map",
+      "size": 3576,
+      "hash": "260f6de4c3493299508579031acde5434fdeeb6a"
     },
     {
       "path": "app/client/templates/home/template.home.js",
       "where": "client",
       "type": "js",
       "cacheable": true,
-      "url": "/app/client/templates/home/template.home.js?9bdc5196d7c5e57edd08d0be37c212bc041b35ef",
+      "url": "/app/client/templates/home/template.home.js?6b2682c2715bcaad0846cefd6acbddf4de29e82b",
       "sourceMap": "app/client/templates/home/template.home.js.map",
-      "sourceMapUrl": "/app/client/templates/home/9bdc5196d7c5e57edd08d0be37c212bc041b35ef.map",
-      "size": 2116,
-      "hash": "9bdc5196d7c5e57edd08d0be37c212bc041b35ef"
+      "sourceMapUrl": "/app/client/templates/home/6b2682c2715bcaad0846cefd6acbddf4de29e82b.map",
+      "size": 2229,
+      "hash": "6b2682c2715bcaad0846cefd6acbddf4de29e82b"
     },
     {
       "path": "app/client/templates/login/template.login.js",
@@ -1159,11 +1159,11 @@
       "where": "client",
       "type": "js",
       "cacheable": true,
-      "url": "/app/client/templates/profile/template.profile.js?2f7c367c70ab9b12451f9ed16bd72d088bc1d6af",
+      "url": "/app/client/templates/profile/template.profile.js?61e0d764222e4f99cb745ccb5b486d9be2236152",
       "sourceMap": "app/client/templates/profile/template.profile.js.map",
-      "sourceMapUrl": "/app/client/templates/profile/2f7c367c70ab9b12451f9ed16bd72d088bc1d6af.map",
-      "size": 1681,
-      "hash": "2f7c367c70ab9b12451f9ed16bd72d088bc1d6af"
+      "sourceMapUrl": "/app/client/templates/profile/61e0d764222e4f99cb745ccb5b486d9be2236152.map",
+      "size": 1839,
+      "hash": "61e0d764222e4f99cb745ccb5b486d9be2236152"
     },
     {
       "path": "app/client/templates/signup/template.signup.js",
@@ -1192,22 +1192,22 @@
       "where": "client",
       "type": "js",
       "cacheable": true,
-      "url": "/app/client/templates/_shared/meetingRow.js?ae4e84e679434b63eb8482230cd8f3121ab2a823",
+      "url": "/app/client/templates/_shared/meetingRow.js?339411d447bfb26e436d2aab868dff8bd5e4fdcd",
       "sourceMap": "app/client/templates/_shared/meetingRow.js.map",
-      "sourceMapUrl": "/app/client/templates/_shared/ae4e84e679434b63eb8482230cd8f3121ab2a823.map",
-      "size": 2445,
-      "hash": "ae4e84e679434b63eb8482230cd8f3121ab2a823"
+      "sourceMapUrl": "/app/client/templates/_shared/339411d447bfb26e436d2aab868dff8bd5e4fdcd.map",
+      "size": 2365,
+      "hash": "339411d447bfb26e436d2aab868dff8bd5e4fdcd"
     },
     {
       "path": "app/client/templates/dashboard/dashboard.js",
       "where": "client",
       "type": "js",
       "cacheable": true,
-      "url": "/app/client/templates/dashboard/dashboard.js?0ad66040a38323e3216c96cfe5f325ec2ff2f08a",
+      "url": "/app/client/templates/dashboard/dashboard.js?e747748a833b50fa2453378d25fbd88a25ee6025",
       "sourceMap": "app/client/templates/dashboard/dashboard.js.map",
-      "sourceMapUrl": "/app/client/templates/dashboard/0ad66040a38323e3216c96cfe5f325ec2ff2f08a.map",
-      "size": 2505,
-      "hash": "0ad66040a38323e3216c96cfe5f325ec2ff2f08a"
+      "sourceMapUrl": "/app/client/templates/dashboard/e747748a833b50fa2453378d25fbd88a25ee6025.map",
+      "size": 8546,
+      "hash": "e747748a833b50fa2453378d25fbd88a25ee6025"
     },
     {
       "path": "app/client/templates/home/home.js",
@@ -1236,11 +1236,11 @@
       "where": "client",
       "type": "js",
       "cacheable": true,
-      "url": "/app/client/templates/profile/profile.js?374c0b6cc989a12b085af7d5f9687a149012e9d5",
+      "url": "/app/client/templates/profile/profile.js?bb11529f4356c738b595df5f44e3100a7979b673",
       "sourceMap": "app/client/templates/profile/profile.js.map",
-      "sourceMapUrl": "/app/client/templates/profile/374c0b6cc989a12b085af7d5f9687a149012e9d5.map",
-      "size": 2141,
-      "hash": "374c0b6cc989a12b085af7d5f9687a149012e9d5"
+      "sourceMapUrl": "/app/client/templates/profile/bb11529f4356c738b595df5f44e3100a7979b673.map",
+      "size": 2221,
+      "hash": "bb11529f4356c738b595df5f44e3100a7979b673"
     },
     {
       "path": "app/client/templates/signup/signup.js",
@@ -1269,22 +1269,22 @@
       "where": "client",
       "type": "js",
       "cacheable": true,
-      "url": "/app/both/config/config.js?ae041281b77117f1f15b76f1141c56b20c8ca488",
+      "url": "/app/both/config/config.js?f36210220629ad1eb1004d2193d5f5130524eeb2",
       "sourceMap": "app/both/config/config.js.map",
-      "sourceMapUrl": "/app/both/config/ae041281b77117f1f15b76f1141c56b20c8ca488.map",
-      "size": 2366,
-      "hash": "ae041281b77117f1f15b76f1141c56b20c8ca488"
+      "sourceMapUrl": "/app/both/config/f36210220629ad1eb1004d2193d5f5130524eeb2.map",
+      "size": 2594,
+      "hash": "f36210220629ad1eb1004d2193d5f5130524eeb2"
     },
     {
       "path": "app/both/router/routes.js",
       "where": "client",
       "type": "js",
       "cacheable": true,
-      "url": "/app/both/router/routes.js?3c300be89c1ed63e3713c47bcce81d813863b1cd",
+      "url": "/app/both/router/routes.js?f967a91316ab78e24e08417b4a5c2d559fa410c9",
       "sourceMap": "app/both/router/routes.js.map",
-      "sourceMapUrl": "/app/both/router/3c300be89c1ed63e3713c47bcce81d813863b1cd.map",
-      "size": 2432,
-      "hash": "3c300be89c1ed63e3713c47bcce81d813863b1cd"
+      "sourceMapUrl": "/app/both/router/f967a91316ab78e24e08417b4a5c2d559fa410c9.map",
+      "size": 3345,
+      "hash": "f967a91316ab78e24e08417b4a5c2d559fa410c9"
     },
     {
       "path": "app/client/compatibility/bootstrap.js",
@@ -1302,11 +1302,11 @@
       "where": "client",
       "type": "js",
       "cacheable": true,
-      "url": "/app/client/compatibility/stringHelpers.js?c9a62d6338150d9922fc472cf6cb30ecf409b1a5",
+      "url": "/app/client/compatibility/stringHelpers.js?ca1d9962cc2a63a63685d5fb7a8d5c18ea6fed10",
       "sourceMap": "app/client/compatibility/stringHelpers.js.map",
-      "sourceMapUrl": "/app/client/compatibility/c9a62d6338150d9922fc472cf6cb30ecf409b1a5.map",
-      "size": 1118,
-      "hash": "c9a62d6338150d9922fc472cf6cb30ecf409b1a5"
+      "sourceMapUrl": "/app/client/compatibility/ca1d9962cc2a63a63685d5fb7a8d5c18ea6fed10.map",
+      "size": 2331,
+      "hash": "ca1d9962cc2a63a63685d5fb7a8d5c18ea6fed10"
     },
     {
       "path": "merged-stylesheets.css",

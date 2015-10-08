@@ -2,7 +2,9 @@
 Template.__checkName("header");
 Template["header"] = new Template("Template.header", (function() {
   var view = this;
-  return HTML.NAV({
+  return [ Blaze.View("lookup:setTitle", function() {
+    return Spacebars.mustache(view.lookup("setTitle"));
+  }), "\n  ", HTML.NAV({
     "class": "navbar navbar-default navbar-static-top",
     role: "navigation"
   }, "\n    ", HTML.DIV({
@@ -64,7 +66,9 @@ Template["header"] = new Template("Template.header", (function() {
       href: function() {
         return Spacebars.mustache(view.lookup("pathFor"), "atSignIn");
       }
-    }, "Login")), "\n            ", HTML.LI({
+    }, HTML.I({
+      "class": "fa fa-user"
+    }), " Login")), "\n            ", HTML.LI({
       "class": function() {
         return Spacebars.mustache(view.lookup("isActiveRoute"), Spacebars.kw({
           regex: "/sign-up"
@@ -101,9 +105,9 @@ Template["header"] = new Template("Template.header", (function() {
         return Spacebars.mustache(view.lookup("pathFor"), "dashboard");
       }
     }, HTML.I({
-      "class": "fa fa-gear"
-    }), " Dashboard")), "\n          " ];
-  }), "\n        "), "\n      "), "\n\n    "), "\n  ");
+      "class": "fa fa-book"
+    }), " Courses")), "\n          " ];
+  }), "\n        "), "\n      "), "\n\n    "), "\n  ") ];
 }));
 
 }).call(this);

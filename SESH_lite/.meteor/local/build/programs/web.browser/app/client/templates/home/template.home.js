@@ -2,7 +2,9 @@
 Template.__checkName("home");
 Template["home"] = new Template("Template.home", (function() {
   var view = this;
-  return [ HTML.DIV({
+  return [ Blaze.View("lookup:setTitle", function() {
+    return Spacebars.mustache(view.lookup("setTitle"));
+  }), "\n  ", HTML.DIV({
     "class": "template-home"
   }, "\n    ", HTML.DIV({
     "class": "page-header"

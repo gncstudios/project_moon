@@ -2,12 +2,14 @@
 Router.configure({
   layoutTemplate: 'appLayout',
   loadingTemplate: 'loading',
-  progressSpinner : false
+  progressSpinner : false,
+  onAfterAction: function() {
+    document.title = Meteor.settings.public.PROJECT_NAME;
+  }
 });
 
 Router.plugin('loading', {loadingTemplate: 'loading'});
 Router.plugin('dataNotFound', {dataNotFoundTemplate: 'notFound'});
-
 
 
 // Accounts Config

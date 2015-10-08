@@ -19,5 +19,8 @@ Template.profile.helpers({
 	/*name: () => {
 		return Meteor.user().profile.name;
 	},*/
-	profile: ()=>Meteor.user().profile || {}
+	profile: ()=> {
+		var user = Meteor.user();
+		return user && user.profile || {};
+	}
 });
