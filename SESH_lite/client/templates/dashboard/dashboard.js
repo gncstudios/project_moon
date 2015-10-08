@@ -77,6 +77,7 @@ Template.dashboard.onCreated(function() {
   // We can use the `ready` callback to interact with the map API once the map is ready.
   GoogleMaps.ready('exampleMap', function(map) {
 
+var markers = {};
 
 Meetings.find().observe({  
   added: function(document) {

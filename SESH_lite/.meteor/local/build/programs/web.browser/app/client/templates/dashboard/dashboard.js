@@ -81,47 +81,52 @@ Template.dashboard.onCreated(function () {                             // 76
   // We can use the `ready` callback to interact with the map API once the map is ready.
   GoogleMaps.ready('exampleMap', function (map) {                      // 78
                                                                        //
-    Meetings.find().observe({                                          // 81
-      added: function (document) {                                     // 82
+    var markers = {};                                                  // 80
+                                                                       //
+    Meetings.find().observe({                                          // 82
+      added: function (document) {                                     // 83
         // Create a marker for this document                           //
-        var lat = document.lat;                                        // 84
-        var lng = document.lng;                                        // 85
-        if (lat && lng) {                                              // 86
-          var marker = new google.maps.Marker({                        // 87
-            draggable: true,                                           // 88
-            animation: google.maps.Animation.DROP,                     // 89
-            position: new google.maps.LatLng(lat, lng),                // 90
-            map: map.instance,                                         // 91
+        var lat = document.lat;                                        // 85
+        var lng = document.lng;                                        // 86
+        if (lat && lng) {                                              // 87
+          var marker = new google.maps.Marker({                        // 88
+            draggable: true,                                           // 89
+            animation: google.maps.Animation.DROP,                     // 90
+            position: new google.maps.LatLng(lat, lng),                // 91
+            map: map.instance,                                         // 92
             // We store the document _id on the marker in order        //
             // to update the document within the 'dragend' event below.
-            id: document._id                                           // 94
+            id: document._id                                           // 95
           });                                                          //
                                                                        //
           // This listener lets us drag markers on the map and update their corresponding document.
           google.maps.event.addListener(marker, 'dragend', function (event) {
             Markers.update(marker.id, { $set: { lat: event.latLng.lat(), lng: event.latLng.lng() } });
           });                                                          //
-          if (document._id)                                            // 102
+          if (document._id) {                                          // 103
             // Store this marker instance within the markers object.   //
-            markers[document._id] = marker;else console.log("no document _id??");
+            markers[document._id] = marker;                            // 105
+          } else {                                                     //
+            console.log("no document _id??");                          // 107
+          }                                                            //
         }                                                              //
       },                                                               //
-      changed: function (newDocument, oldDocument) {                   // 109
-        if (markers[newDocument._id]) {                                // 110
+      changed: function (newDocument, oldDocument) {                   // 111
+        if (markers[newDocument._id]) {                                // 112
           markers[newDocument._id].setPosition({ lat: newDocument.lat, lng: newDocument.lng });
         }                                                              //
       },                                                               //
-      removed: function (oldDocument) {                                // 114
+      removed: function (oldDocument) {                                // 116
                                                                        //
-        console.log("removed:");                                       // 116
-        console.log(oldDocument);                                      // 117
-        markers[oldDocument._id].setMap(null);                         // 118
+        console.log("removed:");                                       // 118
+        console.log(oldDocument);                                      // 119
+        markers[oldDocument._id].setMap(null);                         // 120
                                                                        //
         // Clear the event listener                                    //
         google.maps.event.clearInstanceListeners(markers[oldDocument._id]);
                                                                        //
         // Remove the reference to this marker instance                //
-        delete markers[oldDocument._id];                               // 125
+        delete markers[oldDocument._id];                               // 127
       }                                                                //
     });                                                                //
                                                                        //
@@ -130,21 +135,21 @@ Template.dashboard.onCreated(function () {                             // 76
     //console.log(map.options.center);                                 //
                                                                        //
     var _loop = function (i) {                                         //
-      setTimeout(function () {                                         // 133
+      setTimeout(function () {                                         // 135
         var position = new google.maps.LatLng(map.options.center.lat() + Math.random() - 0.5, map.options.center.lng() + Math.random() - 0.5);
-        var marker = new google.maps.Marker({                          // 135
-          draggable: true,                                             // 136
-          animation: google.maps.Animation.DROP,                       // 137
-          position: position,                                          // 138
-          map: map.instance,                                           // 139
+        var marker = new google.maps.Marker({                          // 137
+          draggable: true,                                             // 138
+          animation: google.maps.Animation.DROP,                       // 139
+          position: position,                                          // 140
+          map: map.instance,                                           // 141
           // We store the document _id on the marker in order          //
           // to update the document within the 'dragend' event below.  //
-          id: i                                                        // 142
+          id: i                                                        // 144
         });                                                            //
       }, 50 * i);                                                      //
     };                                                                 //
                                                                        //
-    for (var i = 0; false && i < 10; i++) {                            // 132
+    for (var i = 0; false && i < 10; i++) {                            // 134
       _loop(i);                                                        //
     }                                                                  //
   });                                                                  //
