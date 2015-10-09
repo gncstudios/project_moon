@@ -3,6 +3,7 @@
 /* Imports */
 var Meteor = Package.meteor.Meteor;
 var _ = Package.underscore._;
+var EJSON = Package.ejson.EJSON;
 var Iron = Package['iron:core'].Iron;
 
 /* Package-scope variables */
@@ -10,119 +11,111 @@ var Handler, MiddlewareStack, Iron;
 
 (function(){
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//                                                                                                            //
-// packages/iron_middleware-stack/packages/iron_middleware-stack.js                                           //
-//                                                                                                            //
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-                                                                                                              //
-(function () {                                                                                                // 1
-                                                                                                              // 2
-/////////////////////////////////////////////////////////////////////////////////////////////////////////     // 3
-//                                                                                                     //     // 4
-// packages/iron:middleware-stack/lib/handler.js                                                       //     // 5
-//                                                                                                     //     // 6
-/////////////////////////////////////////////////////////////////////////////////////////////////////////     // 7
-                                                                                                       //     // 8
-var Url = Iron.Url;                                                                                    // 1   // 9
-                                                                                                       // 2   // 10
-Handler = function (path, fn, options) {                                                               // 3   // 11
-  if (_.isFunction(path)) {                                                                            // 4   // 12
-    options = options || fn || {};                                                                     // 5   // 13
-    fn = path;                                                                                         // 6   // 14
-    path = '/';                                                                                        // 7   // 15
-                                                                                                       // 8   // 16
-    // probably need a better approach here to differentiate between                                   // 9   // 17
-    // Router.use(function () {}) and Router.use(MyAdminApp). In the first                             // 10  // 18
-    // case we don't want to count it as a viable server handler when we're                            // 11  // 19
-    // on the client and need to decide whether to go to the server. in the                            // 12  // 20
-    // latter case, we DO want to go to the server, potentially.                                       // 13  // 21
-    this.middleware = true;                                                                            // 14  // 22
-                                                                                                       // 15  // 23
-    if (typeof options.mount === 'undefined')                                                          // 16  // 24
-      options.mount = true;                                                                            // 17  // 25
-  }                                                                                                    // 18  // 26
-                                                                                                       // 19  // 27
-  // if fn is a function then typeof fn => 'function'                                                  // 20  // 28
-  // but note we can't use _.isObject here because that will return true if the                        // 21  // 29
-  // fn is a function OR an object.                                                                    // 22  // 30
-  if (typeof fn === 'object') {                                                                        // 23  // 31
-    options = fn;                                                                                      // 24  // 32
-    fn = options.action || 'action';                                                                   // 25  // 33
-  }                                                                                                    // 26  // 34
-                                                                                                       // 27  // 35
-  options = options || {};                                                                             // 28  // 36
-                                                                                                       // 29  // 37
-  this.options = options;                                                                              // 30  // 38
-  this.mount = options.mount;                                                                          // 31  // 39
-  this.method = (options.method && options.method.toLowerCase()) || false;                             // 32  // 40
-                                                                                                       // 33  // 41
-  // should the handler be on the 'client', 'server' or 'both'?                                        // 34  // 42
-  // XXX can't we default this to undefined in which case it's run in all                              // 35  // 43
-  // environments?                                                                                     // 36  // 44
-  this.where = options.where || 'client';                                                              // 37  // 45
-                                                                                                       // 38  // 46
-  // if we're mounting at path '/foo' then this handler should also handle                             // 39  // 47
-  // '/foo/bar' and '/foo/bar/baz'                                                                     // 40  // 48
-  if (this.mount)                                                                                      // 41  // 49
-    options.end = false;                                                                               // 42  // 50
-                                                                                                       // 43  // 51
-  // set the name                                                                                      // 44  // 52
-  if (options.name)                                                                                    // 45  // 53
-    this.name = options.name;                                                                          // 46  // 54
-  else if (typeof path === 'string' && path.charAt(0) !== '/')                                         // 47  // 55
-    this.name = path;                                                                                  // 48  // 56
-  else if (fn && fn.name)                                                                              // 49  // 57
-    this.name = fn.name;                                                                               // 50  // 58
-  else if (typeof path === 'string' && path !== '/')                                                   // 51  // 59
-    this.name = path.split('/').slice(1).join('.');                                                    // 52  // 60
-                                                                                                       // 53  // 61
-  // if the path is explicitly set on the options (e.g. legacy router support)                         // 54  // 62
-  // then use that                                                                                     // 55  // 63
-  // otherwise use the path argument which could also be a name                                        // 56  // 64
-  path = options.path || path;                                                                         // 57  // 65
-                                                                                                       // 58  // 66
-  if (typeof path === 'string' && path.charAt(0) !== '/')                                              // 59  // 67
-    path = '/' + path;                                                                                 // 60  // 68
-                                                                                                       // 61  // 69
-  this.path = path;                                                                                    // 62  // 70
-  this.compiledUrl = new Url(path, options);                                                           // 63  // 71
-                                                                                                       // 64  // 72
-  if (_.isString(fn)) {                                                                                // 65  // 73
-    this.handle = function handle () {                                                                 // 66  // 74
-      // try to find a method on the current thisArg which might be a Controller                       // 67  // 75
-      // for example.                                                                                  // 68  // 76
-      var func = this[fn];                                                                             // 69  // 77
-                                                                                                       // 70  // 78
-      if (typeof func !== 'function')                                                                  // 71  // 79
-        throw new Error("No method named " + JSON.stringify(fn) + " found on handler.");               // 72  // 80
-                                                                                                       // 73  // 81
-      return func.apply(this, arguments);                                                              // 74  // 82
-    };                                                                                                 // 75  // 83
-  } else if (_.isFunction(fn)) {                                                                       // 76  // 84
-    // or just a regular old function                                                                  // 77  // 85
-    this.handle = fn;                                                                                  // 78  // 86
-  }                                                                                                    // 79  // 87
-};                                                                                                     // 80  // 88
-                                                                                                       // 81  // 89
-/**                                                                                                    // 82  // 90
- * Returns true if the path matches the handler's compiled url, method                                 // 83  // 91
- * and environment (e.g. client/server). If no options.method or options.where                         // 84  // 92
- * is provided, then only the path will be used to test.                                               // 85  // 93
- */                                                                                                    // 86  // 94
-Handler.prototype.test = function (path, options) {                                                    // 87  // 95
-  options = options || {};                                                                             // 88  // 96
-                                                                                                       // 89  // 97
-  var isUrlMatch = this.compiledUrl.test(path);                                                        // 90  // 98
-  var isMethodMatch = true;                                                                            // 91  // 99
-  var isEnvMatch = true;                                                                               // 92  // 100
-                                                                                                       // 93  // 101
-  if (this.method && options.method)                                                                   // 94  // 102
-    isMethodMatch = this.method == options.method.toLowerCase();                                       // 95  // 103
-                                                                                                       // 96  // 104
-  if (options.where)                                                                                   // 97  // 105
-    isEnvMatch = this.where == options.where;                                                          // 98  // 106
-                                                                                                       // 99  // 107
+/////////////////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                                     //
+// packages/iron_middleware-stack/lib/handler.js                                                       //
+//                                                                                                     //
+/////////////////////////////////////////////////////////////////////////////////////////////////////////
+                                                                                                       //
+var Url = Iron.Url;                                                                                    // 1
+                                                                                                       // 2
+Handler = function (path, fn, options) {                                                               // 3
+  if (_.isFunction(path)) {                                                                            // 4
+    options = options || fn || {};                                                                     // 5
+    fn = path;                                                                                         // 6
+    path = '/';                                                                                        // 7
+                                                                                                       // 8
+    // probably need a better approach here to differentiate between                                   // 9
+    // Router.use(function () {}) and Router.use(MyAdminApp). In the first                             // 10
+    // case we don't want to count it as a viable server handler when we're                            // 11
+    // on the client and need to decide whether to go to the server. in the                            // 12
+    // latter case, we DO want to go to the server, potentially.                                       // 13
+    this.middleware = true;                                                                            // 14
+                                                                                                       // 15
+    if (typeof options.mount === 'undefined')                                                          // 16
+      options.mount = true;                                                                            // 17
+  }                                                                                                    // 18
+                                                                                                       // 19
+  // if fn is a function then typeof fn => 'function'                                                  // 20
+  // but note we can't use _.isObject here because that will return true if the                        // 21
+  // fn is a function OR an object.                                                                    // 22
+  if (typeof fn === 'object') {                                                                        // 23
+    options = fn;                                                                                      // 24
+    fn = options.action || 'action';                                                                   // 25
+  }                                                                                                    // 26
+                                                                                                       // 27
+  options = options || {};                                                                             // 28
+                                                                                                       // 29
+  this.options = options;                                                                              // 30
+  this.mount = options.mount;                                                                          // 31
+  this.method = (options.method && options.method.toLowerCase()) || false;                             // 32
+                                                                                                       // 33
+  // should the handler be on the 'client', 'server' or 'both'?                                        // 34
+  // XXX can't we default this to undefined in which case it's run in all                              // 35
+  // environments?                                                                                     // 36
+  this.where = options.where || 'client';                                                              // 37
+                                                                                                       // 38
+  // if we're mounting at path '/foo' then this handler should also handle                             // 39
+  // '/foo/bar' and '/foo/bar/baz'                                                                     // 40
+  if (this.mount)                                                                                      // 41
+    options.end = false;                                                                               // 42
+                                                                                                       // 43
+  // set the name                                                                                      // 44
+  if (options.name)                                                                                    // 45
+    this.name = options.name;                                                                          // 46
+  else if (typeof path === 'string' && path.charAt(0) !== '/')                                         // 47
+    this.name = path;                                                                                  // 48
+  else if (fn && fn.name)                                                                              // 49
+    this.name = fn.name;                                                                               // 50
+  else if (typeof path === 'string' && path !== '/')                                                   // 51
+    this.name = path.split('/').slice(1).join('.');                                                    // 52
+                                                                                                       // 53
+  // if the path is explicitly set on the options (e.g. legacy router support)                         // 54
+  // then use that                                                                                     // 55
+  // otherwise use the path argument which could also be a name                                        // 56
+  path = options.path || path;                                                                         // 57
+                                                                                                       // 58
+  if (typeof path === 'string' && path.charAt(0) !== '/')                                              // 59
+    path = '/' + path;                                                                                 // 60
+                                                                                                       // 61
+  this.path = path;                                                                                    // 62
+  this.compiledUrl = new Url(path, options);                                                           // 63
+                                                                                                       // 64
+  if (_.isString(fn)) {                                                                                // 65
+    this.handle = function handle () {                                                                 // 66
+      // try to find a method on the current thisArg which might be a Controller                       // 67
+      // for example.                                                                                  // 68
+      var func = this[fn];                                                                             // 69
+                                                                                                       // 70
+      if (typeof func !== 'function')                                                                  // 71
+        throw new Error("No method named " + JSON.stringify(fn) + " found on handler.");               // 72
+                                                                                                       // 73
+      return func.apply(this, arguments);                                                              // 74
+    };                                                                                                 // 75
+  } else if (_.isFunction(fn)) {                                                                       // 76
+    // or just a regular old function                                                                  // 77
+    this.handle = fn;                                                                                  // 78
+  }                                                                                                    // 79
+};                                                                                                     // 80
+                                                                                                       // 81
+/**                                                                                                    // 82
+ * Returns true if the path matches the handler's compiled url, method                                 // 83
+ * and environment (e.g. client/server). If no options.method or options.where                         // 84
+ * is provided, then only the path will be used to test.                                               // 85
+ */                                                                                                    // 86
+Handler.prototype.test = function (path, options) {                                                    // 87
+  options = options || {};                                                                             // 88
+                                                                                                       // 89
+  var isUrlMatch = this.compiledUrl.test(path);                                                        // 90
+  var isMethodMatch = true;                                                                            // 91
+  var isEnvMatch = true;                                                                               // 92
+                                                                                                       // 93
+  if (this.method && options.method)                                                                   // 94
+    isMethodMatch = this.method == options.method.toLowerCase();                                       // 95
+                                                                                                       // 96
+  if (options.where)                                                                                   // 97
+    isEnvMatch = this.where == options.where;                                                          // 98
+                                                                                                       // 99
   return isUrlMatch && isMethodMatch && isEnvMatch;                                                    // 100
 };                                                                                                     // 101
                                                                                                        // 102
@@ -145,122 +138,122 @@ Handler.prototype.clone = function () {                                         
   return clone;                                                                                        // 119
 };                                                                                                     // 120
                                                                                                        // 121
-/////////////////////////////////////////////////////////////////////////////////////////////////////////     // 130
-                                                                                                              // 131
-}).call(this);                                                                                                // 132
-                                                                                                              // 133
-                                                                                                              // 134
-                                                                                                              // 135
-                                                                                                              // 136
-                                                                                                              // 137
-                                                                                                              // 138
-(function () {                                                                                                // 139
-                                                                                                              // 140
-/////////////////////////////////////////////////////////////////////////////////////////////////////////     // 141
-//                                                                                                     //     // 142
-// packages/iron:middleware-stack/lib/middleware_stack.js                                              //     // 143
-//                                                                                                     //     // 144
-/////////////////////////////////////////////////////////////////////////////////////////////////////////     // 145
-                                                                                                       //     // 146
-var Url = Iron.Url;                                                                                    // 1   // 147
-var assert = Iron.utils.assert;                                                                        // 2   // 148
-var defaultValue = Iron.utils.defaultValue;                                                            // 3   // 149
-                                                                                                       // 4   // 150
-/**                                                                                                    // 5   // 151
- * Connect inspired middleware stack that works on the client and the server.                          // 6   // 152
- *                                                                                                     // 7   // 153
- * You can add handlers to the stack for various paths. Those handlers can run                         // 8   // 154
- * on the client or server. Then you can dispatch into the stack with a                                // 9   // 155
- * given path by calling the dispatch method. This goes down the stack looking                         // 10  // 156
- * for matching handlers given the url and environment (client/server). If we're                       // 11  // 157
- * on the client and we should make a trip to the server, the onServerDispatch                         // 12  // 158
- * callback is called.                                                                                 // 13  // 159
- *                                                                                                     // 14  // 160
- * The middleware stack supports the Connect API. But it also allows you to                            // 15  // 161
- * specify a context so we can have one context object (like a Controller) that                        // 16  // 162
- * is a consistent context for each handler function called on a dispatch.                             // 17  // 163
- *                                                                                                     // 18  // 164
- */                                                                                                    // 19  // 165
-MiddlewareStack = function () {                                                                        // 20  // 166
-  this._stack = [];                                                                                    // 21  // 167
-  this.length = 0;                                                                                     // 22  // 168
-};                                                                                                     // 23  // 169
-                                                                                                       // 24  // 170
-MiddlewareStack.prototype._create = function (path, fn, options) {                                     // 25  // 171
-  var handler = new Handler(path, fn, options);                                                        // 26  // 172
-  var name = handler.name;                                                                             // 27  // 173
-                                                                                                       // 28  // 174
-  if (name) {                                                                                          // 29  // 175
-    if (_.has(this._stack, name)) {                                                                    // 30  // 176
-      throw new Error("Handler with name '" + name + "' already exists.");                             // 31  // 177
-    }                                                                                                  // 32  // 178
-    this._stack[name] = handler;                                                                       // 33  // 179
-  }                                                                                                    // 34  // 180
-                                                                                                       // 35  // 181
-  return handler;                                                                                      // 36  // 182
-};                                                                                                     // 37  // 183
-                                                                                                       // 38  // 184
-MiddlewareStack.prototype.findByName = function (name) {                                               // 39  // 185
-  return this._stack[name];                                                                            // 40  // 186
-};                                                                                                     // 41  // 187
-                                                                                                       // 42  // 188
-/**                                                                                                    // 43  // 189
- * Push a new handler onto the stack.                                                                  // 44  // 190
- */                                                                                                    // 45  // 191
-MiddlewareStack.prototype.push = function (path, fn, options) {                                        // 46  // 192
-  var handler = this._create(path, fn, options);                                                       // 47  // 193
-  this._stack.push(handler);                                                                           // 48  // 194
-  this.length++;                                                                                       // 49  // 195
-  return handler;                                                                                      // 50  // 196
-};                                                                                                     // 51  // 197
-                                                                                                       // 52  // 198
-MiddlewareStack.prototype.append = function (/* fn1, fn2, [f3, f4]... */) {                            // 53  // 199
-  var self = this;                                                                                     // 54  // 200
-  var args = _.toArray(arguments);                                                                     // 55  // 201
-  var options = {};                                                                                    // 56  // 202
-                                                                                                       // 57  // 203
-  if (typeof args[args.length-1] === 'object')                                                         // 58  // 204
-    options = args.pop();                                                                              // 59  // 205
-                                                                                                       // 60  // 206
-  _.each(args, function (fnOrArray) {                                                                  // 61  // 207
-    if (typeof fnOrArray === 'undefined')                                                              // 62  // 208
-      return;                                                                                          // 63  // 209
-    else if (typeof fnOrArray === 'function')                                                          // 64  // 210
-      self.push(fnOrArray, options);                                                                   // 65  // 211
-    else if (_.isArray(fnOrArray))                                                                     // 66  // 212
-      self.append.apply(self, fnOrArray.concat([options]));                                            // 67  // 213
-    else                                                                                               // 68  // 214
-      throw new Error("Can only append functions or arrays to the MiddlewareStack");                   // 69  // 215
-  });                                                                                                  // 70  // 216
-                                                                                                       // 71  // 217
-  return this;                                                                                         // 72  // 218
-};                                                                                                     // 73  // 219
-                                                                                                       // 74  // 220
-/**                                                                                                    // 75  // 221
- * Insert a handler at a specific index in the stack.                                                  // 76  // 222
- *                                                                                                     // 77  // 223
- * The index behavior is the same as Array.prototype.splice. If the index is                           // 78  // 224
- * greater than the stack length the handler will be appended at the end of the                        // 79  // 225
- * stack. If the index is negative, the item will be inserted "index" elements                         // 80  // 226
- * from the end.                                                                                       // 81  // 227
- */                                                                                                    // 82  // 228
-MiddlewareStack.prototype.insertAt = function (index, path, fn, options) {                             // 83  // 229
-  var handler = this._create(path, fn, options);                                                       // 84  // 230
-  this._stack.splice(index, 0, handler);                                                               // 85  // 231
-  this.length = this._stack.length;                                                                    // 86  // 232
-  return this;                                                                                         // 87  // 233
-};                                                                                                     // 88  // 234
-                                                                                                       // 89  // 235
-/**                                                                                                    // 90  // 236
- * Insert a handler before another named handler.                                                      // 91  // 237
- */                                                                                                    // 92  // 238
-MiddlewareStack.prototype.insertBefore = function (name, path, fn, options) {                          // 93  // 239
-  var beforeHandler;                                                                                   // 94  // 240
-  var index;                                                                                           // 95  // 241
-                                                                                                       // 96  // 242
-  if (!(beforeHandler = this._stack[name]))                                                            // 97  // 243
-    throw new Error("Couldn't find a handler named '" + name + "' on the path stack");                 // 98  // 244
-                                                                                                       // 99  // 245
+/////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+}).call(this);
+
+
+
+
+
+
+(function(){
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                                     //
+// packages/iron_middleware-stack/lib/middleware_stack.js                                              //
+//                                                                                                     //
+/////////////////////////////////////////////////////////////////////////////////////////////////////////
+                                                                                                       //
+var Url = Iron.Url;                                                                                    // 1
+var assert = Iron.utils.assert;                                                                        // 2
+var defaultValue = Iron.utils.defaultValue;                                                            // 3
+                                                                                                       // 4
+/**                                                                                                    // 5
+ * Connect inspired middleware stack that works on the client and the server.                          // 6
+ *                                                                                                     // 7
+ * You can add handlers to the stack for various paths. Those handlers can run                         // 8
+ * on the client or server. Then you can dispatch into the stack with a                                // 9
+ * given path by calling the dispatch method. This goes down the stack looking                         // 10
+ * for matching handlers given the url and environment (client/server). If we're                       // 11
+ * on the client and we should make a trip to the server, the onServerDispatch                         // 12
+ * callback is called.                                                                                 // 13
+ *                                                                                                     // 14
+ * The middleware stack supports the Connect API. But it also allows you to                            // 15
+ * specify a context so we can have one context object (like a Controller) that                        // 16
+ * is a consistent context for each handler function called on a dispatch.                             // 17
+ *                                                                                                     // 18
+ */                                                                                                    // 19
+MiddlewareStack = function () {                                                                        // 20
+  this._stack = [];                                                                                    // 21
+  this.length = 0;                                                                                     // 22
+};                                                                                                     // 23
+                                                                                                       // 24
+MiddlewareStack.prototype._create = function (path, fn, options) {                                     // 25
+  var handler = new Handler(path, fn, options);                                                        // 26
+  var name = handler.name;                                                                             // 27
+                                                                                                       // 28
+  if (name) {                                                                                          // 29
+    if (_.has(this._stack, name)) {                                                                    // 30
+      throw new Error("Handler with name '" + name + "' already exists.");                             // 31
+    }                                                                                                  // 32
+    this._stack[name] = handler;                                                                       // 33
+  }                                                                                                    // 34
+                                                                                                       // 35
+  return handler;                                                                                      // 36
+};                                                                                                     // 37
+                                                                                                       // 38
+MiddlewareStack.prototype.findByName = function (name) {                                               // 39
+  return this._stack[name];                                                                            // 40
+};                                                                                                     // 41
+                                                                                                       // 42
+/**                                                                                                    // 43
+ * Push a new handler onto the stack.                                                                  // 44
+ */                                                                                                    // 45
+MiddlewareStack.prototype.push = function (path, fn, options) {                                        // 46
+  var handler = this._create(path, fn, options);                                                       // 47
+  this._stack.push(handler);                                                                           // 48
+  this.length++;                                                                                       // 49
+  return handler;                                                                                      // 50
+};                                                                                                     // 51
+                                                                                                       // 52
+MiddlewareStack.prototype.append = function (/* fn1, fn2, [f3, f4]... */) {                            // 53
+  var self = this;                                                                                     // 54
+  var args = _.toArray(arguments);                                                                     // 55
+  var options = {};                                                                                    // 56
+                                                                                                       // 57
+  if (typeof args[args.length-1] === 'object')                                                         // 58
+    options = args.pop();                                                                              // 59
+                                                                                                       // 60
+  _.each(args, function (fnOrArray) {                                                                  // 61
+    if (typeof fnOrArray === 'undefined')                                                              // 62
+      return;                                                                                          // 63
+    else if (typeof fnOrArray === 'function')                                                          // 64
+      self.push(fnOrArray, options);                                                                   // 65
+    else if (_.isArray(fnOrArray))                                                                     // 66
+      self.append.apply(self, fnOrArray.concat([options]));                                            // 67
+    else                                                                                               // 68
+      throw new Error("Can only append functions or arrays to the MiddlewareStack");                   // 69
+  });                                                                                                  // 70
+                                                                                                       // 71
+  return this;                                                                                         // 72
+};                                                                                                     // 73
+                                                                                                       // 74
+/**                                                                                                    // 75
+ * Insert a handler at a specific index in the stack.                                                  // 76
+ *                                                                                                     // 77
+ * The index behavior is the same as Array.prototype.splice. If the index is                           // 78
+ * greater than the stack length the handler will be appended at the end of the                        // 79
+ * stack. If the index is negative, the item will be inserted "index" elements                         // 80
+ * from the end.                                                                                       // 81
+ */                                                                                                    // 82
+MiddlewareStack.prototype.insertAt = function (index, path, fn, options) {                             // 83
+  var handler = this._create(path, fn, options);                                                       // 84
+  this._stack.splice(index, 0, handler);                                                               // 85
+  this.length = this._stack.length;                                                                    // 86
+  return this;                                                                                         // 87
+};                                                                                                     // 88
+                                                                                                       // 89
+/**                                                                                                    // 90
+ * Insert a handler before another named handler.                                                      // 91
+ */                                                                                                    // 92
+MiddlewareStack.prototype.insertBefore = function (name, path, fn, options) {                          // 93
+  var beforeHandler;                                                                                   // 94
+  var index;                                                                                           // 95
+                                                                                                       // 96
+  if (!(beforeHandler = this._stack[name]))                                                            // 97
+    throw new Error("Couldn't find a handler named '" + name + "' on the path stack");                 // 98
+                                                                                                       // 99
   index = _.indexOf(this._stack, beforeHandler);                                                       // 100
   this.insertAt(index, path, fn, options);                                                             // 101
   return this;                                                                                         // 102
@@ -291,7 +284,7 @@ MiddlewareStack.prototype.concat = function (/* stack1, stack2, */) {           
   var ret = new MiddlewareStack;                                                                       // 127
   var concat = Array.prototype.concat;                                                                 // 128
   var clonedThisStack = EJSON.clone(this._stack);                                                      // 129
-  var clonedOtherStacks = _.map(_.toArray(arguments), function (s) { return EJSON.clone(s._stack); }); // 130
+  var clonedOtherStacks = _.map(_.toArray(arguments), function (s) { return EJSON.clone(s._stack); });
   ret._stack = concat.apply(clonedThisStack, clonedOtherStacks);                                       // 131
   ret.length = ret._stack.length;                                                                      // 132
   return ret;                                                                                          // 133
@@ -445,11 +438,7 @@ MiddlewareStack.prototype.dispatch = function dispatch (url, context, done) {   
 Iron = Iron || {};                                                                                     // 281
 Iron.MiddlewareStack = MiddlewareStack;                                                                // 282
                                                                                                        // 283
-/////////////////////////////////////////////////////////////////////////////////////////////////////////     // 430
-                                                                                                              // 431
-}).call(this);                                                                                                // 432
-                                                                                                              // 433
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 }).call(this);
 

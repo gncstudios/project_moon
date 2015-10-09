@@ -24,7 +24,8 @@ Template.profile.helpers({                                             // 18
  	return Meteor.user().profile.name;                                   //
  },*/                                                                  //
 	profile: function () {                                                // 22
-		return Meteor.user().profile || {};                                  //
+		var user = Meteor.user();                                            // 23
+		return user && user.profile || {};                                   // 24
 	}                                                                     //
 });                                                                    //
 /////////////////////////////////////////////////////////////////////////

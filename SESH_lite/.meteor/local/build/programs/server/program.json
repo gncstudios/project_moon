@@ -286,10 +286,7 @@
     {
       "node_modules": "npm/iron_router/node_modules",
       "sourceMap": "packages/iron_router.js.map",
-      "path": "packages/iron_router.js",
-      "assets": {
-        "lib/templates.html": "assets/packages/iron_router/lib/templates.html"
-      }
+      "path": "packages/iron_router.js"
     },
     {
       "sourceMap": "packages/underscorestring_underscore.string.js.map",
@@ -390,6 +387,54 @@
       "path": "packages/jeremy_geocomplete.js"
     },
     {
+      "sourceMap": "packages/accounts-ui.js.map",
+      "path": "packages/accounts-ui.js"
+    },
+    {
+      "sourceMap": "packages/useraccounts_bootstrap.js.map",
+      "path": "packages/useraccounts_bootstrap.js"
+    },
+    {
+      "sourceMap": "packages/service-configuration.js.map",
+      "path": "packages/service-configuration.js"
+    },
+    {
+      "sourceMap": "packages/localstorage.js.map",
+      "path": "packages/localstorage.js"
+    },
+    {
+      "sourceMap": "packages/oauth.js.map",
+      "path": "packages/oauth.js",
+      "assets": {
+        "end_of_popup_response.html": "assets/packages/oauth/end_of_popup_response.html",
+        "end_of_redirect_response.html": "assets/packages/oauth/end_of_redirect_response.html"
+      }
+    },
+    {
+      "sourceMap": "packages/accounts-oauth.js.map",
+      "path": "packages/accounts-oauth.js"
+    },
+    {
+      "sourceMap": "packages/oauth2.js.map",
+      "path": "packages/oauth2.js"
+    },
+    {
+      "sourceMap": "packages/facebook.js.map",
+      "path": "packages/facebook.js"
+    },
+    {
+      "sourceMap": "packages/accounts-facebook.js.map",
+      "path": "packages/accounts-facebook.js"
+    },
+    {
+      "sourceMap": "packages/google.js.map",
+      "path": "packages/google.js"
+    },
+    {
+      "sourceMap": "packages/accounts-google.js.map",
+      "path": "packages/accounts-google.js"
+    },
+    {
       "sourceMap": "packages/livedata.js.map",
       "path": "packages/livedata.js"
     },
@@ -409,10 +454,6 @@
       "path": "packages/global-imports.js"
     },
     {
-      "sourceMap": "app/both/collections/items.js.map",
-      "path": "app/both/collections/items.js"
-    },
-    {
       "sourceMap": "app/both/config/config.js.map",
       "path": "app/both/config/config.js"
     },
@@ -423,18 +464,6 @@
     {
       "sourceMap": "app/server/methods/user.js.map",
       "path": "app/server/methods/user.js"
-    },
-    {
-      "sourceMap": "app/server/permissions/items.js.map",
-      "path": "app/server/permissions/items.js"
-    },
-    {
-      "sourceMap": "app/server/publications/items.js.map",
-      "path": "app/server/publications/items.js"
-    },
-    {
-      "sourceMap": "packages/service-configuration.js.map",
-      "path": "packages/service-configuration.js"
     }
   ]
 }

@@ -37,3 +37,8 @@ aldeed:simple-schema
 copleykj:shower
 reactive-var
 jeremy:geocomplete
+accounts-ui
+useraccounts:bootstrap
+accounts-facebook
+accounts-google
+dburles:google-maps

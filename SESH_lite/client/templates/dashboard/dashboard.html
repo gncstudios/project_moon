@@ -1,19 +1,37 @@
 <template name="dashboard">
+  {{setTitle "Courses"}}
   <div class="template-dashboard">
     <div class="page-header">
-      <h1>Courses I Teach</h1>
-
-      <div class="page-actions pull-right">
-        <btn class="btn btn-primary" data-toggle="modal" data-target="#addItemModal">+ Add Item</btn>
+      <h1>Course Dashboard</h1>
+    </div>
+    <div class="col-md-4 col-xs-12 pull-right clearfix">
+      <div class="map-container">
+        {{> googleMap name="exampleMap" options=exampleMapOptions}}
       </div>
     </div>
 
+
+  <div class="col-md-8 form-inline">
+    <h2 class="clearfix">All Courses <input class="pull-right form-control" placeholder="Search" id="course-search"/> </h2>
     <ul class="list-group">
-      {{#each items}}
-        <li class="list-group-item">{{ name }} <span class="label label-default">{{ rating }}</span></li>
+      {{#each otherMeetings}}
+          {{ > meetingRow }}
       {{/each}}
     </ul>
+  </div>
 
+
+    <div class="col-md-8 clearfix">
+        <h2>Courses I Instruct</h2>
+        <div class="page-actions pull-right">
+          <btn class="btn btn-primary" data-toggle="modal" data-target="#addItemModal">+ Add Item</btn>
+        </div>
+        <ul class="list-group">
+          {{#each myMeetings}}
+            {{ > meetingRow this }}
+          {{/each}}
+        </ul>
+    </div>
   </div>
 
 
@@ -25,23 +43,42 @@
           <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
           <h4 class="modal-title" id="myModalLabel">Add an Item</h4>
         </div>
-        <div class="modal-body">
-          <form role="form">
-            <div class="form-group">
-              <label>Name</label>
-              <input type="text" class="form-control" name="name" placeholder="Name of Item">
-            </div>
-            <div class="form-group">
-              <label>Cost</label>
-              <input type="number" class="form-control" name="rating" placeholder="Rating">
-            </div>
-          </form>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
-          <button type="button" data-action="add-item" class="btn btn-primary">+ Add Item</button>
-        </div>
+        <form role="form" class="add-item">
+          <div class="modal-body">
+              <div class="form-group">
+                <label>Name</label>
+                <input type="text" class="form-control" name="name" placeholder="Name of Item">
+              </div>
+              <div class="form-group">
+                <label>Cost</label>
+                <input type="number" class="form-control" name="cost" placeholder="Cost">
+              </div>
+              <div class="form-group">
+                <label>Latitude</label>
+                <input type="number" class="form-control" name="lat" placeholder="Cost">
+              </div>
+              <div class="form-group">
+                <label>Longitude</label>
+                <input type="number" class="form-control" name="lng" placeholder="Cost">
+              </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+            <input type="submit" class="btn btn-primary" value="+ Add Item"/>
+          </div>
+        </form>
+
       </div>
     </div>
   </div>
+  <style>.map-container {
+  margin:auto;
+  width: 100%;
+  height: 300px;
+}
+.map-canvas {
+    border-radius:8px;
+    box-shadow: 0 0 10px #EEE;
+}
+</style>
 </template>

@@ -19,7 +19,9 @@ Template["profile"] = new Template("Template.profile", (function() {
   }), "\n\n      ", HTML.Raw("<h2>Profile:</h2>"), "\n      ", Spacebars.With(function() {
     return Spacebars.call(view.lookup("profile"));
   }, function() {
-    return [ "\n        ", HTML.FORM({
+    return [ "\n        ", Blaze.View("lookup:setTitle", function() {
+      return Spacebars.mustache(view.lookup("setTitle"), "Profile - ", view.lookup("name"));
+    }), "\n        ", HTML.FORM({
       "class": "form-horizontal col-md-6"
     }, "\n          ", HTML.DIV({
       "class": "form-group"

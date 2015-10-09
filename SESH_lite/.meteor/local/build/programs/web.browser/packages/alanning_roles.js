@@ -15,125 +15,122 @@ var Meteor = Package.meteor.Meteor;
 var _ = Package.underscore._;
 var Accounts = Package['accounts-base'].Accounts;
 var AccountsClient = Package['accounts-base'].AccountsClient;
+var Tracker = Package.tracker.Tracker;
+var Deps = Package.tracker.Deps;
+var Mongo = Package.mongo.Mongo;
+var check = Package.check.check;
+var Match = Package.check.Match;
 
 /* Package-scope variables */
 var Roles;
 
 (function(){
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//                                                                                                                //
-// packages/alanning_roles/packages/alanning_roles.js                                                             //
-//                                                                                                                //
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-                                                                                                                  //
-(function () {                                                                                                    // 1
-                                                                                                                  // 2
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////     // 3
-//                                                                                                         //     // 4
-// packages/alanning:roles/roles_common.js                                                                 //     // 5
-//                                                                                                         //     // 6
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////     // 7
-                                                                                                           //     // 8
-;(function () {                                                                                            // 1   // 9
-                                                                                                           // 2   // 10
-/**                                                                                                        // 3   // 11
- * Provides functions related to user authorization. Compatible with built-in Meteor accounts packages.    // 4   // 12
- *                                                                                                         // 5   // 13
- * @module Roles                                                                                           // 6   // 14
- */                                                                                                        // 7   // 15
-                                                                                                           // 8   // 16
-/**                                                                                                        // 9   // 17
- * Roles collection documents consist only of an id and a role name.                                       // 10  // 18
- *   ex: { _id:<uuid>, name: "admin" }                                                                     // 11  // 19
- */                                                                                                        // 12  // 20
-if (!Meteor.roles) {                                                                                       // 13  // 21
-  Meteor.roles = new Meteor.Collection("roles")                                                            // 14  // 22
-}                                                                                                          // 15  // 23
-                                                                                                           // 16  // 24
-/**                                                                                                        // 17  // 25
- * Role-based authorization compatible with built-in Meteor accounts package.                              // 18  // 26
- *                                                                                                         // 19  // 27
- * Stores user's current roles in a 'roles' field on the user object.                                      // 20  // 28
- *                                                                                                         // 21  // 29
- * @class Roles                                                                                            // 22  // 30
- * @constructor                                                                                            // 23  // 31
- */                                                                                                        // 24  // 32
-if ('undefined' === typeof Roles) {                                                                        // 25  // 33
-  Roles = {}                                                                                               // 26  // 34
-}                                                                                                          // 27  // 35
-                                                                                                           // 28  // 36
-"use strict";                                                                                              // 29  // 37
-                                                                                                           // 30  // 38
-var mixingGroupAndNonGroupErrorMsg = "Roles error: Can't mix grouped and non-grouped roles for same user"; // 31  // 39
-                                                                                                           // 32  // 40
-_.extend(Roles, {                                                                                          // 33  // 41
-                                                                                                           // 34  // 42
-  /**                                                                                                      // 35  // 43
-   * Constant used to reference the special 'global' group that                                            // 36  // 44
-   * can be used to apply blanket permissions across all groups.                                           // 37  // 45
-   *                                                                                                       // 38  // 46
-   * @example                                                                                              // 39  // 47
-   *     Roles.addUsersToRoles(user, 'admin', Roles.GLOBAL_GROUP)                                          // 40  // 48
-   *     Roles.userIsInRole(user, 'admin') // => true                                                      // 41  // 49
-   *                                                                                                       // 42  // 50
-   *     Roles.setUserRoles(user, 'support-staff', Roles.GLOBAL_GROUP)                                     // 43  // 51
-   *     Roles.userIsInRole(user, 'support-staff') // => true                                              // 44  // 52
-   *     Roles.userIsInRole(user, 'admin') // => false                                                     // 45  // 53
-   *                                                                                                       // 46  // 54
-   * @property GLOBAL_GROUP                                                                                // 47  // 55
-   * @type String                                                                                          // 48  // 56
-   * @static                                                                                               // 49  // 57
-   * @final                                                                                                // 50  // 58
-   */                                                                                                      // 51  // 59
-  GLOBAL_GROUP: '__global_roles__',                                                                        // 52  // 60
-                                                                                                           // 53  // 61
-                                                                                                           // 54  // 62
-  /**                                                                                                      // 55  // 63
-   * Create a new role. Whitespace will be trimmed.                                                        // 56  // 64
-   *                                                                                                       // 57  // 65
-   * @method createRole                                                                                    // 58  // 66
-   * @param {String} role Name of role                                                                     // 59  // 67
-   * @return {String} id of new role                                                                       // 60  // 68
-   */                                                                                                      // 61  // 69
-  createRole: function (role) {                                                                            // 62  // 70
-    var id,                                                                                                // 63  // 71
-        match                                                                                              // 64  // 72
-                                                                                                           // 65  // 73
-    if (!role                                                                                              // 66  // 74
-        || 'string' !== typeof role                                                                        // 67  // 75
-        || role.trim().length === 0) {                                                                     // 68  // 76
-      return                                                                                               // 69  // 77
-    }                                                                                                      // 70  // 78
-                                                                                                           // 71  // 79
-    try {                                                                                                  // 72  // 80
-      id = Meteor.roles.insert({'name': role.trim()})                                                      // 73  // 81
-      return id                                                                                            // 74  // 82
-    } catch (e) {                                                                                          // 75  // 83
-      // (from Meteor accounts-base package, insertUserDoc func)                                           // 76  // 84
-      // XXX string parsing sucks, maybe                                                                   // 77  // 85
-      // https://jira.mongodb.org/browse/SERVER-3069 will get fixed one day                                // 78  // 86
-      if (e.name !== 'MongoError') throw e                                                                 // 79  // 87
-      match = e.err.match(/^E11000 duplicate key error index: ([^ ]+)/)                                    // 80  // 88
-      if (!match) throw e                                                                                  // 81  // 89
-      if (match[1].indexOf('$name') !== -1)                                                                // 82  // 90
-        throw new Meteor.Error(403, "Role already exists.")                                                // 83  // 91
-      throw e                                                                                              // 84  // 92
-    }                                                                                                      // 85  // 93
-  },                                                                                                       // 86  // 94
-                                                                                                           // 87  // 95
-  /**                                                                                                      // 88  // 96
-   * Delete an existing role.  Will throw "Role in use" error if any users                                 // 89  // 97
-   * are currently assigned to the target role.                                                            // 90  // 98
-   *                                                                                                       // 91  // 99
-   * @method deleteRole                                                                                    // 92  // 100
-   * @param {String} role Name of role                                                                     // 93  // 101
-   */                                                                                                      // 94  // 102
-  deleteRole: function (role) {                                                                            // 95  // 103
-    if (!role) return                                                                                      // 96  // 104
-                                                                                                           // 97  // 105
-    var foundExistingUser = Meteor.users.findOne(                                                          // 98  // 106
-                              {roles: {$in: [role]}},                                                      // 99  // 107
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                                         //
+// packages/alanning_roles/roles_common.js                                                                 //
+//                                                                                                         //
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+                                                                                                           //
+;(function () {                                                                                            // 1
+                                                                                                           // 2
+/**                                                                                                        // 3
+ * Provides functions related to user authorization. Compatible with built-in Meteor accounts packages.    // 4
+ *                                                                                                         // 5
+ * @module Roles                                                                                           // 6
+ */                                                                                                        // 7
+                                                                                                           // 8
+/**                                                                                                        // 9
+ * Roles collection documents consist only of an id and a role name.                                       // 10
+ *   ex: { _id:<uuid>, name: "admin" }                                                                     // 11
+ */                                                                                                        // 12
+if (!Meteor.roles) {                                                                                       // 13
+  Meteor.roles = new Mongo.Collection("roles")                                                             // 14
+}                                                                                                          // 15
+                                                                                                           // 16
+/**                                                                                                        // 17
+ * Authorization package compatible with built-in Meteor accounts system.                                  // 18
+ *                                                                                                         // 19
+ * Stores user's current roles in a 'roles' field on the user object.                                      // 20
+ *                                                                                                         // 21
+ * @class Roles                                                                                            // 22
+ * @constructor                                                                                            // 23
+ */                                                                                                        // 24
+if ('undefined' === typeof Roles) {                                                                        // 25
+  Roles = {}                                                                                               // 26
+}                                                                                                          // 27
+                                                                                                           // 28
+"use strict";                                                                                              // 29
+                                                                                                           // 30
+var mixingGroupAndNonGroupErrorMsg = "Roles error: Can't mix grouped and non-grouped roles for same user";
+                                                                                                           // 32
+_.extend(Roles, {                                                                                          // 33
+                                                                                                           // 34
+  /**                                                                                                      // 35
+   * Constant used to reference the special 'global' group that                                            // 36
+   * can be used to apply blanket permissions across all groups.                                           // 37
+   *                                                                                                       // 38
+   * @example                                                                                              // 39
+   *     Roles.addUsersToRoles(user, 'admin', Roles.GLOBAL_GROUP)                                          // 40
+   *     Roles.userIsInRole(user, 'admin') // => true                                                      // 41
+   *                                                                                                       // 42
+   *     Roles.setUserRoles(user, 'support-staff', Roles.GLOBAL_GROUP)                                     // 43
+   *     Roles.userIsInRole(user, 'support-staff') // => true                                              // 44
+   *     Roles.userIsInRole(user, 'admin') // => false                                                     // 45
+   *                                                                                                       // 46
+   * @property GLOBAL_GROUP                                                                                // 47
+   * @type String                                                                                          // 48
+   * @static                                                                                               // 49
+   * @final                                                                                                // 50
+   */                                                                                                      // 51
+  GLOBAL_GROUP: '__global_roles__',                                                                        // 52
+                                                                                                           // 53
+                                                                                                           // 54
+  /**                                                                                                      // 55
+   * Create a new role. Whitespace will be trimmed.                                                        // 56
+   *                                                                                                       // 57
+   * @method createRole                                                                                    // 58
+   * @param {String} role Name of role                                                                     // 59
+   * @return {String} id of new role                                                                       // 60
+   */                                                                                                      // 61
+  createRole: function (role) {                                                                            // 62
+    var id,                                                                                                // 63
+        match                                                                                              // 64
+                                                                                                           // 65
+    if (!role                                                                                              // 66
+        || 'string' !== typeof role                                                                        // 67
+        || role.trim().length === 0) {                                                                     // 68
+      return                                                                                               // 69
+    }                                                                                                      // 70
+                                                                                                           // 71
+    try {                                                                                                  // 72
+      id = Meteor.roles.insert({'name': role.trim()})                                                      // 73
+      return id                                                                                            // 74
+    } catch (e) {                                                                                          // 75
+      // (from Meteor accounts-base package, insertUserDoc func)                                           // 76
+      // XXX string parsing sucks, maybe                                                                   // 77
+      // https://jira.mongodb.org/browse/SERVER-3069 will get fixed one day                                // 78
+      if (e.name !== 'MongoError') throw e                                                                 // 79
+      match = e.err.match(/^E11000 duplicate key error index: ([^ ]+)/)                                    // 80
+      if (!match) throw e                                                                                  // 81
+      if (match[1].indexOf('$name') !== -1)                                                                // 82
+        throw new Meteor.Error(403, "Role already exists.")                                                // 83
+      throw e                                                                                              // 84
+    }                                                                                                      // 85
+  },                                                                                                       // 86
+                                                                                                           // 87
+  /**                                                                                                      // 88
+   * Delete an existing role.  Will throw "Role in use" error if any users                                 // 89
+   * are currently assigned to the target role.                                                            // 90
+   *                                                                                                       // 91
+   * @method deleteRole                                                                                    // 92
+   * @param {String} role Name of role                                                                     // 93
+   */                                                                                                      // 94
+  deleteRole: function (role) {                                                                            // 95
+    if (!role) return                                                                                      // 96
+                                                                                                           // 97
+    var foundExistingUser = Meteor.users.findOne(                                                          // 98
+                              {roles: {$in: [role]}},                                                      // 99
                               {fields: {_id: 1}})                                                          // 100
                                                                                                            // 101
     if (foundExistingUser) {                                                                               // 102
@@ -280,587 +277,668 @@ _.extend(Roles, {                                                               
       }                                                                                                    // 243
     }                                                                                                      // 244
     catch (ex) {                                                                                           // 245
-      var removeNonGroupedRoleFromGroupMsg = 'Cannot apply $pull/$pullAll modifier to non-array'           // 246
-                                                                                                           // 247
-      if (ex.name === 'MongoError' &&                                                                      // 248
-          ex.err === removeNonGroupedRoleFromGroupMsg) {                                                   // 249
-        throw new Error (mixingGroupAndNonGroupErrorMsg)                                                   // 250
-      }                                                                                                    // 251
-                                                                                                           // 252
-      throw ex                                                                                             // 253
-    }                                                                                                      // 254
-  },                                                                                                       // 255
-                                                                                                           // 256
-  /**                                                                                                      // 257
-   * Check if user has specified permissions/roles                                                         // 258
-   *                                                                                                       // 259
-   * @example                                                                                              // 260
-   *     // non-group usage                                                                                // 261
-   *     Roles.userIsInRole(user, 'admin')                                                                 // 262
-   *     Roles.userIsInRole(user, ['admin','editor'])                                                      // 263
-   *     Roles.userIsInRole(userId, 'admin')                                                               // 264
-   *     Roles.userIsInRole(userId, ['admin','editor'])                                                    // 265
-   *                                                                                                       // 266
-   *     // per-group usage                                                                                // 267
-   *     Roles.userIsInRole(user,   ['admin','editor'], 'group1')                                          // 268
-   *     Roles.userIsInRole(userId, ['admin','editor'], 'group1')                                          // 269
-   *     Roles.userIsInRole(userId, ['admin','editor'], Roles.GLOBAL_GROUP)                                // 270
+      if (ex.name === 'MongoError' && isMongoMixError(ex.err)) {                                           // 246
+        throw new Error (mixingGroupAndNonGroupErrorMsg)                                                   // 247
+      }                                                                                                    // 248
+                                                                                                           // 249
+      throw ex                                                                                             // 250
+    }                                                                                                      // 251
+  },                                                                                                       // 252
+                                                                                                           // 253
+  /**                                                                                                      // 254
+   * Check if user has specified permissions/roles                                                         // 255
+   *                                                                                                       // 256
+   * @example                                                                                              // 257
+   *     // non-group usage                                                                                // 258
+   *     Roles.userIsInRole(user, 'admin')                                                                 // 259
+   *     Roles.userIsInRole(user, ['admin','editor'])                                                      // 260
+   *     Roles.userIsInRole(userId, 'admin')                                                               // 261
+   *     Roles.userIsInRole(userId, ['admin','editor'])                                                    // 262
+   *                                                                                                       // 263
+   *     // per-group usage                                                                                // 264
+   *     Roles.userIsInRole(user,   ['admin','editor'], 'group1')                                          // 265
+   *     Roles.userIsInRole(userId, ['admin','editor'], 'group1')                                          // 266
+   *     Roles.userIsInRole(userId, ['admin','editor'], Roles.GLOBAL_GROUP)                                // 267
+   *                                                                                                       // 268
+   *     // this format can also be used as short-hand for Roles.GLOBAL_GROUP                              // 269
+   *     Roles.userIsInRole(user, 'admin')                                                                 // 270
    *                                                                                                       // 271
-   *     // this format can also be used as short-hand for Roles.GLOBAL_GROUP                              // 272
-   *     Roles.userIsInRole(user, 'admin')                                                                 // 273
-   *                                                                                                       // 274
-   * @method userIsInRole                                                                                  // 275
-   * @param {String|Object} user User Id or actual user object                                             // 276
-   * @param {String|Array} roles Name of role/permission or Array of                                       // 277
-   *                            roles/permissions to check against.  If array,                             // 278
-   *                            will return true if user is in _any_ role.                                 // 279
-   * @param {String} [group] Optional. Name of group.  If supplied, limits check                           // 280
-   *                         to just that group.                                                           // 281
-   *                         The user's Roles.GLOBAL_GROUP will always be checked                          // 282
-   *                         whether group is specified or not.                                            // 283
-   * @return {Boolean} true if user is in _any_ of the target roles                                        // 284
-   */                                                                                                      // 285
-  userIsInRole: function (user, roles, group) {                                                            // 286
-    var id,                                                                                                // 287
-        userRoles,                                                                                         // 288
-        query,                                                                                             // 289
-        groupQuery,                                                                                        // 290
-        found = false                                                                                      // 291
-                                                                                                           // 292
-    // ensure array to simplify code                                                                       // 293
-    if (!_.isArray(roles)) {                                                                               // 294
-      roles = [roles]                                                                                      // 295
-    }                                                                                                      // 296
-                                                                                                           // 297
-    if (!user) return false                                                                                // 298
-    if (group) {                                                                                           // 299
-      if ('string' !== typeof group) return false                                                          // 300
-      if ('$' === group[0]) return false                                                                   // 301
-                                                                                                           // 302
-      // convert any periods to underscores                                                                // 303
-      group = group.replace(/\./g, '_')                                                                    // 304
-    }                                                                                                      // 305
-                                                                                                           // 306
-    if ('object' === typeof user) {                                                                        // 307
-      userRoles = user.roles                                                                               // 308
-      if (_.isArray(userRoles)) {                                                                          // 309
-        return _.some(roles, function (role) {                                                             // 310
-          return _.contains(userRoles, role)                                                               // 311
-        })                                                                                                 // 312
-      } else if ('object' === typeof userRoles) {                                                          // 313
-        // roles field is dictionary of groups                                                             // 314
-        found = _.isArray(userRoles[group]) && _.some(roles, function (role) {                             // 315
-          return _.contains(userRoles[group], role)                                                        // 316
-        })                                                                                                 // 317
-        if (!found) {                                                                                      // 318
-          // not found in regular group or group not specified.                                            // 319
-          // check Roles.GLOBAL_GROUP, if it exists                                                        // 320
-          found = _.isArray(userRoles[Roles.GLOBAL_GROUP]) && _.some(roles, function (role) {              // 321
-            return _.contains(userRoles[Roles.GLOBAL_GROUP], role)                                         // 322
-          })                                                                                               // 323
-        }                                                                                                  // 324
-        return found                                                                                       // 325
-      }                                                                                                    // 326
-                                                                                                           // 327
-      // missing roles field, try going direct via id                                                      // 328
-      id = user._id                                                                                        // 329
-    } else if ('string' === typeof user) {                                                                 // 330
-      id = user                                                                                            // 331
-    }                                                                                                      // 332
+   * @method userIsInRole                                                                                  // 272
+   * @param {String|Object} user User Id or actual user object                                             // 273
+   * @param {String|Array} roles Name of role/permission or Array of                                       // 274
+   *                            roles/permissions to check against.  If array,                             // 275
+   *                            will return true if user is in _any_ role.                                 // 276
+   * @param {String} [group] Optional. Name of group.  If supplied, limits check                           // 277
+   *                         to just that group.                                                           // 278
+   *                         The user's Roles.GLOBAL_GROUP will always be checked                          // 279
+   *                         whether group is specified or not.                                            // 280
+   * @return {Boolean} true if user is in _any_ of the target roles                                        // 281
+   */                                                                                                      // 282
+  userIsInRole: function (user, roles, group) {                                                            // 283
+    var id,                                                                                                // 284
+        userRoles,                                                                                         // 285
+        query,                                                                                             // 286
+        groupQuery,                                                                                        // 287
+        found = false                                                                                      // 288
+                                                                                                           // 289
+    // ensure array to simplify code                                                                       // 290
+    if (!_.isArray(roles)) {                                                                               // 291
+      roles = [roles]                                                                                      // 292
+    }                                                                                                      // 293
+                                                                                                           // 294
+    if (!user) return false                                                                                // 295
+    if (group) {                                                                                           // 296
+      if ('string' !== typeof group) return false                                                          // 297
+      if ('$' === group[0]) return false                                                                   // 298
+                                                                                                           // 299
+      // convert any periods to underscores                                                                // 300
+      group = group.replace(/\./g, '_')                                                                    // 301
+    }                                                                                                      // 302
+                                                                                                           // 303
+    if ('object' === typeof user) {                                                                        // 304
+      userRoles = user.roles                                                                               // 305
+      if (_.isArray(userRoles)) {                                                                          // 306
+        return _.some(roles, function (role) {                                                             // 307
+          return _.contains(userRoles, role)                                                               // 308
+        })                                                                                                 // 309
+      } else if ('object' === typeof userRoles) {                                                          // 310
+        // roles field is dictionary of groups                                                             // 311
+        found = _.isArray(userRoles[group]) && _.some(roles, function (role) {                             // 312
+          return _.contains(userRoles[group], role)                                                        // 313
+        })                                                                                                 // 314
+        if (!found) {                                                                                      // 315
+          // not found in regular group or group not specified.                                            // 316
+          // check Roles.GLOBAL_GROUP, if it exists                                                        // 317
+          found = _.isArray(userRoles[Roles.GLOBAL_GROUP]) && _.some(roles, function (role) {              // 318
+            return _.contains(userRoles[Roles.GLOBAL_GROUP], role)                                         // 319
+          })                                                                                               // 320
+        }                                                                                                  // 321
+        return found                                                                                       // 322
+      }                                                                                                    // 323
+                                                                                                           // 324
+      // missing roles field, try going direct via id                                                      // 325
+      id = user._id                                                                                        // 326
+    } else if ('string' === typeof user) {                                                                 // 327
+      id = user                                                                                            // 328
+    }                                                                                                      // 329
+                                                                                                           // 330
+    if (!id) return false                                                                                  // 331
+                                                                                                           // 332
                                                                                                            // 333
-    if (!id) return false                                                                                  // 334
+    query = {_id: id, $or: []}                                                                             // 334
                                                                                                            // 335
-                                                                                                           // 336
-    query = {_id: id, $or: []}                                                                             // 337
-                                                                                                           // 338
-    // always check Roles.GLOBAL_GROUP                                                                     // 339
-    groupQuery = {}                                                                                        // 340
-    groupQuery['roles.'+Roles.GLOBAL_GROUP] = {$in: roles}                                                 // 341
-    query.$or.push(groupQuery)                                                                             // 342
-                                                                                                           // 343
-    if (group) {                                                                                           // 344
-      // structure of query, when group specified including Roles.GLOBAL_GROUP                             // 345
-      //   {_id: id,                                                                                       // 346
-      //    $or: [                                                                                         // 347
-      //      {'roles.group1':{$in: ['admin']}},                                                           // 348
-      //      {'roles.__global_roles__':{$in: ['admin']}}                                                  // 349
-      //    ]}                                                                                             // 350
-      groupQuery = {}                                                                                      // 351
-      groupQuery['roles.'+group] = {$in: roles}                                                            // 352
-      query.$or.push(groupQuery)                                                                           // 353
-    } else {                                                                                               // 354
-      // structure of query, where group not specified. includes                                           // 355
-      // Roles.GLOBAL_GROUP                                                                                // 356
-      //   {_id: id,                                                                                       // 357
-      //    $or: [                                                                                         // 358
-      //      {roles: {$in: ['admin']}},                                                                   // 359
-      //      {'roles.__global_roles__': {$in: ['admin']}}                                                 // 360
-      //    ]}                                                                                             // 361
-      query.$or.push({roles: {$in: roles}})                                                                // 362
-    }                                                                                                      // 363
-                                                                                                           // 364
-    found = Meteor.users.findOne(query, {fields: {_id: 1}})                                                // 365
-    return found ? true : false                                                                            // 366
-  },                                                                                                       // 367
-                                                                                                           // 368
-  /**                                                                                                      // 369
-   * Retrieve users roles                                                                                  // 370
-   *                                                                                                       // 371
-   * @method getRolesForUser                                                                               // 372
-   * @param {String|Object} user User Id or actual user object                                             // 373
-   * @param {String} [group] Optional name of group to restrict roles to.                                  // 374
-   *                         User's Roles.GLOBAL_GROUP will also be included.                              // 375
-   * @return {Array} Array of user's roles, unsorted.                                                      // 376
-   */                                                                                                      // 377
-  getRolesForUser: function (user, group) {                                                                // 378
-    if (!user) return []                                                                                   // 379
-    if (group) {                                                                                           // 380
-      if ('string' !== typeof group) return []                                                             // 381
-      if ('$' === group[0]) return []                                                                      // 382
-                                                                                                           // 383
-      // convert any periods to underscores                                                                // 384
-      group = group.replace(/\./g, '_')                                                                    // 385
-    }                                                                                                      // 386
-                                                                                                           // 387
-    if ('string' === typeof user) {                                                                        // 388
-      user = Meteor.users.findOne(                                                                         // 389
-               {_id: user},                                                                                // 390
-               {fields: {roles: 1}})                                                                       // 391
-                                                                                                           // 392
-    } else if ('object' !== typeof user) {                                                                 // 393
-      // invalid user object                                                                               // 394
-      return []                                                                                            // 395
-    }                                                                                                      // 396
-                                                                                                           // 397
-    if (!user || !user.roles) return []                                                                    // 398
-                                                                                                           // 399
-    if (group) {                                                                                           // 400
-      return _.union(user.roles[group] || [], user.roles[Roles.GLOBAL_GROUP] || [])                        // 401
-    }                                                                                                      // 402
+    // always check Roles.GLOBAL_GROUP                                                                     // 336
+    groupQuery = {}                                                                                        // 337
+    groupQuery['roles.'+Roles.GLOBAL_GROUP] = {$in: roles}                                                 // 338
+    query.$or.push(groupQuery)                                                                             // 339
+                                                                                                           // 340
+    if (group) {                                                                                           // 341
+      // structure of query, when group specified including Roles.GLOBAL_GROUP                             // 342
+      //   {_id: id,                                                                                       // 343
+      //    $or: [                                                                                         // 344
+      //      {'roles.group1':{$in: ['admin']}},                                                           // 345
+      //      {'roles.__global_roles__':{$in: ['admin']}}                                                  // 346
+      //    ]}                                                                                             // 347
+      groupQuery = {}                                                                                      // 348
+      groupQuery['roles.'+group] = {$in: roles}                                                            // 349
+      query.$or.push(groupQuery)                                                                           // 350
+    } else {                                                                                               // 351
+      // structure of query, where group not specified. includes                                           // 352
+      // Roles.GLOBAL_GROUP                                                                                // 353
+      //   {_id: id,                                                                                       // 354
+      //    $or: [                                                                                         // 355
+      //      {roles: {$in: ['admin']}},                                                                   // 356
+      //      {'roles.__global_roles__': {$in: ['admin']}}                                                 // 357
+      //    ]}                                                                                             // 358
+      query.$or.push({roles: {$in: roles}})                                                                // 359
+    }                                                                                                      // 360
+                                                                                                           // 361
+    found = Meteor.users.findOne(query, {fields: {_id: 1}})                                                // 362
+    return found ? true : false                                                                            // 363
+  },                                                                                                       // 364
+                                                                                                           // 365
+  /**                                                                                                      // 366
+   * Retrieve users roles                                                                                  // 367
+   *                                                                                                       // 368
+   * @method getRolesForUser                                                                               // 369
+   * @param {String|Object} user User Id or actual user object                                             // 370
+   * @param {String} [group] Optional name of group to restrict roles to.                                  // 371
+   *                         User's Roles.GLOBAL_GROUP will also be included.                              // 372
+   * @return {Array} Array of user's roles, unsorted.                                                      // 373
+   */                                                                                                      // 374
+  getRolesForUser: function (user, group) {                                                                // 375
+    if (!user) return []                                                                                   // 376
+    if (group) {                                                                                           // 377
+      if ('string' !== typeof group) return []                                                             // 378
+      if ('$' === group[0]) return []                                                                      // 379
+                                                                                                           // 380
+      // convert any periods to underscores                                                                // 381
+      group = group.replace(/\./g, '_')                                                                    // 382
+    }                                                                                                      // 383
+                                                                                                           // 384
+    if ('string' === typeof user) {                                                                        // 385
+      user = Meteor.users.findOne(                                                                         // 386
+               {_id: user},                                                                                // 387
+               {fields: {roles: 1}})                                                                       // 388
+                                                                                                           // 389
+    } else if ('object' !== typeof user) {                                                                 // 390
+      // invalid user object                                                                               // 391
+      return []                                                                                            // 392
+    }                                                                                                      // 393
+                                                                                                           // 394
+    if (!user || !user.roles) return []                                                                    // 395
+                                                                                                           // 396
+    if (group) {                                                                                           // 397
+      return _.union(user.roles[group] || [], user.roles[Roles.GLOBAL_GROUP] || [])                        // 398
+    }                                                                                                      // 399
+                                                                                                           // 400
+    if (_.isArray(user.roles))                                                                             // 401
+      return user.roles                                                                                    // 402
                                                                                                            // 403
-    if (_.isArray(user.roles))                                                                             // 404
-      return user.roles                                                                                    // 405
-                                                                                                           // 406
-    // using groups but group not specified. return global group, if exists                                // 407
-    return user.roles[Roles.GLOBAL_GROUP] || []                                                            // 408
-  },                                                                                                       // 409
-                                                                                                           // 410
-  /**                                                                                                      // 411
-   * Retrieve set of all existing roles                                                                    // 412
-   *                                                                                                       // 413
-   * @method getAllRoles                                                                                   // 414
-   * @return {Cursor} cursor of existing roles                                                             // 415
-   */                                                                                                      // 416
-  getAllRoles: function () {                                                                               // 417
-    return Meteor.roles.find({}, {sort: {name: 1}})                                                        // 418
-  },                                                                                                       // 419
-                                                                                                           // 420
-  /**                                                                                                      // 421
-   * Retrieve all users who are in target role.                                                            // 422
-   *                                                                                                       // 423
-   * NOTE: This is an expensive query; it performs a full collection scan                                  // 424
-   * on the users collection since there is no index set on the 'roles' field.                             // 425
-   * This is by design as most queries will specify an _id so the _id index is                             // 426
-   * used automatically.                                                                                   // 427
-   *                                                                                                       // 428
-   * @method getUsersInRole                                                                                // 429
-   * @param {Array|String} role Name of role/permission.  If array, users                                  // 430
-   *                            returned will have at least one of the roles                               // 431
-   *                            specified but need not have _all_ roles.                                   // 432
-   * @param {String} [group] Optional name of group to restrict roles to.                                  // 433
-   *                         User's Roles.GLOBAL_GROUP will also be checked.                               // 434
-   * @return {Cursor} cursor of users in role                                                              // 435
-   */                                                                                                      // 436
-  getUsersInRole: function (role, group) {                                                                 // 437
-    var query,                                                                                             // 438
-        roles = role,                                                                                      // 439
-        groupQuery                                                                                         // 440
-                                                                                                           // 441
-    // ensure array to simplify query logic                                                                // 442
-    if (!_.isArray(roles)) roles = [roles]                                                                 // 443
-                                                                                                           // 444
-    if (group) {                                                                                           // 445
-      if ('string' !== typeof group)                                                                       // 446
-        throw new Error ("Roles error: Invalid parameter 'group'. Expected 'string' type")                 // 447
-      if ('$' === group[0])                                                                                // 448
-        throw new Error ("Roles error: groups can not start with '$'")                                     // 449
-                                                                                                           // 450
-      // convert any periods to underscores                                                                // 451
-      group = group.replace(/\./g, '_')                                                                    // 452
-    }                                                                                                      // 453
-                                                                                                           // 454
-    query = {$or: []}                                                                                      // 455
-                                                                                                           // 456
-    // always check Roles.GLOBAL_GROUP                                                                     // 457
-    groupQuery = {}                                                                                        // 458
-    groupQuery['roles.'+Roles.GLOBAL_GROUP] = {$in: roles}                                                 // 459
-    query.$or.push(groupQuery)                                                                             // 460
-                                                                                                           // 461
-    if (group) {                                                                                           // 462
-      // structure of query, when group specified including Roles.GLOBAL_GROUP                             // 463
-      //   {                                                                                               // 464
-      //    $or: [                                                                                         // 465
-      //      {'roles.group1':{$in: ['admin']}},                                                           // 466
-      //      {'roles.__global_roles__':{$in: ['admin']}}                                                  // 467
-      //    ]}                                                                                             // 468
-      groupQuery = {}                                                                                      // 469
-      groupQuery['roles.'+group] = {$in: roles}                                                            // 470
-      query.$or.push(groupQuery)                                                                           // 471
-    } else {                                                                                               // 472
-      // structure of query, where group not specified. includes                                           // 473
-      // Roles.GLOBAL_GROUP                                                                                // 474
-      //   {                                                                                               // 475
-      //    $or: [                                                                                         // 476
-      //      {roles: {$in: ['admin']}},                                                                   // 477
-      //      {'roles.__global_roles__': {$in: ['admin']}}                                                 // 478
-      //    ]}                                                                                             // 479
-      query.$or.push({roles: {$in: roles}})                                                                // 480
-    }                                                                                                      // 481
-                                                                                                           // 482
-    return Meteor.users.find(query)                                                                        // 483
-  },  // end getUsersInRole                                                                                // 484
-                                                                                                           // 485
-  /**                                                                                                      // 486
-   * Retrieve users groups, if any                                                                         // 487
-   *                                                                                                       // 488
-   * @method getGroupsForUser                                                                              // 489
-   * @param {String|Object} user User Id or actual user object                                             // 490
-   * @param {String} [role] Optional name of roles to restrict groups to.                                  // 491
-   *                                                                                                       // 492
-   * @return {Array} Array of user's groups, unsorted. Roles.GLOBAL_GROUP will be omitted                  // 493
-   */                                                                                                      // 494
-  getGroupsForUser: function (user, role) {                                                                // 495
-    var userGroups = [];                                                                                   // 496
-                                                                                                           // 497
-    if (!user) return []                                                                                   // 498
-    if (role) {                                                                                            // 499
-      if ('string' !== typeof role) return []                                                              // 500
-      if ('$' === role[0]) return []                                                                       // 501
-                                                                                                           // 502
-      // convert any periods to underscores                                                                // 503
-      role = role.replace('.', '_')                                                                        // 504
-    }                                                                                                      // 505
-                                                                                                           // 506
-    if ('string' === typeof user) {                                                                        // 507
-      user = Meteor.users.findOne(                                                                         // 508
-               {_id: user},                                                                                // 509
-               {fields: {roles: 1}})                                                                       // 510
-                                                                                                           // 511
-    }else if ('object' !== typeof user) {                                                                  // 512
-      // invalid user object                                                                               // 513
-      return []                                                                                            // 514
-    }                                                                                                      // 515
-                                                                                                           // 516
-    //User has no roles or is not using groups                                                             // 517
-    if (!user || !user.roles || _.isArray(user.roles)) return []                                           // 518
-                                                                                                           // 519
-    if (role) {                                                                                            // 520
-      _.each(user.roles, function(groupRoles, groupName) {                                                 // 521
-        if (_.contains(groupRoles, role) && groupName !== Roles.GLOBAL_GROUP) {                            // 522
-          userGroups.push(groupName);                                                                      // 523
-        }                                                                                                  // 524
-      });                                                                                                  // 525
-      return userGroups;                                                                                   // 526
-    }else {                                                                                                // 527
-      return _.without(_.keys(user.roles), Roles.GLOBAL_GROUP);                                            // 528
-    }                                                                                                      // 529
-                                                                                                           // 530
-  }, //End getGroupsForUser                                                                                // 531
+    // using groups but group not specified. return global group, if exists                                // 404
+    return user.roles[Roles.GLOBAL_GROUP] || []                                                            // 405
+  },                                                                                                       // 406
+                                                                                                           // 407
+  /**                                                                                                      // 408
+   * Retrieve set of all existing roles                                                                    // 409
+   *                                                                                                       // 410
+   * @method getAllRoles                                                                                   // 411
+   * @return {Cursor} cursor of existing roles                                                             // 412
+   */                                                                                                      // 413
+  getAllRoles: function () {                                                                               // 414
+    return Meteor.roles.find({}, {sort: {name: 1}})                                                        // 415
+  },                                                                                                       // 416
+                                                                                                           // 417
+  /**                                                                                                      // 418
+   * Retrieve all users who are in target role.                                                            // 419
+   *                                                                                                       // 420
+   * NOTE: This is an expensive query; it performs a full collection scan                                  // 421
+   * on the users collection since there is no index set on the 'roles' field.                             // 422
+   * This is by design as most queries will specify an _id so the _id index is                             // 423
+   * used automatically.                                                                                   // 424
+   *                                                                                                       // 425
+   * @method getUsersInRole                                                                                // 426
+   * @param {Array|String} role Name of role/permission.  If array, users                                  // 427
+   *                            returned will have at least one of the roles                               // 428
+   *                            specified but need not have _all_ roles.                                   // 429
+   * @param {String} [group] Optional name of group to restrict roles to.                                  // 430
+   *                         User's Roles.GLOBAL_GROUP will also be checked.                               // 431
+   * @param {Object} [options] Optional options which are passed directly                                  // 432
+   *                           through to `Meteor.users.find(query, options)`                              // 433
+   * @return {Cursor} cursor of users in role                                                              // 434
+   */                                                                                                      // 435
+  getUsersInRole: function (role, group, options) {                                                        // 436
+    var query,                                                                                             // 437
+        roles = role,                                                                                      // 438
+        groupQuery                                                                                         // 439
+                                                                                                           // 440
+    // ensure array to simplify query logic                                                                // 441
+    if (!_.isArray(roles)) roles = [roles]                                                                 // 442
+                                                                                                           // 443
+    if (group) {                                                                                           // 444
+      if ('string' !== typeof group)                                                                       // 445
+        throw new Error ("Roles error: Invalid parameter 'group'. Expected 'string' type")                 // 446
+      if ('$' === group[0])                                                                                // 447
+        throw new Error ("Roles error: groups can not start with '$'")                                     // 448
+                                                                                                           // 449
+      // convert any periods to underscores                                                                // 450
+      group = group.replace(/\./g, '_')                                                                    // 451
+    }                                                                                                      // 452
+                                                                                                           // 453
+    query = {$or: []}                                                                                      // 454
+                                                                                                           // 455
+    // always check Roles.GLOBAL_GROUP                                                                     // 456
+    groupQuery = {}                                                                                        // 457
+    groupQuery['roles.'+Roles.GLOBAL_GROUP] = {$in: roles}                                                 // 458
+    query.$or.push(groupQuery)                                                                             // 459
+                                                                                                           // 460
+    if (group) {                                                                                           // 461
+      // structure of query, when group specified including Roles.GLOBAL_GROUP                             // 462
+      //   {                                                                                               // 463
+      //    $or: [                                                                                         // 464
+      //      {'roles.group1':{$in: ['admin']}},                                                           // 465
+      //      {'roles.__global_roles__':{$in: ['admin']}}                                                  // 466
+      //    ]}                                                                                             // 467
+      groupQuery = {}                                                                                      // 468
+      groupQuery['roles.'+group] = {$in: roles}                                                            // 469
+      query.$or.push(groupQuery)                                                                           // 470
+    } else {                                                                                               // 471
+      // structure of query, where group not specified. includes                                           // 472
+      // Roles.GLOBAL_GROUP                                                                                // 473
+      //   {                                                                                               // 474
+      //    $or: [                                                                                         // 475
+      //      {roles: {$in: ['admin']}},                                                                   // 476
+      //      {'roles.__global_roles__': {$in: ['admin']}}                                                 // 477
+      //    ]}                                                                                             // 478
+      query.$or.push({roles: {$in: roles}})                                                                // 479
+    }                                                                                                      // 480
+                                                                                                           // 481
+    return Meteor.users.find(query, options);                                                              // 482
+  },  // end getUsersInRole                                                                                // 483
+                                                                                                           // 484
+  /**                                                                                                      // 485
+   * Retrieve users groups, if any                                                                         // 486
+   *                                                                                                       // 487
+   * @method getGroupsForUser                                                                              // 488
+   * @param {String|Object} user User Id or actual user object                                             // 489
+   * @param {String} [role] Optional name of roles to restrict groups to.                                  // 490
+   *                                                                                                       // 491
+   * @return {Array} Array of user's groups, unsorted. Roles.GLOBAL_GROUP will be omitted                  // 492
+   */                                                                                                      // 493
+  getGroupsForUser: function (user, role) {                                                                // 494
+    var userGroups = [];                                                                                   // 495
+                                                                                                           // 496
+    if (!user) return []                                                                                   // 497
+    if (role) {                                                                                            // 498
+      if ('string' !== typeof role) return []                                                              // 499
+      if ('$' === role[0]) return []                                                                       // 500
+                                                                                                           // 501
+      // convert any periods to underscores                                                                // 502
+      role = role.replace('.', '_')                                                                        // 503
+    }                                                                                                      // 504
+                                                                                                           // 505
+    if ('string' === typeof user) {                                                                        // 506
+      user = Meteor.users.findOne(                                                                         // 507
+               {_id: user},                                                                                // 508
+               {fields: {roles: 1}})                                                                       // 509
+                                                                                                           // 510
+    }else if ('object' !== typeof user) {                                                                  // 511
+      // invalid user object                                                                               // 512
+      return []                                                                                            // 513
+    }                                                                                                      // 514
+                                                                                                           // 515
+    //User has no roles or is not using groups                                                             // 516
+    if (!user || !user.roles || _.isArray(user.roles)) return []                                           // 517
+                                                                                                           // 518
+    if (role) {                                                                                            // 519
+      _.each(user.roles, function(groupRoles, groupName) {                                                 // 520
+        if (_.contains(groupRoles, role) && groupName !== Roles.GLOBAL_GROUP) {                            // 521
+          userGroups.push(groupName);                                                                      // 522
+        }                                                                                                  // 523
+      });                                                                                                  // 524
+      return userGroups;                                                                                   // 525
+    }else {                                                                                                // 526
+      return _.without(_.keys(user.roles), Roles.GLOBAL_GROUP);                                            // 527
+    }                                                                                                      // 528
+                                                                                                           // 529
+  }, //End getGroupsForUser                                                                                // 530
+                                                                                                           // 531
                                                                                                            // 532
-                                                                                                           // 533
-  /**                                                                                                      // 534
-   * Private function 'template' that uses $set to construct an update object                              // 535
-   * for MongoDB.  Passed to _updateUserRoles                                                              // 536
-   *                                                                                                       // 537
-   * @method _update_$set_fn                                                                               // 538
-   * @protected                                                                                            // 539
-   * @param {Array} roles                                                                                  // 540
-   * @param {String} [group]                                                                               // 541
-   * @return {Object} update object for use in MongoDB update command                                      // 542
-   */                                                                                                      // 543
-  _update_$set_fn: function  (roles, group) {                                                              // 544
-    var update = {}                                                                                        // 545
-                                                                                                           // 546
-    if (group) {                                                                                           // 547
-      // roles is a key/value dict object                                                                  // 548
-      update.$set = {}                                                                                     // 549
-      update.$set['roles.' + group] = roles                                                                // 550
-    } else {                                                                                               // 551
-      // roles is an array of strings                                                                      // 552
-      update.$set = {roles: roles}                                                                         // 553
-    }                                                                                                      // 554
-                                                                                                           // 555
-    return update                                                                                          // 556
-  },  // end _update_$set_fn                                                                               // 557
-                                                                                                           // 558
-  /**                                                                                                      // 559
-   * Private function 'template' that uses $addToSet to construct an update                                // 560
-   * object for MongoDB.  Passed to _updateUserRoles                                                       // 561
-   *                                                                                                       // 562
-   * @method _update_$addToSet_fn                                                                          // 563
-   * @protected                                                                                            // 564
-   * @param {Array} roles                                                                                  // 565
-   * @param {String} [group]                                                                               // 566
-   * @return {Object} update object for use in MongoDB update command                                      // 567
-   */                                                                                                      // 568
-  _update_$addToSet_fn: function (roles, group) {                                                          // 569
-    var update = {}                                                                                        // 570
-                                                                                                           // 571
-    if (group) {                                                                                           // 572
-      // roles is a key/value dict object                                                                  // 573
-      update.$addToSet = {}                                                                                // 574
-      update.$addToSet['roles.' + group] = {$each: roles}                                                  // 575
-    } else {                                                                                               // 576
-      // roles is an array of strings                                                                      // 577
-      update.$addToSet = {roles: {$each: roles}}                                                           // 578
-    }                                                                                                      // 579
-                                                                                                           // 580
-    return update                                                                                          // 581
-  },  // end _update_$addToSet_fn                                                                          // 582
+  /**                                                                                                      // 533
+   * Private function 'template' that uses $set to construct an update object                              // 534
+   * for MongoDB.  Passed to _updateUserRoles                                                              // 535
+   *                                                                                                       // 536
+   * @method _update_$set_fn                                                                               // 537
+   * @protected                                                                                            // 538
+   * @param {Array} roles                                                                                  // 539
+   * @param {String} [group]                                                                               // 540
+   * @return {Object} update object for use in MongoDB update command                                      // 541
+   */                                                                                                      // 542
+  _update_$set_fn: function  (roles, group) {                                                              // 543
+    var update = {}                                                                                        // 544
+                                                                                                           // 545
+    if (group) {                                                                                           // 546
+      // roles is a key/value dict object                                                                  // 547
+      update.$set = {}                                                                                     // 548
+      update.$set['roles.' + group] = roles                                                                // 549
+    } else {                                                                                               // 550
+      // roles is an array of strings                                                                      // 551
+      update.$set = {roles: roles}                                                                         // 552
+    }                                                                                                      // 553
+                                                                                                           // 554
+    return update                                                                                          // 555
+  },  // end _update_$set_fn                                                                               // 556
+                                                                                                           // 557
+  /**                                                                                                      // 558
+   * Private function 'template' that uses $addToSet to construct an update                                // 559
+   * object for MongoDB.  Passed to _updateUserRoles                                                       // 560
+   *                                                                                                       // 561
+   * @method _update_$addToSet_fn                                                                          // 562
+   * @protected                                                                                            // 563
+   * @param {Array} roles                                                                                  // 564
+   * @param {String} [group]                                                                               // 565
+   * @return {Object} update object for use in MongoDB update command                                      // 566
+   */                                                                                                      // 567
+  _update_$addToSet_fn: function (roles, group) {                                                          // 568
+    var update = {}                                                                                        // 569
+                                                                                                           // 570
+    if (group) {                                                                                           // 571
+      // roles is a key/value dict object                                                                  // 572
+      update.$addToSet = {}                                                                                // 573
+      update.$addToSet['roles.' + group] = {$each: roles}                                                  // 574
+    } else {                                                                                               // 575
+      // roles is an array of strings                                                                      // 576
+      update.$addToSet = {roles: {$each: roles}}                                                           // 577
+    }                                                                                                      // 578
+                                                                                                           // 579
+    return update                                                                                          // 580
+  },  // end _update_$addToSet_fn                                                                          // 581
+                                                                                                           // 582
                                                                                                            // 583
-                                                                                                           // 584
-  /**                                                                                                      // 585
-   * Internal function that users the Template pattern to adds or sets roles                               // 586
-   * for users.                                                                                            // 587
-   *                                                                                                       // 588
-   * @method _updateUserRoles                                                                              // 589
-   * @protected                                                                                            // 590
-   * @param {Array|String} users user id(s) or object(s) with an _id field                                 // 591
-   * @param {Array|String} roles name(s) of roles/permissions to add users to                              // 592
-   * @param {String} group Group name. If not null or undefined, roles will be                             // 593
-   *                         specific to that group.                                                       // 594
-   *                         Group names can not start with '$'.                                           // 595
-   *                         Periods in names '.' are automatically converted                              // 596
-   *                         to underscores.                                                               // 597
-   *                         The special group Roles.GLOBAL_GROUP provides                                 // 598
-   *                         a convenient way to assign blanket roles/permissions                          // 599
-   *                         across all groups.  The roles/permissions in the                              // 600
-   *                         Roles.GLOBAL_GROUP group will be automatically                                // 601
-   *                         included in checks for any group.                                             // 602
-   * @param {Function} updateFactory Func which returns an update object that                              // 603
-   *                         will be passed to Mongo.                                                      // 604
-   *   @param {Array} roles                                                                                // 605
-   *   @param {String} [group]                                                                             // 606
-   */                                                                                                      // 607
-  _updateUserRoles: function (users, roles, group, updateFactory) {                                        // 608
-    if (!users) throw new Error ("Missing 'users' param")                                                  // 609
-    if (!roles) throw new Error ("Missing 'roles' param")                                                  // 610
-    if (group) {                                                                                           // 611
-      if ('string' !== typeof group)                                                                       // 612
-        throw new Error ("Roles error: Invalid parameter 'group'. Expected 'string' type")                 // 613
-      if ('$' === group[0])                                                                                // 614
-        throw new Error ("Roles error: groups can not start with '$'")                                     // 615
-                                                                                                           // 616
-      // convert any periods to underscores                                                                // 617
-      group = group.replace(/\./g, '_')                                                                    // 618
-    }                                                                                                      // 619
-                                                                                                           // 620
-    var existingRoles,                                                                                     // 621
-        query,                                                                                             // 622
-        update                                                                                             // 623
-                                                                                                           // 624
-    // ensure arrays to simplify code                                                                      // 625
-    if (!_.isArray(users)) users = [users]                                                                 // 626
-    if (!_.isArray(roles)) roles = [roles]                                                                 // 627
-                                                                                                           // 628
-    // remove invalid roles                                                                                // 629
-    roles = _.reduce(roles, function (memo, role) {                                                        // 630
-      if (role                                                                                             // 631
-          && 'string' === typeof role                                                                      // 632
-          && role.trim().length > 0) {                                                                     // 633
-        memo.push(role.trim())                                                                             // 634
-      }                                                                                                    // 635
-      return memo                                                                                          // 636
-    }, [])                                                                                                 // 637
-                                                                                                           // 638
-    // empty roles array is ok, since it might be a $set operation to clear roles                          // 639
-    //if (roles.length === 0) return                                                                       // 640
-                                                                                                           // 641
-    // ensure all roles exist in 'roles' collection                                                        // 642
-    existingRoles = _.reduce(Meteor.roles.find({}).fetch(), function (memo, role) {                        // 643
-      memo[role.name] = true                                                                               // 644
-      return memo                                                                                          // 645
-    }, {})                                                                                                 // 646
-    _.each(roles, function (role) {                                                                        // 647
-      if (!existingRoles[role]) {                                                                          // 648
-        Roles.createRole(role)                                                                             // 649
-      }                                                                                                    // 650
-    })                                                                                                     // 651
-                                                                                                           // 652
-    // ensure users is an array of user ids                                                                // 653
-    users = _.reduce(users, function (memo, user) {                                                        // 654
-      var _id                                                                                              // 655
-      if ('string' === typeof user) {                                                                      // 656
-        memo.push(user)                                                                                    // 657
-      } else if ('object' === typeof user) {                                                               // 658
-        _id = user._id                                                                                     // 659
-        if ('string' === typeof _id) {                                                                     // 660
-          memo.push(_id)                                                                                   // 661
-        }                                                                                                  // 662
-      }                                                                                                    // 663
-      return memo                                                                                          // 664
-    }, [])                                                                                                 // 665
-                                                                                                           // 666
-    // update all users                                                                                    // 667
-    update = updateFactory(roles, group)                                                                   // 668
-                                                                                                           // 669
-    try {                                                                                                  // 670
-      if (Meteor.isClient) {                                                                               // 671
-        // On client, iterate over each user to fulfill Meteor's                                           // 672
-        // 'one update per ID' policy                                                                      // 673
-        _.each(users, function (user) {                                                                    // 674
-          Meteor.users.update({_id: user}, update)                                                         // 675
-        })                                                                                                 // 676
-      } else {                                                                                             // 677
-        // On the server we can use MongoDB's $in operator for                                             // 678
-        // better performance                                                                              // 679
-        Meteor.users.update(                                                                               // 680
-          {_id: {$in: users}},                                                                             // 681
-          update,                                                                                          // 682
-          {multi: true})                                                                                   // 683
-      }                                                                                                    // 684
-    }                                                                                                      // 685
-    catch (ex) {                                                                                           // 686
-      var addNonGroupToGroupedRolesMsg = 'Cannot apply $addToSet modifier to non-array',                   // 687
-          addGrouped2NonGroupedMsg = "can't append to array using string field name"                       // 688
+  /**                                                                                                      // 584
+   * Internal function that uses the Template pattern to adds or sets roles                                // 585
+   * for users.                                                                                            // 586
+   *                                                                                                       // 587
+   * @method _updateUserRoles                                                                              // 588
+   * @protected                                                                                            // 589
+   * @param {Array|String} users user id(s) or object(s) with an _id field                                 // 590
+   * @param {Array|String} roles name(s) of roles/permissions to add users to                              // 591
+   * @param {String} group Group name. If not null or undefined, roles will be                             // 592
+   *                         specific to that group.                                                       // 593
+   *                         Group names can not start with '$'.                                           // 594
+   *                         Periods in names '.' are automatically converted                              // 595
+   *                         to underscores.                                                               // 596
+   *                         The special group Roles.GLOBAL_GROUP provides                                 // 597
+   *                         a convenient way to assign blanket roles/permissions                          // 598
+   *                         across all groups.  The roles/permissions in the                              // 599
+   *                         Roles.GLOBAL_GROUP group will be automatically                                // 600
+   *                         included in checks for any group.                                             // 601
+   * @param {Function} updateFactory Func which returns an update object that                              // 602
+   *                         will be passed to Mongo.                                                      // 603
+   *   @param {Array} roles                                                                                // 604
+   *   @param {String} [group]                                                                             // 605
+   */                                                                                                      // 606
+  _updateUserRoles: function (users, roles, group, updateFactory) {                                        // 607
+    if (!users) throw new Error ("Missing 'users' param")                                                  // 608
+    if (!roles) throw new Error ("Missing 'roles' param")                                                  // 609
+    if (group) {                                                                                           // 610
+      if ('string' !== typeof group)                                                                       // 611
+        throw new Error ("Roles error: Invalid parameter 'group'. Expected 'string' type")                 // 612
+      if ('$' === group[0])                                                                                // 613
+        throw new Error ("Roles error: groups can not start with '$'")                                     // 614
+                                                                                                           // 615
+      // convert any periods to underscores                                                                // 616
+      group = group.replace(/\./g, '_')                                                                    // 617
+    }                                                                                                      // 618
+                                                                                                           // 619
+    var existingRoles,                                                                                     // 620
+        query,                                                                                             // 621
+        update                                                                                             // 622
+                                                                                                           // 623
+    // ensure arrays to simplify code                                                                      // 624
+    if (!_.isArray(users)) users = [users]                                                                 // 625
+    if (!_.isArray(roles)) roles = [roles]                                                                 // 626
+                                                                                                           // 627
+    // remove invalid roles                                                                                // 628
+    roles = _.reduce(roles, function (memo, role) {                                                        // 629
+      if (role                                                                                             // 630
+          && 'string' === typeof role                                                                      // 631
+          && role.trim().length > 0) {                                                                     // 632
+        memo.push(role.trim())                                                                             // 633
+      }                                                                                                    // 634
+      return memo                                                                                          // 635
+    }, [])                                                                                                 // 636
+                                                                                                           // 637
+    // empty roles array is ok, since it might be a $set operation to clear roles                          // 638
+    //if (roles.length === 0) return                                                                       // 639
+                                                                                                           // 640
+    // ensure all roles exist in 'roles' collection                                                        // 641
+    existingRoles = _.reduce(Meteor.roles.find({}).fetch(), function (memo, role) {                        // 642
+      memo[role.name] = true                                                                               // 643
+      return memo                                                                                          // 644
+    }, {})                                                                                                 // 645
+    _.each(roles, function (role) {                                                                        // 646
+      if (!existingRoles[role]) {                                                                          // 647
+        Roles.createRole(role)                                                                             // 648
+      }                                                                                                    // 649
+    })                                                                                                     // 650
+                                                                                                           // 651
+    // ensure users is an array of user ids                                                                // 652
+    users = _.reduce(users, function (memo, user) {                                                        // 653
+      var _id                                                                                              // 654
+      if ('string' === typeof user) {                                                                      // 655
+        memo.push(user)                                                                                    // 656
+      } else if ('object' === typeof user) {                                                               // 657
+        _id = user._id                                                                                     // 658
+        if ('string' === typeof _id) {                                                                     // 659
+          memo.push(_id)                                                                                   // 660
+        }                                                                                                  // 661
+      }                                                                                                    // 662
+      return memo                                                                                          // 663
+    }, [])                                                                                                 // 664
+                                                                                                           // 665
+    // update all users                                                                                    // 666
+    update = updateFactory(roles, group)                                                                   // 667
+                                                                                                           // 668
+    try {                                                                                                  // 669
+      if (Meteor.isClient) {                                                                               // 670
+        // On client, iterate over each user to fulfill Meteor's                                           // 671
+        // 'one update per ID' policy                                                                      // 672
+        _.each(users, function (user) {                                                                    // 673
+          Meteor.users.update({_id: user}, update)                                                         // 674
+        })                                                                                                 // 675
+      } else {                                                                                             // 676
+        // On the server we can use MongoDB's $in operator for                                             // 677
+        // better performance                                                                              // 678
+        Meteor.users.update(                                                                               // 679
+          {_id: {$in: users}},                                                                             // 680
+          update,                                                                                          // 681
+          {multi: true})                                                                                   // 682
+      }                                                                                                    // 683
+    }                                                                                                      // 684
+    catch (ex) {                                                                                           // 685
+      if (ex.name === 'MongoError' && isMongoMixError(ex.err)) {                                           // 686
+        throw new Error (mixingGroupAndNonGroupErrorMsg)                                                   // 687
+      }                                                                                                    // 688
                                                                                                            // 689
-      if (ex.name === 'MongoError' &&                                                                      // 690
-          (ex.err === addNonGroupToGroupedRolesMsg ||                                                      // 691
-           ex.err.substring(0, 45) === addGrouped2NonGroupedMsg)) {                                        // 692
-        throw new Error (mixingGroupAndNonGroupErrorMsg)                                                   // 693
-      }                                                                                                    // 694
+      throw ex                                                                                             // 690
+    }                                                                                                      // 691
+  }  // end _updateUserRoles                                                                               // 692
+                                                                                                           // 693
+})  // end _.extend(Roles ...)                                                                             // 694
                                                                                                            // 695
-      throw ex                                                                                             // 696
-    }                                                                                                      // 697
-  }  // end _updateUserRoles                                                                               // 698
-                                                                                                           // 699
-})  // end _.extend(Roles ...)                                                                             // 700
-                                                                                                           // 701
-}());                                                                                                      // 702
-                                                                                                           // 703
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////     // 712
-                                                                                                                  // 713
-}).call(this);                                                                                                    // 714
-                                                                                                                  // 715
-                                                                                                                  // 716
-                                                                                                                  // 717
-                                                                                                                  // 718
-                                                                                                                  // 719
-                                                                                                                  // 720
-(function () {                                                                                                    // 721
-                                                                                                                  // 722
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////     // 723
-//                                                                                                         //     // 724
-// packages/alanning:roles/roles_client.js                                                                 //     // 725
-//                                                                                                         //     // 726
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////     // 727
-                                                                                                           //     // 728
-;(function () {                                                                                            // 1   // 729
-                                                                                                           // 2   // 730
-/**                                                                                                        // 3   // 731
- * Convenience functions for use on client.                                                                // 4   // 732
- *                                                                                                         // 5   // 733
- * NOTE: You must restrict user actions on the server-side; any                                            // 6   // 734
- * client-side checks are strictly for convenience and must not be                                         // 7   // 735
- * trusted.                                                                                                // 8   // 736
- *                                                                                                         // 9   // 737
- * @module UIHelpers                                                                                       // 10  // 738
- */                                                                                                        // 11  // 739
-                                                                                                           // 12  // 740
-var _registerHelper                                                                                        // 13  // 741
-                                                                                                           // 14  // 742
-////////////////////////////////////////////////////////////                                               // 15  // 743
-// UI helpers                                                                                              // 16  // 744
-//                                                                                                         // 17  // 745
-// Use a semi-private variable rather than declaring UI                                                    // 18  // 746
-// helpers directly so that we can unit test the helpers.                                                  // 19  // 747
-// XXX For some reason, the UI helpers are not registered                                                  // 20  // 748
-// before the tests run.                                                                                   // 21  // 749
-//                                                                                                         // 22  // 750
-Roles._uiHelpers = {                                                                                       // 23  // 751
-                                                                                                           // 24  // 752
-  /**                                                                                                      // 25  // 753
-   * UI helper to check if current user is in at least one                                                 // 26  // 754
-   * of the target roles.  For use in client-side templates.                                               // 27  // 755
-   *                                                                                                       // 28  // 756
-   * @example                                                                                              // 29  // 757
-   *     {{#if isInRole 'admin'}}                                                                          // 30  // 758
-   *     {{/if}}                                                                                           // 31  // 759
-   *                                                                                                       // 32  // 760
-   *     {{#if isInRole 'editor,user'}}                                                                    // 33  // 761
-   *     {{/if}}                                                                                           // 34  // 762
-   *                                                                                                       // 35  // 763
-   *     {{#if isInRole 'editor,user' 'group1'}}                                                           // 36  // 764
-   *     {{/if}}                                                                                           // 37  // 765
-   *                                                                                                       // 38  // 766
-   * @method isInRole                                                                                      // 39  // 767
-   * @param {String} role Name of role or comma-seperated list of roles                                    // 40  // 768
-   * @param {String} [group] Optional, name of group to check                                              // 41  // 769
-   * @return {Boolean} true if current user is in at least one of the target roles                         // 42  // 770
-   * @static                                                                                               // 43  // 771
-   * @for UIHelpers                                                                                        // 44  // 772
-   */                                                                                                      // 45  // 773
-  isInRole: function (role, group) {                                                                       // 46  // 774
-    var user = Meteor.user(),                                                                              // 47  // 775
-        comma = (role || '').indexOf(','),                                                                 // 48  // 776
-        roles                                                                                              // 49  // 777
-                                                                                                           // 50  // 778
-    if (!user) return false                                                                                // 51  // 779
-    if (!Match.test(role, String)) return false                                                            // 52  // 780
-                                                                                                           // 53  // 781
-    if (comma !== -1) {                                                                                    // 54  // 782
-      roles = _.reduce(role.split(','), function (memo, r) {                                               // 55  // 783
-        if (!r || !r.trim()) {                                                                             // 56  // 784
-          return memo                                                                                      // 57  // 785
-        }                                                                                                  // 58  // 786
-        memo.push(r.trim())                                                                                // 59  // 787
-        return memo                                                                                        // 60  // 788
-      }, [])                                                                                               // 61  // 789
-    } else {                                                                                               // 62  // 790
-      roles = [role]                                                                                       // 63  // 791
-    }                                                                                                      // 64  // 792
-                                                                                                           // 65  // 793
-    if (Match.test(group, String)) {                                                                       // 66  // 794
-      return Roles.userIsInRole(user, roles, group)                                                        // 67  // 795
-    }                                                                                                      // 68  // 796
-                                                                                                           // 69  // 797
-    return Roles.userIsInRole(user, roles)                                                                 // 70  // 798
-  }                                                                                                        // 71  // 799
-}                                                                                                          // 72  // 800
-                                                                                                           // 73  // 801
-                                                                                                           // 74  // 802
-// Attempt to register ui helper                                                                           // 75  // 803
-                                                                                                           // 76  // 804
-if (Package.blaze && Package.blaze.Blaze &&                                                                // 77  // 805
-    Package.blaze.Blaze.registerHelper) {                                                                  // 78  // 806
-  // Meteor 0.9.1                                                                                          // 79  // 807
-  //console.log(' Meteor 0.9.1')                                                                           // 80  // 808
-  _registerHelper = Package.blaze.Blaze.registerHelper                                                     // 81  // 809
-} else if (Package.ui && Package.ui.UI) {                                                                  // 82  // 810
-  // Meteor 0.8 - 0.9.0.1                                                                                  // 83  // 811
-  //console.log(' Meteor 0.8 - 0.9.0.1')                                                                   // 84  // 812
-  _registerHelper = Package.ui.UI.registerHelper                                                           // 85  // 813
-} else if (Package.handlebars && Package.handlebars.Handlebars) {                                          // 86  // 814
-  // Meteor <0.8                                                                                           // 87  // 815
-  //console.log(' Meteor <0.8')                                                                            // 88  // 816
-  _registerHelper = Package.handlebars.Handlebars.registerHelper                                           // 89  // 817
-}                                                                                                          // 90  // 818
-                                                                                                           // 91  // 819
-if (_registerHelper) {                                                                                     // 92  // 820
-  _.each(Roles._uiHelpers, function (func, name) {                                                         // 93  // 821
-    _registerHelper(name, func)                                                                            // 94  // 822
-  })                                                                                                       // 95  // 823
-} else {                                                                                                   // 96  // 824
-  console.log && console.log('WARNING: Roles template helpers not registered. Handlebars, UI, or Blaze packages not found')
-}                                                                                                          // 98  // 826
-                                                                                                           // 99  // 827
-}());                                                                                                      // 100
-                                                                                                           // 101
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////     // 830
-                                                                                                                  // 831
-}).call(this);                                                                                                    // 832
-                                                                                                                  // 833
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+                                                                                                           // 696
+function isMongoMixError (errorMsg) {                                                                      // 697
+  var expectedMessages = [                                                                                 // 698
+      'Cannot apply $addToSet modifier to non-array',                                                      // 699
+      'Cannot apply $addToSet to a non-array field',                                                       // 700
+      'Can only apply $pullAll to an array',                                                               // 701
+      'Cannot apply $pull/$pullAll modifier to non-array',                                                 // 702
+      "can't append to array using string field name",                                                     // 703
+      'to traverse the element'                                                                            // 704
+      ]                                                                                                    // 705
+                                                                                                           // 706
+  return _.some(expectedMessages, function (snippet) {                                                     // 707
+    return strContains(errorMsg, snippet)                                                                  // 708
+  })                                                                                                       // 709
+}                                                                                                          // 710
+                                                                                                           // 711
+function strContains (haystack, needle) {                                                                  // 712
+  return -1 !== haystack.indexOf(needle)                                                                   // 713
+}                                                                                                          // 714
+                                                                                                           // 715
+}());                                                                                                      // 716
+                                                                                                           // 717
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+}).call(this);
+
+
+
+
+
+
+(function(){
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                                         //
+// packages/alanning_roles/client/debug.js                                                                 //
+//                                                                                                         //
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+                                                                                                           //
+"use strict"                                                                                               // 1
+                                                                                                           // 2
+                                                                                                           // 3
+////////////////////////////////////////////////////////////                                               // 4
+// Debugging helpers                                                                                       // 5
+//                                                                                                         // 6
+// Run this in your browser console to turn on debugging                                                   // 7
+// for this package:                                                                                       // 8
+//                                                                                                         // 9
+//   localstorage.setItem('Roles.debug', true)                                                             // 10
+//                                                                                                         // 11
+                                                                                                           // 12
+Roles.debug = false                                                                                        // 13
+                                                                                                           // 14
+if (localStorage) {                                                                                        // 15
+  var temp = localStorage.getItem("Roles.debug")                                                           // 16
+                                                                                                           // 17
+  if ('undefined' !== typeof temp) {                                                                       // 18
+    Roles.debug = !!temp                                                                                   // 19
+  }                                                                                                        // 20
+}                                                                                                          // 21
+                                                                                                           // 22
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+}).call(this);
+
+
+
+
+
+
+(function(){
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                                         //
+// packages/alanning_roles/client/uiHelpers.js                                                             //
+//                                                                                                         //
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+                                                                                                           //
+"use strict"                                                                                               // 1
+                                                                                                           // 2
+/**                                                                                                        // 3
+ * Convenience functions for use on client.                                                                // 4
+ *                                                                                                         // 5
+ * NOTE: You must restrict user actions on the server-side; any                                            // 6
+ * client-side checks are strictly for convenience and must not be                                         // 7
+ * trusted.                                                                                                // 8
+ *                                                                                                         // 9
+ * @module UIHelpers                                                                                       // 10
+ */                                                                                                        // 11
+                                                                                                           // 12
+                                                                                                           // 13
+////////////////////////////////////////////////////////////                                               // 14
+// UI helpers                                                                                              // 15
+//                                                                                                         // 16
+// Use a semi-private variable rather than declaring UI                                                    // 17
+// helpers directly so that we can unit test the helpers.                                                  // 18
+// XXX For some reason, the UI helpers are not registered                                                  // 19
+// before the tests run.                                                                                   // 20
+//                                                                                                         // 21
+Roles._uiHelpers = {                                                                                       // 22
+                                                                                                           // 23
+  /**                                                                                                      // 24
+   * UI helper to check if current user is in at least one                                                 // 25
+   * of the target roles.  For use in client-side templates.                                               // 26
+   *                                                                                                       // 27
+   * @example                                                                                              // 28
+   *     {{#if isInRole 'admin'}}                                                                          // 29
+   *     {{/if}}                                                                                           // 30
+   *                                                                                                       // 31
+   *     {{#if isInRole 'editor,user'}}                                                                    // 32
+   *     {{/if}}                                                                                           // 33
+   *                                                                                                       // 34
+   *     {{#if isInRole 'editor,user' 'group1'}}                                                           // 35
+   *     {{/if}}                                                                                           // 36
+   *                                                                                                       // 37
+   * @method isInRole                                                                                      // 38
+   * @param {String} role Name of role or comma-seperated list of roles                                    // 39
+   * @param {String} [group] Optional, name of group to check                                              // 40
+   * @return {Boolean} true if current user is in at least one of the target roles                         // 41
+   * @static                                                                                               // 42
+   * @for UIHelpers                                                                                        // 43
+   */                                                                                                      // 44
+  isInRole: function (role, group) {                                                                       // 45
+    var user = Meteor.user(),                                                                              // 46
+        comma = (role || '').indexOf(','),                                                                 // 47
+        roles                                                                                              // 48
+                                                                                                           // 49
+    if (!user) return false                                                                                // 50
+    if (!Match.test(role, String)) return false                                                            // 51
+                                                                                                           // 52
+    if (comma !== -1) {                                                                                    // 53
+      roles = _.reduce(role.split(','), function (memo, r) {                                               // 54
+        if (!r || !r.trim()) {                                                                             // 55
+          return memo                                                                                      // 56
+        }                                                                                                  // 57
+        memo.push(r.trim())                                                                                // 58
+        return memo                                                                                        // 59
+      }, [])                                                                                               // 60
+    } else {                                                                                               // 61
+      roles = [role]                                                                                       // 62
+    }                                                                                                      // 63
+                                                                                                           // 64
+    if (Match.test(group, String)) {                                                                       // 65
+      return Roles.userIsInRole(user, roles, group)                                                        // 66
+    }                                                                                                      // 67
+                                                                                                           // 68
+    return Roles.userIsInRole(user, roles)                                                                 // 69
+  }                                                                                                        // 70
+}                                                                                                          // 71
+                                                                                                           // 72
+                                                                                                           // 73
+                                                                                                           // 74
+////////////////////////////////////////////////////////////                                               // 75
+// Register UI helpers                                                                                     // 76
+//                                                                                                         // 77
+                                                                                                           // 78
+if (Roles.debug && console.log) {                                                                          // 79
+  console.log("[roles] Roles.debug =", Roles.debug)                                                        // 80
+}                                                                                                          // 81
+                                                                                                           // 82
+if ('undefined' !== typeof Package.blaze &&                                                                // 83
+    'undefined' !== typeof Package.blaze.Blaze &&                                                          // 84
+    'function'  === typeof Package.blaze.Blaze.registerHelper) {                                           // 85
+  _.each(Roles._uiHelpers, function (func, name) {                                                         // 86
+    if (Roles.debug && console.log) {                                                                      // 87
+      console.log("[roles] registering Blaze helper '" + name + "'")                                       // 88
+    }                                                                                                      // 89
+    Package.blaze.Blaze.registerHelper(name, func)                                                         // 90
+  })                                                                                                       // 91
+}                                                                                                          // 92
+                                                                                                           // 93
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+}).call(this);
+
+
+
+
+
+
+(function(){
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                                         //
+// packages/alanning_roles/client/subscriptions.js                                                         //
+//                                                                                                         //
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+                                                                                                           //
+"use strict"                                                                                               // 1
+                                                                                                           // 2
+                                                                                                           // 3
+/**                                                                                                        // 4
+ * Subscription handle for the currently logged in user's permissions.                                     // 5
+ *                                                                                                         // 6
+ * NOTE: The corresponding publish function, `_roles`, depends on                                          // 7
+ * `this.userId` so it will automatically re-run when the currently                                        // 8
+ * logged-in user changes.                                                                                 // 9
+ *                                                                                                         // 10
+ * @example                                                                                                // 11
+ *                                                                                                         // 12
+ *     `Roles.subscription.ready()` // => `true` if user roles have been loaded                            // 13
+ *                                                                                                         // 14
+ * @property subscription                                                                                  // 15
+ * @type Object                                                                                            // 16
+ * @for Roles                                                                                              // 17
+ */                                                                                                        // 18
+                                                                                                           // 19
+Tracker.autorun(function () {                                                                              // 20
+  Roles.subscription = Meteor.subscribe("_roles")                                                          // 21
+})                                                                                                         // 22
+                                                                                                           // 23
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 }).call(this);
 

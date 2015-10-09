@@ -1,22 +1,22 @@
 // Home Route
 Router.route('/', {
-  name: 'home'
+  name: 'home',
+  title: "Home"
 });
 
 // Dashboard route
 Router.route('/dashboard', {
   name: 'dashboard',
+  title: "Dashboard",
   waitOn: function() {
-    return this.subscribe('items');
+    return this.subscribe('meetings');
   },
   data: {
-    items: Items.find({})
+    meetings: Meetings.find()
+
   },
   onBeforeAction: function (pause) {
-    if(!Meteor.userId()) {
-      Router.go("/login");
-    }
-    this.next();
+    AccountsTemplates.ensureSignedIn.call(this, pause);
   },
   onAfterAction: function () {
 
@@ -25,14 +25,16 @@ Router.route('/dashboard', {
 
 // Profile Route
 Router.route('/profile', {
-  name: 'profile'
+  name: 'profile',
+  title: function() {
+    var user = Meteor.user();
+    var username = user && user.profile && user.profile.name || "Unknown";
+    return "Profile - " + username;
+  }
 });
 
-// Login Route
-Router.route('/login', {
-  name: 'login'
-});
-// Signup Route
-Router.route('/signup', {
-  name: 'signup'
-});
+
+Router.onBeforeAction(function() {
+  GoogleMaps.load();
+  this.next();
+}, { only: ['dashboard'] });
