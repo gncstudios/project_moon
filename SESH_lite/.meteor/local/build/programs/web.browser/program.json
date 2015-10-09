@@ -1203,11 +1203,11 @@
       "where": "client",
       "type": "js",
       "cacheable": true,
-      "url": "/app/client/templates/dashboard/dashboard.js?7fa459030556c0f90148a2b91dc00a54d5c31a0f",
+      "url": "/app/client/templates/dashboard/dashboard.js?c4b3387124600107a5dedc76a46641cef8ca0cc1",
       "sourceMap": "app/client/templates/dashboard/dashboard.js.map",
-      "sourceMapUrl": "/app/client/templates/dashboard/7fa459030556c0f90148a2b91dc00a54d5c31a0f.map",
-      "size": 11883,
-      "hash": "7fa459030556c0f90148a2b91dc00a54d5c31a0f"
+      "sourceMapUrl": "/app/client/templates/dashboard/c4b3387124600107a5dedc76a46641cef8ca0cc1.map",
+      "size": 11806,
+      "hash": "c4b3387124600107a5dedc76a46641cef8ca0cc1"
     },
     {
       "path": "app/client/templates/home/home.js",

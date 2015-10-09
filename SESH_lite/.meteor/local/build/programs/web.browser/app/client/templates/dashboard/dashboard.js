@@ -90,7 +90,7 @@ Template.dashboard.onCreated(function () {                             // 76
         var lng = document.lng;                                        // 86
         if (lat && lng) {                                              // 87
           var marker = new google.maps.Marker({                        // 88
-            draggable: true,                                           // 89
+            draggable: document.owner == Meteor.userId(),              // 89
             animation: google.maps.Animation.DROP,                     // 90
             position: new google.maps.LatLng(lat, lng),                // 91
             map: map.instance,                                         // 92
@@ -101,7 +101,7 @@ Template.dashboard.onCreated(function () {                             // 76
                                                                        //
           // This listener lets us drag markers on the map and update their corresponding document.
           google.maps.event.addListener(marker, 'dragend', function (event) {
-            Markers.update(marker.id, { $set: { lat: event.latLng.lat(), lng: event.latLng.lng() } });
+            Meetings.update(marker.id, { $set: { lat: event.latLng.lat(), lng: event.latLng.lng() } });
           });                                                          //
           if (document._id) {                                          // 103
             // Store this marker instance within the markers object.   //
@@ -118,15 +118,14 @@ Template.dashboard.onCreated(function () {                             // 76
       },                                                               //
       removed: function (oldDocument) {                                // 116
                                                                        //
-        console.log("removed:");                                       // 118
-        console.log(oldDocument);                                      // 119
-        markers[oldDocument._id].setMap(null);                         // 120
+        console.log(oldDocument);                                      // 118
+        markers[oldDocument._id].setMap(null);                         // 119
                                                                        //
         // Clear the event listener                                    //
         google.maps.event.clearInstanceListeners(markers[oldDocument._id]);
                                                                        //
         // Remove the reference to this marker instance                //
-        delete markers[oldDocument._id];                               // 127
+        delete markers[oldDocument._id];                               // 126
       }                                                                //
     });                                                                //
                                                                        //
@@ -135,21 +134,21 @@ Template.dashboard.onCreated(function () {                             // 76
     //console.log(map.options.center);                                 //
                                                                        //
     var _loop = function (i) {                                         //
-      setTimeout(function () {                                         // 135
+      setTimeout(function () {                                         // 134
         var position = new google.maps.LatLng(map.options.center.lat() + Math.random() - 0.5, map.options.center.lng() + Math.random() - 0.5);
-        var marker = new google.maps.Marker({                          // 137
-          draggable: true,                                             // 138
-          animation: google.maps.Animation.DROP,                       // 139
-          position: position,                                          // 140
-          map: map.instance,                                           // 141
+        var marker = new google.maps.Marker({                          // 136
+          draggable: true,                                             // 137
+          animation: google.maps.Animation.DROP,                       // 138
+          position: position,                                          // 139
+          map: map.instance,                                           // 140
           // We store the document _id on the marker in order          //
           // to update the document within the 'dragend' event below.  //
-          id: i                                                        // 144
+          id: i                                                        // 143
         });                                                            //
       }, 50 * i);                                                      //
     };                                                                 //
                                                                        //
-    for (var i = 0; false && i < 10; i++) {                            // 134
+    for (var i = 0; false && i < 10; i++) {                            // 133
       _loop(i);                                                        //
     }                                                                  //
   });                                                                  //

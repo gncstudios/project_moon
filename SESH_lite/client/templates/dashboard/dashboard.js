@@ -86,7 +86,7 @@ Meetings.find().observe({
     var lng = document.lng;
     if(lat && lng) {
       var marker = new google.maps.Marker({
-        draggable: true,
+        draggable: document.owner == Meteor.userId(),
         animation: google.maps.Animation.DROP,
         position: new google.maps.LatLng(lat, lng),
         map: map.instance,
@@ -98,7 +98,7 @@ Meetings.find().observe({
 
       // This listener lets us drag markers on the map and update their corresponding document.
       google.maps.event.addListener(marker, 'dragend', function(event) {
-        Markers.update(marker.id, { $set: { lat: event.latLng.lat(), lng: event.latLng.lng() }});
+        Meetings.update(marker.id, { $set: { lat: event.latLng.lat(), lng: event.latLng.lng() }});
       });
       if(document._id) {
       // Store this marker instance within the markers object.
@@ -114,8 +114,7 @@ Meetings.find().observe({
     }
   },
   removed: function(oldDocument) {
-    
-    console.log("removed:")
+  
     console.log(oldDocument);
     markers[oldDocument._id].setMap(null);
 
