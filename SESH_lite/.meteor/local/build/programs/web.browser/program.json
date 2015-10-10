@@ -1,0 +1,358 @@
+{
+  "format": "web-program-pre1",
+  "manifest": [
+    {
+      "path": "app/client/templates/_shared/header.js",
+      "where": "client",
+      "type": "js",
+      "cacheable": true,
+      "url": "/client/templates/_shared/header.js?b2242e7ca10f78dfe96576c74bf6130c0932b814",
+      "sourceMap": "app/client/templates/_shared/header.js.map",
+      "sourceMapUrl": "/client/templates/_shared/b2242e7ca10f78dfe96576c74bf6130c0932b814.map",
+      "size": 276,
+      "hash": "b2242e7ca10f78dfe96576c74bf6130c0932b814"
+    },
+    {
+      "path": "app/client/templates/dashboard/dashboard.js",
+      "where": "client",
+      "type": "js",
+      "cacheable": true,
+      "url": "/client/templates/dashboard/dashboard.js?a91a0e40189d38fce28ac31471fd45f3848071f4",
+      "sourceMap": "app/client/templates/dashboard/dashboard.js.map",
+      "sourceMapUrl": "/client/templates/dashboard/a91a0e40189d38fce28ac31471fd45f3848071f4.map",
+      "size": 4432,
+      "hash": "a91a0e40189d38fce28ac31471fd45f3848071f4"
+    },
+    {
+      "path": "app/client/templates/home/home.js",
+      "where": "client",
+      "type": "js",
+      "cacheable": true,
+      "url": "/client/templates/home/home.js?9d2cacfd45e37bee67028f1b3c7711c0089d8fd8",
+      "sourceMap": "app/client/templates/home/home.js.map",
+      "sourceMapUrl": "/client/templates/home/9d2cacfd45e37bee67028f1b3c7711c0089d8fd8.map",
+      "size": 70,
+      "hash": "9d2cacfd45e37bee67028f1b3c7711c0089d8fd8"
+    },
+    {
+      "path": "app/client/templates/login/login.js",
+      "where": "client",
+      "type": "js",
+      "cacheable": true,
+      "url": "/client/templates/login/login.js?b3c0eab5ceb08815f6d0886c4028660da81a83be",
+      "sourceMap": "app/client/templates/login/login.js.map",
+      "sourceMapUrl": "/client/templates/login/b3c0eab5ceb08815f6d0886c4028660da81a83be.map",
+      "size": 995,
+      "hash": "b3c0eab5ceb08815f6d0886c4028660da81a83be"
+    },
+    {
+      "path": "app/client/templates/profile/profile.js",
+      "where": "client",
+      "type": "js",
+      "cacheable": true,
+      "url": "/client/templates/profile/profile.js?9ad7e13c7bac812988aa7c031255a3eb745dccf2",
+      "sourceMap": "app/client/templates/profile/profile.js.map",
+      "sourceMapUrl": "/client/templates/profile/9ad7e13c7bac812988aa7c031255a3eb745dccf2.map",
+      "size": 511,
+      "hash": "9ad7e13c7bac812988aa7c031255a3eb745dccf2"
+    },
+    {
+      "path": "app/client/templates/signup/signup.js",
+      "where": "client",
+      "type": "js",
+      "cacheable": true,
+      "url": "/client/templates/signup/signup.js?82f6712761997c2baccfa4750173d87fbfcb8498",
+      "sourceMap": "app/client/templates/signup/signup.js.map",
+      "sourceMapUrl": "/client/templates/signup/82f6712761997c2baccfa4750173d87fbfcb8498.map",
+      "size": 821,
+      "hash": "82f6712761997c2baccfa4750173d87fbfcb8498"
+    },
+    {
+      "path": "app/both/config/config.js",
+      "where": "client",
+      "type": "js",
+      "cacheable": true,
+      "url": "/both/config/config.js?d8ef0e2ad073dad303ceb1f08e5d79c5fa6bcfb2",
+      "sourceMap": "app/both/config/config.js.map",
+      "sourceMapUrl": "/both/config/d8ef0e2ad073dad303ceb1f08e5d79c5fa6bcfb2.map",
+      "size": 793,
+      "hash": "d8ef0e2ad073dad303ceb1f08e5d79c5fa6bcfb2"
+    },
+    {
+      "path": "app/both/router/routes.js",
+      "where": "client",
+      "type": "js",
+      "cacheable": true,
+      "url": "/both/router/routes.js?b3d14e6483346ad3400bfa1154fe31ea4fa2a82d",
+      "sourceMap": "app/both/router/routes.js.map",
+      "sourceMapUrl": "/both/router/b3d14e6483346ad3400bfa1154fe31ea4fa2a82d.map",
+      "size": 777,
+      "hash": "b3d14e6483346ad3400bfa1154fe31ea4fa2a82d"
+    },
+    {
+      "path": "app/client/compatibility/bootstrap.js",
+      "where": "client",
+      "type": "js",
+      "cacheable": true,
+      "url": "/client/compatibility/bootstrap.js?afe897ea4b6757b9a5741df4a6962738d022a41b",
+      "sourceMap": "app/client/compatibility/bootstrap.js.map",
+      "sourceMapUrl": "/client/compatibility/afe897ea4b6757b9a5741df4a6962738d022a41b.map",
+      "size": 55259,
+      "hash": "afe897ea4b6757b9a5741df4a6962738d022a41b"
+    },
+    {
+      "path": "app/client/compatibility/stringHelpers.js",
+      "where": "client",
+      "type": "js",
+      "cacheable": true,
+      "url": "/client/compatibility/stringHelpers.js?1334f2943d12b58bdaa288687b09059b9f112954",
+      "sourceMap": "app/client/compatibility/stringHelpers.js.map",
+      "sourceMapUrl": "/client/compatibility/1334f2943d12b58bdaa288687b09059b9f112954.map",
+      "size": 655,
+      "hash": "1334f2943d12b58bdaa288687b09059b9f112954"
+    },
+    {
+      "path": "app/fonts/font-awesome/FontAwesome.otf",
+      "where": "client",
+      "type": "asset",
+      "cacheable": false,
+      "url": "/fonts/font-awesome/FontAwesome.otf",
+      "size": 85908,
+      "hash": "6270a4a561a69fef5f5cc18cdf9efc256ec2ccbe"
+    },
+    {
+      "path": "app/fonts/font-awesome/fontawesome-webfont.eot",
+      "where": "client",
+      "type": "asset",
+      "cacheable": false,
+      "url": "/fonts/font-awesome/fontawesome-webfont.eot",
+      "size": 56006,
+      "hash": "0183979056f0b87616cd99d5c54a48f3b771eee6"
+    },
+    {
+      "path": "app/fonts/font-awesome/fontawesome-webfont.svg",
+      "where": "client",
+      "type": "asset",
+      "cacheable": false,
+      "url": "/fonts/font-awesome/fontawesome-webfont.svg",
+      "size": 287007,
+      "hash": "cd980eab6db5fa57db670cb2e4278e67e1a4d6c9"
+    },
+    {
+      "path": "app/fonts/font-awesome/fontawesome-webfont.ttf",
+      "where": "client",
+      "type": "asset",
+      "cacheable": false,
+      "url": "/fonts/font-awesome/fontawesome-webfont.ttf",
+      "size": 112160,
+      "hash": "6225ccc4ec94d060f19efab97ca42d842845b949"
+    },
+    {
+      "path": "app/fonts/font-awesome/fontawesome-webfont.woff",
+      "where": "client",
+      "type": "asset",
+      "cacheable": false,
+      "url": "/fonts/font-awesome/fontawesome-webfont.woff",
+      "size": 65452,
+      "hash": "7d65e0227d0d7cdc1718119cd2a7dce0638f151c"
+    },
+    {
+      "path": "app/images/favicons/apple-touch-icon-114x114.png",
+      "where": "client",
+      "type": "asset",
+      "cacheable": false,
+      "url": "/images/favicons/apple-touch-icon-114x114.png",
+      "size": 1327,
+      "hash": "dff121dd5be746b97ac5b844a3e5451b3ff66a23"
+    },
+    {
+      "path": "app/images/favicons/apple-touch-icon-120x120.png",
+      "where": "client",
+      "type": "asset",
+      "cacheable": false,
+      "url": "/images/favicons/apple-touch-icon-120x120.png",
+      "size": 1321,
+      "hash": "25b39816cfb1efa843b0318d0ae070d0f3d5f054"
+    },
+    {
+      "path": "app/images/favicons/apple-touch-icon-144x144.png",
+      "where": "client",
+      "type": "asset",
+      "cacheable": false,
+      "url": "/images/favicons/apple-touch-icon-144x144.png",
+      "size": 1520,
+      "hash": "60f7577beebae7c9d1462e92f4b4db1f337b4eec"
+    },
+    {
+      "path": "app/images/favicons/apple-touch-icon-152x152.png",
+      "where": "client",
+      "type": "asset",
+      "cacheable": false,
+      "url": "/images/favicons/apple-touch-icon-152x152.png",
+      "size": 1603,
+      "hash": "c744fee43f1cbe5078f38407a5c364d520ced8e5"
+    },
+    {
+      "path": "app/images/favicons/apple-touch-icon-57x57.png",
+      "where": "client",
+      "type": "asset",
+      "cacheable": false,
+      "url": "/images/favicons/apple-touch-icon-57x57.png",
+      "size": 947,
+      "hash": "a0f966bffe87df71b0a3caa5779592311dec1eaf"
+    },
+    {
+      "path": "app/images/favicons/apple-touch-icon-60x60.png",
+      "where": "client",
+      "type": "asset",
+      "cacheable": false,
+      "url": "/images/favicons/apple-touch-icon-60x60.png",
+      "size": 959,
+      "hash": "0bf4b7c93cc74dfcad53836b35d798631a78a991"
+    },
+    {
+      "path": "app/images/favicons/apple-touch-icon-72x72.png",
+      "where": "client",
+      "type": "asset",
+      "cacheable": false,
+      "url": "/images/favicons/apple-touch-icon-72x72.png",
+      "size": 994,
+      "hash": "39ea92ff4f8d8d8ec6e7f5660dfd523b3b81135b"
+    },
+    {
+      "path": "app/images/favicons/apple-touch-icon-76x76.png",
+      "where": "client",
+      "type": "asset",
+      "cacheable": false,
+      "url": "/images/favicons/apple-touch-icon-76x76.png",
+      "size": 1058,
+      "hash": "b36b1064165d6b1c85c558987087941cc270973e"
+    },
+    {
+      "path": "app/images/favicons/apple-touch-icon-precomposed.png",
+      "where": "client",
+      "type": "asset",
+      "cacheable": false,
+      "url": "/images/favicons/apple-touch-icon-precomposed.png",
+      "size": 2050,
+      "hash": "23c4593acdb79fb4c883776f9ed2ada7c355d78e"
+    },
+    {
+      "path": "app/images/favicons/apple-touch-icon.png",
+      "where": "client",
+      "type": "asset",
+      "cacheable": false,
+      "url": "/images/favicons/apple-touch-icon.png",
+      "size": 1603,
+      "hash": "c744fee43f1cbe5078f38407a5c364d520ced8e5"
+    },
+    {
+      "path": "app/images/favicons/browserconfig.xml",
+      "where": "client",
+      "type": "asset",
+      "cacheable": false,
+      "url": "/images/favicons/browserconfig.xml",
+      "size": 439,
+      "hash": "597e577c1b90c03ba815625ad7a151b44824bb6d"
+    },
+    {
+      "path": "app/images/favicons/favicon-160x160.png",
+      "where": "client",
+      "type": "asset",
+      "cacheable": false,
+      "url": "/images/favicons/favicon-160x160.png",
+      "size": 1653,
+      "hash": "d614bf9b6a3570fe7d07f947c3dc894f7e11f238"
+    },
+    {
+      "path": "app/images/favicons/favicon-16x16.png",
+      "where": "client",
+      "type": "asset",
+      "cacheable": false,
+      "url": "/images/favicons/favicon-16x16.png",
+      "size": 542,
+      "hash": "43e0492ac9ce9abdfd6871a3d0b1f2adc878706b"
+    },
+    {
+      "path": "app/images/favicons/favicon-192x192.png",
+      "where": "client",
+      "type": "asset",
+      "cacheable": false,
+      "url": "/images/favicons/favicon-192x192.png",
+      "size": 1938,
+      "hash": "0198cc62aee881feac480f3a085451174260d299"
+    },
+    {
+      "path": "app/images/favicons/favicon-32x32.png",
+      "where": "client",
+      "type": "asset",
+      "cacheable": false,
+      "url": "/images/favicons/favicon-32x32.png",
+      "size": 738,
+      "hash": "8212f13c2f1a24f6e255bc6e455fd6ad73d5c05a"
+    },
+    {
+      "path": "app/images/favicons/favicon-96x96.png",
+      "where": "client",
+      "type": "asset",
+      "cacheable": false,
+      "url": "/images/favicons/favicon-96x96.png",
+      "size": 1234,
+      "hash": "e602f9011d1046959b7e67db488aca32879f403f"
+    },
+    {
+      "path": "app/images/favicons/favicon.ico",
+      "where": "client",
+      "type": "asset",
+      "cacheable": false,
+      "url": "/images/favicons/favicon.ico",
+      "size": 7406,
+      "hash": "6f759e088a7fd3125d590810eb1d56aff6b28e35"
+    },
+    {
+      "path": "app/images/favicons/mstile-144x144.png",
+      "where": "client",
+      "type": "asset",
+      "cacheable": false,
+      "url": "/images/favicons/mstile-144x144.png",
+      "size": 1520,
+      "hash": "cdad40640d43d69be43da1ab5b3ec1eae6456f1b"
+    },
+    {
+      "path": "app/images/favicons/mstile-150x150.png",
+      "where": "client",
+      "type": "asset",
+      "cacheable": false,
+      "url": "/images/favicons/mstile-150x150.png",
+      "size": 1548,
+      "hash": "ea3b0ba3f3dad4561bdb84adbf35fba69ea33295"
+    },
+    {
+      "path": "app/images/favicons/mstile-310x150.png",
+      "where": "client",
+      "type": "asset",
+      "cacheable": false,
+      "url": "/images/favicons/mstile-310x150.png",
+      "size": 1843,
+      "hash": "ad3b752a613d3a417824d9dbb4fab9ddf37d3093"
+    },
+    {
+      "path": "app/images/favicons/mstile-310x310.png",
+      "where": "client",
+      "type": "asset",
+      "cacheable": false,
+      "url": "/images/favicons/mstile-310x310.png",
+      "size": 3452,
+      "hash": "aa553cd9e95639c9ec4c98214cd17c76150dd954"
+    },
+    {
+      "path": "app/images/favicons/mstile-70x70.png",
+      "where": "client",
+      "type": "asset",
+      "cacheable": false,
+      "url": "/images/favicons/mstile-70x70.png",
+      "size": 1259,
+      "hash": "ab415dcc0644be9c2184330758e6e6ef791c40b8"
+    }
+  ]
+}

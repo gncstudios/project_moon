@@ -1,0 +1,18 @@
+{
+  "format": "javascript-image-pre1",
+  "arch": "os",
+  "load": [
+    {
+      "sourceMap": "app/both/config/config.js.map",
+      "path": "app/both/config/config.js"
+    },
+    {
+      "sourceMap": "app/both/router/routes.js.map",
+      "path": "app/both/router/routes.js"
+    },
+    {
+      "sourceMap": "app/server/methods/user.js.map",
+      "path": "app/server/methods/user.js"
+    }
+  ]
+}
