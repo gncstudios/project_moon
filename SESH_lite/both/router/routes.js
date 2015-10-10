@@ -13,7 +13,6 @@ Router.route('/dashboard', {
   },
   data: {
     meetings: Meetings.find()
-
   },
   onBeforeAction: function (pause) {
     AccountsTemplates.ensureSignedIn.call(this, pause);

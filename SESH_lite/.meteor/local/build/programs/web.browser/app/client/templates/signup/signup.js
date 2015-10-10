@@ -1,34 +1,47 @@
-(function(){    let that = this;
+(function(){
 
-Template.signup.events({
-  'submit form': function(event) {
-    event.preventDefault();
-    var emailVar = event.target.email.value;
-    var passwordVar = event.target.password.value;
-    var nameVar = event.target.name.value;
-    Meteor.call("createNewUser", {
-      email: emailVar,
-      password: passwordVar,
-      name: nameVar
-    }, function(err) {
-      if(err) {
-        console.log(err);
-        that.badFormResponse.set(err.reason);
-      } else {
-        Router.go("/login")
-      }
-    });
-  }
-});
+/////////////////////////////////////////////////////////////////////////
+//                                                                     //
+// client/templates/signup/signup.js                                   //
+//                                                                     //
+/////////////////////////////////////////////////////////////////////////
+                                                                       //
+var _this = this;                                                      //
+                                                                       //
+var that = this;                                                       // 1
+                                                                       //
+Template.signup.events({                                               // 3
+  'submit form': function (event) {                                    // 4
+    event.preventDefault();                                            // 5
+    var emailVar = event.target.email.value;                           // 6
+    var passwordVar = event.target.password.value;                     // 7
+    var nameVar = event.target.name.value;                             // 8
+    Meteor.call("createNewUser", {                                     // 9
+      email: emailVar,                                                 // 10
+      password: passwordVar,                                           // 11
+      name: nameVar                                                    // 12
+    }, function (err) {                                                //
+      if (err) {                                                       // 14
+        console.log(err);                                              // 15
+        that.badFormResponse.set(err.reason);                          // 16
+      } else {                                                         //
+        Router.go("/login");                                           // 18
+      }                                                                //
+    });                                                                //
+  }                                                                    //
+});                                                                    //
+                                                                       //
+Template.signup.onCreated(function () {                                // 25
+  _this.badFormResponse = new ReactiveVar(undefined);                  // 26
+});                                                                    //
+Template.signup.helpers({                                              // 28
+  formClass: function () {                                             // 29
+    return _this.badFormResponse.get() ? "has-error" : "";             // 30
+  },                                                                   //
+  badFormResponse: function () {                                       // 32
+    return _this.badFormResponse.get();                                //
+  }                                                                    //
+});                                                                    //
+/////////////////////////////////////////////////////////////////////////
 
-
-Template.signup.onCreated(() => {
-  this.badFormResponse = new ReactiveVar(undefined);
-});
-Template.signup.helpers({
-  formClass: () => {
-    return this.badFormResponse.get() ? "has-error" : "";
-  }, 
-  badFormResponse: () => this.badFormResponse.get()
-});
 }).call(this);

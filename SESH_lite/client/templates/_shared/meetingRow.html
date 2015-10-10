@@ -1,0 +1,15 @@
+<template name="meetingRow">
+	<li class="list-group-item clearfix">
+		{{ name }}
+		{{#if isOwner}}
+			<span class="label label-success">${{ costString }}</span> 
+		{{/if}}
+		<div class="pull-right"> <!--right side -->
+			{{#if isOwner}}
+				<a class="btn btn-danger" data-action="delete" href="#">&times;</a>
+			{{else}}
+				<a class="btn btn-success">${{costString}}</a>
+			{{/if}}
+		</div>
+	</li>
+</template>
