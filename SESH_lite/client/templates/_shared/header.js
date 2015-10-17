@@ -26,7 +26,6 @@ Template.header.rendered = function () {
   */
   $('html').click(function() {
     if(!$(event.target).closest('.side-nav').length && ($(event.target).attr('data-action') !== "toggle-side-nav")) {
-      console.log("clicked outside the nav");
         $('.side-nav').hide('1000');
     }
   });

@@ -32,8 +32,7 @@ Template.header.rendered = function () {                               // 21
   */                                                                   //
   $('html').click(function () {                                        // 27
     if (!$(event.target).closest('.side-nav').length && $(event.target).attr('data-action') !== "toggle-side-nav") {
-      console.log("clicked outside the nav");                          // 29
-      $('.side-nav').hide('1000');                                     // 30
+      $('.side-nav').hide('1000');                                     // 29
     }                                                                  //
   });                                                                  //
 };                                                                     //
