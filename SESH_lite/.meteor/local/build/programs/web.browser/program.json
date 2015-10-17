@@ -1203,11 +1203,11 @@
       "where": "client",
       "type": "js",
       "cacheable": true,
-      "url": "/app/client/templates/_shared/header.js?1f3d94f147e3c7e7c370fc82b2a257a57c1ac432",
+      "url": "/app/client/templates/_shared/header.js?67039fcf31770d4bd93b858df308ea36bc52710d",
       "sourceMap": "app/client/templates/_shared/header.js.map",
-      "sourceMapUrl": "/app/client/templates/_shared/1f3d94f147e3c7e7c370fc82b2a257a57c1ac432.map",
-      "size": 3008,
-      "hash": "1f3d94f147e3c7e7c370fc82b2a257a57c1ac432"
+      "sourceMapUrl": "/app/client/templates/_shared/67039fcf31770d4bd93b858df308ea36bc52710d.map",
+      "size": 2931,
+      "hash": "67039fcf31770d4bd93b858df308ea36bc52710d"
     },
     {
       "path": "app/client/templates/_shared/meetingRow.js",

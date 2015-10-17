@@ -24,14 +24,13 @@ Template.header.events({                                               // 1
   }                                                                    //
 });                                                                    //
                                                                        //
-/* THis shit here hides the side nav if it is open ON ANY FUCKING CLICK EXCEPT!!!!
-    - When you click any button with data-action equal to toggle-side-nav
-    - on the side menu itself or any of its children elements          //
-*/                                                                     //
-Template.header.rendered = function () {                               // 24
-  $('html').click(function () {                                        // 25
-    console.log($(event.target));                                      // 26
-    console.log($(event.target).closest('.side-nav'));                 // 27
+Template.header.rendered = function () {                               // 21
+  /*                                                                   //
+    This shit here hides the side nav if it is open ON ANY FUCKING CLICK EXCEPT!!!!
+      - When you click any button with data-action equal to toggle-side-nav
+      - on the side menu itself or any of its children elements        //
+  */                                                                   //
+  $('html').click(function () {                                        // 27
     if (!$(event.target).closest('.side-nav').length && $(event.target).attr('data-action') !== "toggle-side-nav") {
       console.log("clicked outside the nav");                          // 29
       $('.side-nav').hide('1000');                                     // 30
