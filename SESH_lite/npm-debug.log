@@ -1,0 +1,139 @@
+0 info it worked if it ends with ok
+1 verbose cli [ 'node', '/usr/local/bin/npm', 'install', 'materialize-css' ]
+2 info using npm@2.11.2
+3 info using node@v0.12.5
+4 verbose install initial load of /Users/samueljacobs/project_moon/project_moon/SESH_lite/package.json
+5 verbose installManyTop reading scoped package data from /Users/samueljacobs/project_moon/project_moon/SESH_lite/node_modules/jade/package.json
+6 verbose readDependencies loading dependencies from /Users/samueljacobs/project_moon/project_moon/SESH_lite/package.json
+7 silly cache add args [ 'materialize-css', null ]
+8 verbose cache add spec materialize-css
+9 silly cache add parsed spec { raw: 'materialize-css',
+9 silly cache add   scope: null,
+9 silly cache add   name: 'materialize-css',
+9 silly cache add   rawSpec: '',
+9 silly cache add   spec: '*',
+9 silly cache add   type: 'range' }
+10 silly addNamed materialize-css@*
+11 verbose addNamed "*" is a valid semver range for materialize-css
+12 silly addNameRange { name: 'materialize-css', range: '*', hasData: false }
+13 silly mapToRegistry name materialize-css
+14 silly mapToRegistry using default registry
+15 silly mapToRegistry registry https://registry.npmjs.org/
+16 silly mapToRegistry uri https://registry.npmjs.org/materialize-css
+17 verbose addNameRange registry:https://registry.npmjs.org/materialize-css not in flight; fetching
+18 verbose request uri https://registry.npmjs.org/materialize-css
+19 verbose request no auth needed
+20 info attempt registry request try #1 at 8:21:20 PM
+21 verbose request id 2a3ce5888d8fdbda
+22 http request GET https://registry.npmjs.org/materialize-css
+23 http 200 https://registry.npmjs.org/materialize-css
+24 silly get cb [ 200,
+24 silly get   { server: 'CouchDB/1.5.0 (Erlang OTP/R16B03)',
+24 silly get     etag: '"21SY7EW51X8SUIOJJO8CE6HQD"',
+24 silly get     'content-type': 'application/json',
+24 silly get     'cache-control': 'max-age=60',
+24 silly get     'content-length': '8164',
+24 silly get     'accept-ranges': 'bytes',
+24 silly get     date: 'Thu, 15 Oct 2015 03:21:21 GMT',
+24 silly get     via: '1.1 varnish',
+24 silly get     age: '0',
+24 silly get     connection: 'keep-alive',
+24 silly get     'x-served-by': 'cache-sjc3127-SJC',
+24 silly get     'x-cache': 'MISS',
+24 silly get     'x-cache-hits': '0',
+24 silly get     'x-timer': 'S1444879281.101884,VS0,VE43',
+24 silly get     vary: 'Accept' } ]
+25 verbose get saving materialize-css to /Users/samueljacobs/.npm/registry.npmjs.org/materialize-css/.cache.json
+26 silly addNameRange number 2 { name: 'materialize-css', range: '*', hasData: true }
+27 silly addNameRange versions [ 'materialize-css', [ '0.95.3', '0.96.1', '0.97.1' ] ]
+28 silly addNamed materialize-css@0.97.1
+29 verbose addNamed "0.97.1" is a plain semver version for materialize-css
+30 silly mapToRegistry name materialize-css
+31 silly mapToRegistry using default registry
+32 silly mapToRegistry registry https://registry.npmjs.org/
+33 silly mapToRegistry uri https://registry.npmjs.org/materialize-css
+34 verbose addRemoteTarball https://registry.npmjs.org/materialize-css/-/materialize-css-0.97.1.tgz not in flight; adding
+35 verbose addRemoteTarball [ 'https://registry.npmjs.org/materialize-css/-/materialize-css-0.97.1.tgz',
+35 verbose addRemoteTarball   '739c26931d092a3380e724ee97b177a7c34d2a8b' ]
+36 info retry fetch attempt 1 at 8:21:20 PM
+37 info attempt registry request try #1 at 8:21:20 PM
+38 http fetch GET https://registry.npmjs.org/materialize-css/-/materialize-css-0.97.1.tgz
+39 http fetch 200 https://registry.npmjs.org/materialize-css/-/materialize-css-0.97.1.tgz
+40 silly fetchAndShaCheck shasum 739c26931d092a3380e724ee97b177a7c34d2a8b
+41 verbose addTmpTarball /var/folders/k_/v_ws3p8n5rv9j5k5c0tq8f740000gn/T/npm-11342-7905782f/registry.npmjs.org/materialize-css/-/materialize-css-0.97.1.tgz not in flight; adding
+42 verbose addTmpTarball already have metadata; skipping unpack for materialize-css@0.97.1
+43 silly cache afterAdd materialize-css@0.97.1
+44 verbose afterAdd /Users/samueljacobs/.npm/materialize-css/0.97.1/package/package.json not in flight; writing
+45 verbose afterAdd /Users/samueljacobs/.npm/materialize-css/0.97.1/package/package.json written
+46 silly install resolved [ { name: 'materialize-css',
+46 silly install resolved     description: 'Builds Materialize distribution packages',
+46 silly install resolved     author: { name: 'Alvin Wang, Alan Chang' },
+46 silly install resolved     url: 'http://materializecss.com/',
+46 silly install resolved     version: '0.97.1',
+46 silly install resolved     repository: { type: 'git', url: 'git://github.com/Dogfalo/materialize.git' },
+46 silly install resolved     dependencies: {},
+46 silly install resolved     engine: 'node >= 0.10',
+46 silly install resolved     devDependencies:
+46 silly install resolved      { grunt: '^0.4.5',
+46 silly install resolved        'grunt-banner': '^0.3.0',
+46 silly install resolved        'grunt-browser-sync': '^2.1.1',
+46 silly install resolved        'grunt-concurrent': '^1.0.0',
+46 silly install resolved        'grunt-contrib-clean': '0.5.x',
+46 silly install resolved        'grunt-contrib-compress': '^0.12.0',
+46 silly install resolved        'grunt-contrib-concat': '^0.5.0',
+46 silly install resolved        'grunt-contrib-connect': '^0.4.2',
+46 silly install resolved        'grunt-contrib-copy': '0.4.x',
+46 silly install resolved        'grunt-contrib-cssmin': '^0.13.0',
+46 silly install resolved        'grunt-contrib-jade': '0.8.x',
+46 silly install resolved        'grunt-contrib-testem': '^0.5.16',
+46 silly install resolved        'grunt-contrib-uglify': '0.2.x',
+46 silly install resolved        'grunt-contrib-watch': '^0.5.3',
+46 silly install resolved        'grunt-notify': '^0.4.1',
+46 silly install resolved        'grunt-remove-logging': '^0.2.0',
+46 silly install resolved        'grunt-rename': '^0.1.4',
+46 silly install resolved        'grunt-sass': '^0.18.1',
+46 silly install resolved        'grunt-text-replace': '^0.4.0',
+46 silly install resolved        'node-sass': '^2.1.1',
+46 silly install resolved        qunit: '^0.7.6' },
+46 silly install resolved     scripts: { test: 'grunt testem:run:default' },
+46 silly install resolved     gitHead: '8b9ea2fbdc3eb2e5ad698627b6f4e2f93e991269',
+46 silly install resolved     bugs: { url: 'https://github.com/Dogfalo/materialize/issues' },
+46 silly install resolved     homepage: 'https://github.com/Dogfalo/materialize#readme',
+46 silly install resolved     _id: 'materialize-css@0.97.1',
+46 silly install resolved     _shasum: '739c26931d092a3380e724ee97b177a7c34d2a8b',
+46 silly install resolved     _from: 'materialize-css@*',
+46 silly install resolved     _npmVersion: '2.10.1',
+46 silly install resolved     _nodeVersion: '0.12.4',
+46 silly install resolved     _npmUser: { name: 'materialize', email: 'materializeframework@gmail.com' },
+46 silly install resolved     maintainers: [ [Object] ],
+46 silly install resolved     dist:
+46 silly install resolved      { shasum: '739c26931d092a3380e724ee97b177a7c34d2a8b',
+46 silly install resolved        tarball: 'http://registry.npmjs.org/materialize-css/-/materialize-css-0.97.1.tgz' },
+46 silly install resolved     directories: {},
+46 silly install resolved     _resolved: 'https://registry.npmjs.org/materialize-css/-/materialize-css-0.97.1.tgz' } ]
+47 info install materialize-css@0.97.1 into /Users/samueljacobs/project_moon/project_moon/SESH_lite
+48 info installOne materialize-css@0.97.1
+49 verbose installOne of materialize-css to /Users/samueljacobs/project_moon/project_moon/SESH_lite not in flight; installing
+50 warn locking Error: EACCES, open '/Users/samueljacobs/.npm/_locks/materialize-css-4c16f138abab7e48.lock'
+50 warn locking     at Error (native)
+50 warn locking  /Users/samueljacobs/.npm/_locks/materialize-css-4c16f138abab7e48.lock failed { [Error: EACCES, open '/Users/samueljacobs/.npm/_locks/materialize-css-4c16f138abab7e48.lock']
+50 warn locking   errno: -13,
+50 warn locking   code: 'EACCES',
+50 warn locking   path: '/Users/samueljacobs/.npm/_locks/materialize-css-4c16f138abab7e48.lock' }
+51 verbose stack Error: Attempt to unlock /Users/samueljacobs/project_moon/project_moon/SESH_lite/node_modules/materialize-css, which hasn't been locked
+51 verbose stack     at unlock (/usr/local/lib/node_modules/npm/lib/utils/locker.js:66:11)
+51 verbose stack     at cb (/usr/local/lib/node_modules/npm/lib/install.js:1017:5)
+51 verbose stack     at /usr/local/lib/node_modules/npm/lib/install.js:1021:20
+51 verbose stack     at /usr/local/lib/node_modules/npm/lib/utils/locker.js:40:9
+51 verbose stack     at cb (/usr/local/lib/node_modules/npm/node_modules/lockfile/lockfile.js:149:38)
+51 verbose stack     at /usr/local/lib/node_modules/npm/node_modules/lockfile/lockfile.js:177:38
+51 verbose stack     at FSReqWrap.oncomplete (fs.js:95:15)
+52 verbose cwd /Users/samueljacobs/project_moon/project_moon/SESH_lite
+53 error Darwin 14.5.0
+54 error argv "node" "/usr/local/bin/npm" "install" "materialize-css"
+55 error node v0.12.5
+56 error npm  v2.11.2
+57 error Attempt to unlock /Users/samueljacobs/project_moon/project_moon/SESH_lite/node_modules/materialize-css, which hasn't been locked
+58 error If you need help, you may report this error at:
+58 error     <https://github.com/npm/npm/issues>
+59 verbose exit [ 1, true ]

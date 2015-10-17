@@ -438,6 +438,14 @@
       "path": "packages/accounts-google.js"
     },
     {
+      "sourceMap": "packages/mquandalle_jade.js.map",
+      "path": "packages/mquandalle_jade.js"
+    },
+    {
+      "sourceMap": "packages/materialize_materialize.js.map",
+      "path": "packages/materialize_materialize.js"
+    },
+    {
       "sourceMap": "packages/livedata.js.map",
       "path": "packages/livedata.js"
     },

@@ -1,0 +1,69 @@
+template(name='header')
+  setTitle
+  nav.blue.accent-2
+    .nav-wrapper
+      a.brand-logo(href="{{ pathFor 'home' }}")
+        {{PROJECT_NAME}}  
+      ul
+        li
+          a.button-collapse(href='#', data-action='toggle-side-nav')
+            i.fa.fa-ellipsis-v
+      ul.right.hide-on-med-and-down
+        li
+           a(href="{{ pathFor 'home' }}")
+             i.fa.fa-home
+        if currentUser
+          li
+            a(href="{{ pathFor 'dashboard' }}")
+              i.fa.fa-book
+        if currentUser
+          li
+            a(href="{{ pathFor 'profile' }}")
+              i.fa.fa-user
+          li
+            a(href='#', data-action='logout')
+              i.fa.fa-sign-out
+        else
+          li
+             a(href="{{ pathFor 'atSignIn' }}")
+               i.fa.fa-sign-in
+          li
+            a(href="{{ pathFor 'atSignUp' }}")
+              i.fa.fa-user-plus
+               
+      ul.side-nav
+        li
+          a(href='#', data-action='toggle-side-nav')
+            h5 Close
+              i.right.fa.fa-arrow-circle-o-left 
+        li
+          h5
+            a(href="{{ pathFor 'home' }}")
+              h5 Home
+                i.right.fa.fa-home
+             
+        if currentUser
+          li
+            a(href="{{ pathFor 'dashboard' }}")
+              h5 Sessions
+                i.right.fa.fa-book
+        if currentUser
+          li
+            h5
+              a(href="{{ pathFor 'profile' }}")
+                h5 Profile
+                  i.right.fa.fa-user
+          li
+            h5
+              a(href='#', data-action='logout')
+                h5 Logout
+                  i.right.fa.fa-sign-out
+        else
+          li
+            a(href="{{ pathFor 'atSignIn' }}")
+              h5 Sign In
+                i.right.fa.fa-sign-in
+          li
+            a(href="{{ pathFor 'atSignUp' }}")
+              h5 Sign Up
+                i.right.fa.fa-user-plus

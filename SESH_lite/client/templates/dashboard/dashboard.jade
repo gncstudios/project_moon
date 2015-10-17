@@ -1,0 +1,48 @@
+template(name='dashboard')
+  {{setTitle "Courses"}}
+  .template-dashboard
+    .page-header
+      h1 Course Dashboard
+    .col-md-4.col-xs-12.pull-right.clearfix
+      .map-container
+        +googleMap name="exampleMap" options=exampleMapOptions
+    .col-md-8.form-inline
+      h2.clearfix
+        | All Courses
+        input#course-search.pull-right.form-control(placeholder='Search')
+      ul.list-group
+        each otherMeetings}}
+          +meetingRow
+    .col-md-8.clearfix
+      h2 Courses I Instruct
+      .page-actions.pull-right
+        btn.btn.btn-primary(data-toggle='modal', data-target='#addItemModal') + Add Item
+      ul.list-group
+        each myMeetings
+          +meetingRow this
+  // Modal
+  #addItemModal.modal.fade(tabindex='-1', role='dialog', aria-labelledby='myModalLabel', aria-hidden='true')
+    .modal-dialog
+      .modal-content
+        .modal-header
+          button.close(type='button', data-dismiss='modal')
+            span(aria-hidden='true') ×
+            span.sr-only Close
+          h4#myModalLabel.modal-title Add an Item
+        form.add-item(role='form')
+          .modal-body
+            .form-group
+              label Name
+              input.form-control(type='text', name='name', placeholder='Name of Item')
+            .form-group
+              label Cost
+              input.form-control(type='number', name='cost', placeholder='Cost')
+            .form-group
+              label Latitude
+              input.form-control(type='number', name='lat', placeholder='Cost')
+            .form-group
+              label Longitude
+              input.form-control(type='number', name='lng', placeholder='Cost')
+          .modal-footer
+            button.btn.btn-default(type='button', data-dismiss='modal') Cancel
+            input.btn.btn-primary(type='submit', value='+ Add Item')

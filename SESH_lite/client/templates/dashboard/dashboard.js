@@ -79,7 +79,7 @@ Template.dashboard.onCreated(function() {
 
 var markers = {};
 
-Meetings.find().observe({  
+Meetings.find().observe({
   added: function(document) {
     // Create a marker for this document
     var lat = document.lat;
@@ -90,7 +90,7 @@ Meetings.find().observe({
         animation: google.maps.Animation.DROP,
         position: new google.maps.LatLng(lat, lng),
         map: map.instance,
-        // We store the document _id on the marker in order 
+        // We store the document _id on the marker in order
         // to update the document within the 'dragend' event below.
         id: document._id
       });
@@ -114,7 +114,7 @@ Meetings.find().observe({
     }
   },
   removed: function(oldDocument) {
-  
+
     console.log(oldDocument);
     markers[oldDocument._id].setMap(null);
 
@@ -138,7 +138,7 @@ Meetings.find().observe({
               animation: google.maps.Animation.DROP,
               position: position,
               map: map.instance,
-              // We store the document _id on the marker in order 
+              // We store the document _id on the marker in order
               // to update the document within the 'dragend' event below.
               id: i
             });

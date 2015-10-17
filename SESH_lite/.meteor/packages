@@ -8,7 +8,6 @@ less
 spiderable
 accounts-password
 alanning:roles
-iron:router
 zimme:iron-router-active
 multiply:iron-router-progress
 dburles:collection-helpers
@@ -42,3 +41,6 @@ useraccounts:bootstrap
 accounts-facebook
 accounts-google
 dburles:google-maps
+mquandalle:jade
+iron:router
+materialize:materialize@=0.97.0
